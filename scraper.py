@@ -56,27 +56,6 @@ class Scraper:
             print("ya dun goofed with your weights")
             sys.exit()
 
-    #load the data that has previously been scraped
-    #param datadir: directory where the data is stored
-    def do_load(self, datadir):
-        #loop through datadir
-        for root, dirs, files in os.walk(datadir):
-            for filename in files:
-                if ('.json') not in filename:
-                    continue
-                if self.verbose:
-                    print("Loading", filename)
-                with open(os.path.join(root, filename)) as f:
-                    team_obj = json.loads(f.read())
-                games = set()
-                for game in team_obj["games"]:
-                    games.add(Game(game["opponent"], game["location"], game["opp_NET"], game["team_score"], game["opp_score"]))
-                curr_team = Team()
-                curr_team.fill_data(team_obj["conference"], team_obj["NET"], team_obj["KenPom"], team_obj["BPI"],
-                        team_obj["Sagarin"], team_obj["KPI"], team_obj["SOR"], team_obj["NET_SOS"], \
-                        team_obj["noncon_SOS"], games)
-                self.teams[filename[:filename.find(".json")]] = curr_team
-    
     #grab the data from where it's stored on disk or scrape it if necessary
     #param datadir: directory where the data is stored
     #param should_scrape: If true, scrape the data from the web if we haven't yet today
@@ -97,6 +76,27 @@ class Scraper:
         else:
             self.do_load(datadir)
 
+   #load the data that has previously been scraped
+    #param datadir: directory where the data is stored
+    def do_load(self, datadir):
+        #loop through datadir
+        for root, dirs, files in os.walk(datadir):
+            for filename in files:
+                if ('.json') not in filename:
+                    continue
+                if self.verbose:
+                    print("Loading", filename)
+                with open(os.path.join(root, filename)) as f:
+                    team_obj = json.loads(f.read())
+                games = set()
+                for game in team_obj["games"]:
+                    games.add(Game(game["opponent"], game["location"], game["opp_NET"], game["team_score"], game["opp_score"]))
+                curr_team = Team()
+                curr_team.fill_data(team_obj["conference"], team_obj["NET"], team_obj["KenPom"], team_obj["BPI"],
+                        team_obj["Sagarin"], team_obj["KPI"], team_obj["SOR"], team_obj["NET_SOS"], \
+                        team_obj["noncon_SOS"], games)
+                self.teams[filename[:filename.find(".json")]] = curr_team
+    
     #scrape college basketball data from the web
     #param datadir: directory where the data should be stored
     #param today_date: MM-DD representation of today's date. written to file to record that scraping took place
@@ -184,7 +184,6 @@ class Scraper:
             print("road wins", good_road_wins)
         return ROAD_WEIGHT*good_road_wins/5
 
-    
     #calculate score for a team's neutral court wins (scale: 1.000 = 5, 0.000 = 0)
     def get_neutral_score(self, team):
         good_neutral_wins = 0
@@ -260,6 +259,7 @@ class Scraper:
             print("bad losses", bad_losses)
         return BAD_LOSS_WEIGHT*(1 - bad_losses)
 
+    #calculate a team's resume score
     def build_score(self):
         self.sum_weights()
         for team in self.teams:
@@ -283,6 +283,7 @@ class Scraper:
             score += self.get_bad_loss_score(self.teams[team])
             self.teams[team].score = score
 
+    #seed and print the field, including a bubble section
     def print_results(self):
         curr_seed = 1
         num_curr_seed = 1
@@ -338,7 +339,7 @@ class Scraper:
         print()
         print(bubble_string)
 
-
+#accept command line arguments
 def process_args():
     argindex = 1
     outputfile = "bracketlist.csv"

@@ -131,7 +131,7 @@ class Scraper:
     def get_loss_score(self, team):
         if self.verbose:
             print("losses", int(team.record.split("-")[1]))
-        return LOSS_WEIGHT*int(team.record.split("-")[1])/12
+        return LOSS_WEIGHT*(12-int(team.record.split("-")[1]))/12
 
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
     def get_NET_score(self, team):

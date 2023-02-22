@@ -232,6 +232,36 @@ class Team:
                 (int(record[record.find("-")+1:]) + int(record[:record.find("-")]))
         except ZeroDivisionError:
             return 0
+    
+    def get_derived_record(self, quad):
+        Q1_record = self.Q1_record
+        Q2_record = self.Q2_record
+        Q3_record = self.Q3_record
+        Q4_record = self.Q4_record
+        wins = int(Q1_record[:Q1_record.find("-")])
+        if quad > 1:
+            wins += int(Q2_record[:Q2_record.find("-")])
+        if quad > 2:
+            wins += int(Q3_record[:Q3_record.find("-")])
+        if quad > 3:
+            wins += int(Q4_record[:Q4_record.find("-")])
+        losses = int(Q4_record[Q4_record.find("-")+1:])
+        if quad < 4:
+            losses += int(Q3_record[Q3_record.find("-")+1:])
+        if quad < 3:
+            losses += int(Q2_record[Q2_record.find("-")+1:])
+        if quad < 2:
+            losses += int(Q1_record[Q1_record.find("-")+1:])
+        return str(wins) + "-" + str(losses)
+
+    def get_derived_pct(self, quad):
+        record = self.get_derived_record(quad)
+        wins = int(record[:record.find("-")])
+        losses = int(record[record.find("-")+1:])
+        try:
+            return wins/(wins + losses)
+        except ZeroDivisionError:
+            return 0
 
     def get_predictive(self):
         return sum([self.KenPom, self.BPI, self.Sagarin])/3

@@ -15,8 +15,8 @@ SCRAPE_DATE_FILE = "scrapedate.txt"
 AT_LARGE_MAX = 36
 AUTO_MAX = 32
 
-LOSS_WEIGHT = 0.03
-NET_WEIGHT = 0.15
+LOSS_WEIGHT = 0.04
+NET_WEIGHT = 0.14
 POWER_WEIGHT = 0.12
 Q1_WEIGHT = 0.17
 Q2_WEIGHT = 0.08
@@ -50,7 +50,7 @@ class Scraper:
 
     #sanity check to make sure my weights are added correctly
     def sum_weights(self):
-        s = sum([LOSS_WEIGHT, NET_WEIGHT, POWER_WEIGHT, Q1_WEIGHT, Q2_WEIGHT, Q3_WEIGHT, Q4_WEIGHT, ROAD_WEIGHT, NEUTRAL_WEIGHT, TOP_10_WEIGHT, TOP_25_WEIGHT, SOS_WEIGHT, NONCON_SOS_WEIGHT, AWFUL_LOSS_WEIGHT, BAD_LOSS_WEIGHT])
+        s = round(sum([round(LOSS_WEIGHT, 5), round(NET_WEIGHT, 5), round(POWER_WEIGHT, 5), round(Q1_WEIGHT, 5), round(Q2_WEIGHT, 5), round(Q3_WEIGHT, 5), round(Q4_WEIGHT, 5), round(ROAD_WEIGHT, 5), round(NEUTRAL_WEIGHT, 5), round(TOP_10_WEIGHT, 5), round(TOP_25_WEIGHT, 5), round(SOS_WEIGHT, 5), round(NONCON_SOS_WEIGHT, 5), round(AWFUL_LOSS_WEIGHT, 5), round(BAD_LOSS_WEIGHT, 5)]), 5)
         if s != 1:
             print(s)
             print("ya dun goofed with your weights")
@@ -149,27 +149,27 @@ class Scraper:
     #calculate score for a team's record in quadrant 1 (scale: 1.000 = 1, 0.000 = .000)
     def get_Q1_score(self, team):
         if self.verbose:
-            print("Quadrant 1", team.Q1_pct)
-        return Q1_WEIGHT*team.Q1_pct
+            print("Quadrant 1", team.get_derived_pct(1))
+        return Q1_WEIGHT*team.get_derived_pct(1)
 
     #calculate score for a team's record in quadrant 2 (scale: 1.000 = 1, 0.000 = .500)
     def get_Q2_score(self, team):
         if self.verbose:
-            print("Quadrant 2", team.Q2_pct)
-        return Q2_WEIGHT*(team.Q2_pct-0.5)/0.5
+            print("Quadrant 2", team.get_derived_pct(2))
+        return Q2_WEIGHT*(team.get_derived_pct(2)-0.5)/0.5
 
     #TODO: are these good scales, here and Q4?
     #calculate score for a team's record in quadrant 3 (scale: 1.000 = 1, 0.000 = .800)
     def get_Q3_score(self, team):
         if self.verbose:
-            print("Quadrant 3", team.Q3_pct)
-        return Q3_WEIGHT*(team.Q3_pct-0.8)/0.2
+            print("Quadrant 3", team.get_derived_pct(3))
+        return Q3_WEIGHT*(team.get_derived_pct(3)-0.8)/0.2
 
     #calculate score for a team's record in quadrant 4 (scale: 1.000 = 1, 0.000 = .950)
     def get_Q4_score(self, team):
         if self.verbose:
-            print("Quadrant 4", team.Q4_pct)
-        return Q4_WEIGHT*(team.Q4_pct-0.95)/0.05
+            print("Quadrant 4", team.get_derived_pct(4))
+        return Q4_WEIGHT*(team.get_derived_pct(4)-0.95)/0.05
 
     #calculate score for a team's road wins (scale: 1.000 = 5, 0.000 = 0)
     def get_road_score(self, team):
@@ -315,6 +315,7 @@ class Scraper:
                     confs_used.add(self.teams[team].conference)
                 else:
                     continue
+            #TODO: print a better team name? e.g. Saint Mary's instead of Saint-Marys-College
             print("(" + str(curr_seed) + ")" + team, end="")
             if at_large_bid:
                 if at_large_bids >= AT_LARGE_MAX - 3:
@@ -367,8 +368,10 @@ def process_args():
             argindex += 2
         elif sys.argv[argindex] == '-e':
             should_scrape = False
+            argindex += 1
         elif sys.argv[argindex] == '-v':
             verbose = True
+            argindex += 1
     return outputfile, datadir, should_scrape, verbose
 
 if __name__ == '__main__':

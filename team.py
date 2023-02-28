@@ -152,7 +152,13 @@ class Team:
             else:
                 losses += 1
         return str(wins) + "-" + str(losses)
-    
+   
+    def get_record_pct(self):
+        record = self.record
+        wins = int(record.split("-")[0])
+        losses = int(record.split("-")[1])
+        return wins/(wins + losses)
+
     def get_Q1_record(self):
         wins = 0
         losses = 0
@@ -166,11 +172,26 @@ class Team:
 
     def get_Q1_pct(self):
         record = self.Q1_record
+        wins = int(record.split("-")[0])
+        losses = int(record.split("-")[1])
         try:
-            return int(record[:record.find("-")]) / \
-                (int(record[record.find("-")+1:]) + int(record[:record.find("-")]))
+            return wins/(wins + losses)
         except ZeroDivisionError:
             return 0
+
+    def get_fuzzy_Q1_record(self):
+        wins = 0
+        losses = 0
+        for game in self.games:
+            if game.opp_NET <= 25 or (game.opp_NET <= 45 and game.location == "N") or (game.opp_NET <= 70 and game.location == "A"):
+                if game.margin > 0:
+                    wins += 1
+                else:
+                    losses += 1
+            elif game.opp_NET <= 35:
+                if game.margin > 0:
+                    wins += (35 - game.opp_NET)/10
+        return str(wins) + "-" + str(losses)
 
     def get_Q2_record(self):
         wins = 0
@@ -187,9 +208,10 @@ class Team:
 
     def get_Q2_pct(self):
         record = self.Q2_record
+        wins = int(record.split("-")[0])
+        losses = int(record.split("-")[1])
         try:
-            return int(record[:record.find("-")]) / \
-                (int(record[record.find("-")+1:]) + int(record[:record.find("-")]))
+            return wins/(wins + losses)
         except ZeroDivisionError:
             return 0
 
@@ -208,9 +230,10 @@ class Team:
 
     def get_Q3_pct(self):
         record = self.Q3_record
+        wins = int(record.split("-")[0])
+        losses = int(record.split("-")[1])
         try:
-            return int(record[:record.find("-")]) / \
-                (int(record[record.find("-")+1:]) + int(record[:record.find("-")]))
+            return wins/(wins + losses)
         except ZeroDivisionError:
             return 0
 
@@ -226,10 +249,11 @@ class Team:
         return str(wins) + "-" + str(losses)
 
     def get_Q4_pct(self):
-        record = self.Q4_record
+        record = self.Q1_record
+        wins = int(record.split("-")[0])
+        losses = int(record.split("-")[1])
         try:
-            return int(record[:record.find("-")]) / \
-                (int(record[record.find("-")+1:]) + int(record[:record.find("-")]))
+            return wins/(wins + losses)
         except ZeroDivisionError:
             return 0
     
@@ -238,26 +262,26 @@ class Team:
         Q2_record = self.Q2_record
         Q3_record = self.Q3_record
         Q4_record = self.Q4_record
-        wins = int(Q1_record[:Q1_record.find("-")])
+        wins = int(Q1_record.split("-")[0])
         if quad > 1:
-            wins += int(Q2_record[:Q2_record.find("-")])
+            wins += int(Q2_record.split("-")[0])
         if quad > 2:
-            wins += int(Q3_record[:Q3_record.find("-")])
+            wins += int(Q3_record.split("-")[0])
         if quad > 3:
-            wins += int(Q4_record[:Q4_record.find("-")])
-        losses = int(Q4_record[Q4_record.find("-")+1:])
+            wins += int(Q4_record.split("-")[0])
+        losses = int(Q4_record.split("-")[1])
         if quad < 4:
-            losses += int(Q3_record[Q3_record.find("-")+1:])
+            losses += int(Q3_record.split("-")[1])
         if quad < 3:
-            losses += int(Q2_record[Q2_record.find("-")+1:])
+            losses += int(Q2_record.split("-")[1])
         if quad < 2:
-            losses += int(Q1_record[Q1_record.find("-")+1:])
+            losses += int(Q1_record.split("-")[1])
         return str(wins) + "-" + str(losses)
 
     def get_derived_pct(self, quad):
         record = self.get_derived_record(quad)
-        wins = int(record[:record.find("-")])
-        losses = int(record[record.find("-")+1:])
+        wins = int(record.split("-")[0])
+        losses = int(record.split("-")[1])
         try:
             return wins/(wins + losses)
         except ZeroDivisionError:
@@ -270,6 +294,7 @@ class Team:
         return sum(self.KPI, self.SOR)/2
 
     record = property(get_record)
+    record_pct = property(get_record_pct)
     Q1_record = property(get_Q1_record)
     Q2_record = property(get_Q2_record)
     Q3_record = property(get_Q3_record)

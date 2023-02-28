@@ -131,45 +131,51 @@ class Scraper:
     def get_loss_score(self, team):
         if self.verbose:
             print("losses", int(team.record.split("-")[1]))
-        return LOSS_WEIGHT*(12-int(team.record.split("-")[1]))/12
+        team.loss_score = LOSS_WEIGHT*(12-int(team.record.split("-")[1]))/12
+        return team.loss_score
 
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
     def get_NET_score(self, team):
         if self.verbose:
             print("NET", team.NET)
-        return NET_WEIGHT*(60-team.NET)/59
+        team.NET_score = NET_WEIGHT*(60-team.NET)/59
+        return team.NET_score
 
     #calculate score for a team's predictive rating (scale: 1.000 = 1, 0.000 = 60)
     def get_power_score(self, team):
         if self.verbose:
             print("power", team.predictive)
-        return POWER_WEIGHT*(60-team.predictive)/59
+        team.power_score = POWER_WEIGHT*(60-team.predictive)/59
+        return team.power_score
 
-    #TODO: want to use the better methods here?
     #calculate score for a team's record in quadrant 1 (scale: 1.000 = 1, 0.000 = .000)
     def get_Q1_score(self, team):
         if self.verbose:
             print("Quadrant 1", team.get_derived_pct(1))
-        return Q1_WEIGHT*team.get_derived_pct(1)
+        team.Q1_score = Q1_WEIGHT*team.get_derived_pct(1)
+        return team.Q1_score
 
     #calculate score for a team's record in quadrant 2 (scale: 1.000 = 1, 0.000 = .500)
     def get_Q2_score(self, team):
         if self.verbose:
             print("Quadrant 2", team.get_derived_pct(2))
-        return Q2_WEIGHT*(team.get_derived_pct(2)-0.5)/0.5
+        team.Q2_score = Q2_WEIGHT*(team.get_derived_pct(2)-0.5)/0.5
+        return team.Q2_score
 
     #TODO: are these good scales, here and Q4?
     #calculate score for a team's record in quadrant 3 (scale: 1.000 = 1, 0.000 = .800)
     def get_Q3_score(self, team):
         if self.verbose:
             print("Quadrant 3", team.get_derived_pct(3))
-        return Q3_WEIGHT*(team.get_derived_pct(3)-0.8)/0.2
+        team.Q3_score = Q3_WEIGHT*(team.get_derived_pct(3)-0.8)/0.2
+        return team.Q3_score
 
     #calculate score for a team's record in quadrant 4 (scale: 1.000 = 1, 0.000 = .950)
     def get_Q4_score(self, team):
         if self.verbose:
             print("Quadrant 4", team.get_derived_pct(4))
-        return Q4_WEIGHT*(team.get_derived_pct(4)-0.95)/0.05
+        team.Q4_score = Q4_WEIGHT*(team.get_derived_pct(4)-0.95)/0.05
+        return team.Q4_score
 
     #calculate score for a team's road wins (scale: 1.000 = 5, 0.000 = 0)
     def get_road_score(self, team):
@@ -182,7 +188,8 @@ class Scraper:
                     good_road_wins += (100 - game.opp_NET)/50
         if self.verbose:
             print("road wins", good_road_wins)
-        return ROAD_WEIGHT*good_road_wins/5
+        team.road_score = ROAD_WEIGHT*good_road_wins/5
+        return team.road_score
 
     #calculate score for a team's neutral court wins (scale: 1.000 = 5, 0.000 = 0)
     def get_neutral_score(self, team):
@@ -195,7 +202,8 @@ class Scraper:
                     good_neutral_wins += (100 - game.opp_NET)/50
         if self.verbose:
             print("neutral wins", good_neutral_wins)
-        return NEUTRAL_WEIGHT*good_neutral_wins/5
+        team.neutral_score = NEUTRAL_WEIGHT*good_neutral_wins/5
+        return team.neutral_score
 
     #TODO: Use Quad 1A or whatever?
     #calculate score for a team's top 10 wins (scale: 1.000 = 3, 0.000 = 0)
@@ -209,33 +217,48 @@ class Scraper:
                     top_10_wins += (16 - game.opp_NET)/10
         if self.verbose:
             print("top 10 wins", top_10_wins)
-        return TOP_10_WEIGHT*top_10_wins/5
+        team.top10_score = TOP_10_WEIGHT*top_10_wins/5
+        return team.top10_score
 
-    #calculate score for a team's top 25 wins (scale: 1.000 = 5, 0.000 = 0)
+    #calculate score for a team's top 25 wins (Quad 1A) (scale: 1.000 = 5, 0.000 = 0)
     def get_top25_score(self, team):
         top_25_wins = 0
         for game in team.games:
             if game.margin > 0:
-                if game.opp_NET <= 20:
-                    top_25_wins += 1
-                elif game.opp_NET <= 30:
-                    top_25_wins += (31 - game.opp_NET)/10
+                if game.location == "H":
+                    if game.opp_NET <= 10:
+                        top_25_wins += 1
+                    elif game.opp_NET <= 20:
+                        top_25_wins += (21 - game.opp_NET)/10
+                elif game.location == "N":
+                    if game.opp_NET <= 20:
+                        top_25_wins += 1
+                    elif game.opp_NET <= 30:
+                        top_25_wins += (31 - game.opp_NET)/10
+                elif game.location == "A":
+                    if game.opp_NET <= 35:
+                        top_25_wins += 1
+                    elif game.opp_NET <= 45:
+                        top_25_wins += (46 - game.opp_NET)/10
         if self.verbose:
             print("top 25 wins", top_25_wins)
-        return TOP_25_WEIGHT*top_25_wins/5
+        team.top25_score = TOP_25_WEIGHT*top_25_wins/5
+        return team.top25_score
 
     #calculate score for a team's strength of schedule (scale: 1.000 = 1, 0.000 = 150)
     def get_SOS_score(self, team):
         if self.verbose:
             print("SOS", team.NET_SOS)
-        return SOS_WEIGHT*(151 - team.NET_SOS)/150
+        team.SOS_score = SOS_WEIGHT*(151 - team.NET_SOS)/150
+        return team.SOS_score
 
     #calculate score for a team's nonconference strength of schedule (scale: 1.000 = 1, 0.000 = 150)
     def get_NCSOS_score(self, team):
         if self.verbose:
             print("Noncon SOS", team.noncon_SOS)
-        return NONCON_SOS_WEIGHT*(151 - team.noncon_SOS)/150
-    
+        team.NCSOS_score = NONCON_SOS_WEIGHT*(151 - team.noncon_SOS)/150
+        return team.NCSOS_score
+
     #calculate score for a team's awful (NET > 200) losses (scale: 1.000 = 0, 0.000 = 1)
     def get_awful_loss_score(self,team):
         awful_losses = 0
@@ -247,17 +270,19 @@ class Scraper:
                     awful_losses += (game.opp_NET - 170)/60
         if self.verbose:
             print("awful losses", awful_losses)
-        return AWFUL_LOSS_WEIGHT*(1 - awful_losses)
+        team.awful_loss_score = AWFUL_LOSS_WEIGHT*(1 - awful_losses)
+        return team.awful_loss_score
 
     #calculate score for a team's bad losses (scale: 1.000 = 0, 0.000 = 3)
     def get_bad_loss_score(self,team):
         bad_losses = 0
-        bad_losses += int(team.Q2_record[team.Q2_record.find("-")+1:])
-        bad_losses += int(team.Q3_record[team.Q3_record.find("-")+1:])
-        bad_losses += int(team.Q4_record[team.Q4_record.find("-")+1:])
+        bad_losses += int(team.Q2_record.split("-")[1])
+        bad_losses += int(team.Q3_record.split("-")[1])
+        bad_losses += int(team.Q4_record.split("-")[1])
         if self.verbose:
             print("bad losses", bad_losses)
-        return BAD_LOSS_WEIGHT*(1 - bad_losses)
+        team.bad_loss_score = BAD_LOSS_WEIGHT*(1 - bad_losses/3)
+        return team.bad_loss_score
 
     #calculate a team's resume score
     def build_score(self):
@@ -296,6 +321,8 @@ class Scraper:
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             at_large_bid = False
             if self.teams[team].conference in confs_used:
+                if self.teams[team].record_pct < 0.5:
+                    continue
                 if at_large_bids < AT_LARGE_MAX:
                     at_large_bids += 1
                     at_large_bid = True
@@ -340,10 +367,49 @@ class Scraper:
         print()
         print(bubble_string)
 
+    def output_scores(self):
+        with open(self.outputfile, "w") as f:
+            f.write("Team," + \
+                    "Losses(" + str(round(LOSS_WEIGHT, 5)) + \
+                    "), NET(" + str(round(NET_WEIGHT, 5)) + \
+                    "), Power(" + str(round(POWER_WEIGHT, 5)) + \
+                    "), Q1(" + str(round(Q1_WEIGHT, 5)) + \
+                    "), Q2(" + str(round(Q2_WEIGHT, 5)) + \
+                    "), Q3(" + str(round(Q3_WEIGHT, 5)) + \
+                    "), Q4(" + str(round(Q4_WEIGHT, 5)) + \
+                    "), Road(" + str(round(ROAD_WEIGHT, 5)) + \
+                    "), Neutral(" + str(round(NEUTRAL_WEIGHT, 5)) + \
+                    "), Top 10(" + str(round(TOP_10_WEIGHT, 5)) + \
+                    "), Top 25(" + str(round(TOP_25_WEIGHT, 5)) + \
+                    "), SOS(" + str(round(SOS_WEIGHT, 5)) + \
+                    "), Noncon SOS(" + str(round(NONCON_SOS_WEIGHT, 5)) + \
+                    "), Awful losses(" + str(round(AWFUL_LOSS_WEIGHT, 5)) + \
+                    "), Bad losses(" + str(round(BAD_LOSS_WEIGHT, 5)) + \
+                    "), Total Score\n")
+            for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
+                line = team + "," + \
+                        str(round(self.teams[team].loss_score, 5)) + "," + \
+                        str(round(self.teams[team].NET_score, 5)) + "," + \
+                        str(round(self.teams[team].power_score, 5)) + "," + \
+                        str(round(self.teams[team].Q1_score, 5)) + "," + \
+                        str(round(self.teams[team].Q2_score, 5)) + "," + \
+                        str(round(self.teams[team].Q3_score, 5)) + "," + \
+                        str(round(self.teams[team].Q4_score, 5)) + "," + \
+                        str(round(self.teams[team].road_score, 5)) + "," + \
+                        str(round(self.teams[team].neutral_score, 5)) + "," + \
+                        str(round(self.teams[team].top10_score, 5)) + "," + \
+                        str(round(self.teams[team].top25_score, 5)) + "," + \
+                        str(round(self.teams[team].SOS_score, 5)) + "," + \
+                        str(round(self.teams[team].NCSOS_score, 5)) + "," + \
+                        str(round(self.teams[team].awful_loss_score, 5)) + "," + \
+                        str(round(self.teams[team].bad_loss_score, 5)) + "," + \
+                        str(round(self.teams[team].score, 5)) + "\n"
+                f.write(line)
+
 #accept command line arguments
 def process_args():
     argindex = 1
-    outputfile = "bracketlist.csv"
+    outputfile = ""
     datadir = "data/"
     should_scrape = True
     verbose = False
@@ -378,7 +444,10 @@ if __name__ == '__main__':
     outputfile, datadir, should_scrape, verbose = process_args()
     scraper = Scraper()
     scraper.verbose = verbose
+    scraper.outputfile = outputfile
     scraper.load_data(datadir, should_scrape)
     scraper.build_score()
     scraper.print_results()
+    if outputfile:
+        scraper.output_scores()
 

@@ -7,6 +7,7 @@ import os
 import sys
 import json
 import requests
+import math
 
 NITTY_GRITTY_URL = "https://www.warrennolan.com/basketball/2023/net-nitty"
 TEAM_URL_START = "https://www.warrennolan.com"
@@ -15,20 +16,20 @@ SCRAPE_DATE_FILE = "scrapedate.txt"
 AT_LARGE_MAX = 36
 AUTO_MAX = 32
 
-LOSS_WEIGHT = 0.05
+LOSS_WEIGHT = 0.07
 NET_WEIGHT = 0.12
 POWER_WEIGHT = 0.11
-Q1_WEIGHT = 0.19
-Q2_WEIGHT = 0.08
+Q1_WEIGHT = 0.21
+Q2_WEIGHT = 0.09
 Q3_WEIGHT = 0.03
-Q4_WEIGHT = 0.025
-ROAD_WEIGHT = 0.04
+Q4_WEIGHT = 0.02
+ROAD_WEIGHT = 0.05
 NEUTRAL_WEIGHT = 0.035
 TOP_10_WEIGHT = 0.07
-TOP_25_WEIGHT = 0.08
-SOS_WEIGHT = 0.07
-NONCON_SOS_WEIGHT = 0.03
-AWFUL_LOSS_WEIGHT = 0.03
+TOP_25_WEIGHT = 0.07
+SOS_WEIGHT = 0.04
+NONCON_SOS_WEIGHT = 0.025
+AWFUL_LOSS_WEIGHT = 0.02
 BAD_LOSS_WEIGHT = 0.04
 
 #class to turn the Team and Game objects into jsonifyable strings
@@ -59,7 +60,8 @@ class Scraper:
     #grab the data from where it's stored on disk or scrape it if necessary
     #param datadir: directory where the data is stored
     #param should_scrape: If true, scrape the data from the web if we haven't yet today
-    def load_data(self, datadir, should_scrape):
+    #param force_scrape: If true, scrape the data from the web regardless of if we have or haven't
+    def load_data(self, datadir, should_scrape, force_scrape):
         if not os.path.exists(datadir):
             print("creating datadir", datadir)
             os.makedirs(datadir)
@@ -68,15 +70,15 @@ class Scraper:
             f.close()
         f = open(datadir + SCRAPE_DATE_FILE, "r+")
         today = date.today()
-        today_date = today.strftime("%m-%d")
+        today_date = today.strftime("%m-%d")    #format: mm-dd
         saved_date = f.read().strip()
         f.close()
-        if should_scrape and today_date != saved_date:
+        if force_scrape or (should_scrape and today_date != saved_date):
             self.do_scrape(datadir, today_date)
         else:
             self.do_load(datadir)
 
-   #load the data that has previously been scraped
+    #load the data that has previously been scraped
     #param datadir: directory where the data is stored
     def do_load(self, datadir):
         #loop through datadir
@@ -128,6 +130,7 @@ class Scraper:
         f.close()
 
     #calculate score for a team's raw number of losses (scale: 1.000 = 0, 0.000 = 12)
+    #param team: Team object to calculate score for
     def get_loss_score(self, team):
         if self.verbose:
             print("losses", int(team.record.split("-")[1]))
@@ -135,20 +138,23 @@ class Scraper:
         return team.loss_score
 
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
+    #param team: Team object to calculate score for
     def get_NET_score(self, team):
         if self.verbose:
             print("NET", team.NET)
-        team.NET_score = NET_WEIGHT*(60-team.NET)/59
+        team.NET_score = NET_WEIGHT*(-math.log(team.NET + 19, 2)/2 + 3.12)#(60-team.NET)/59
         return team.NET_score
 
     #calculate score for a team's predictive rating (scale: 1.000 = 1, 0.000 = 60)
+    #param team: Team object to calculate score for
     def get_power_score(self, team):
         if self.verbose:
             print("power", team.predictive)
-        team.power_score = POWER_WEIGHT*(60-team.predictive)/59
+        team.power_score = POWER_WEIGHT*(-math.log(team.predictive + 19, 2)/2 + 3.12)#(60-team.predictive)/59
         return team.power_score
 
     #calculate score for a team's record in quadrant 1 (scale: 1.000 = 1, 0.000 = .000)
+    #param team: Team object to calculate score for
     def get_Q1_score(self, team):
         if self.verbose:
             print("Quadrant 1", team.get_derived_pct(1))
@@ -156,6 +162,7 @@ class Scraper:
         return team.Q1_score
 
     #calculate score for a team's record in quadrant 2 (scale: 1.000 = 1, 0.000 = .500)
+    #param team: Team object to calculate score for
     def get_Q2_score(self, team):
         if self.verbose:
             print("Quadrant 2", team.get_derived_pct(2))
@@ -171,6 +178,7 @@ class Scraper:
         return team.Q3_score
 
     #calculate score for a team's record in quadrant 4 (scale: 1.000 = 1, 0.000 = .950)
+    #param team: Team object to calculate score for
     def get_Q4_score(self, team):
         if self.verbose:
             print("Quadrant 4", team.get_derived_pct(4))
@@ -178,6 +186,8 @@ class Scraper:
         return team.Q4_score
 
     #calculate score for a team's road wins (scale: 1.000 = 5, 0.000 = 0)
+        #sliding scale. #1-#50: full win. #51-#99: decreases win count by 0.02 for each rank down.
+    #param team: Team object to calculate score for
     def get_road_score(self, team):
         good_road_wins = 0
         for game in team.games:
@@ -192,6 +202,8 @@ class Scraper:
         return team.road_score
 
     #calculate score for a team's neutral court wins (scale: 1.000 = 5, 0.000 = 0)
+        #sliding scale. #1-#50: full win. #51-#99: decreases win count by 0.02 for each rank down.
+    #param team: Team object to calculate score for
     def get_neutral_score(self, team):
         good_neutral_wins = 0
         for game in team.games:
@@ -205,8 +217,9 @@ class Scraper:
         team.neutral_score = NEUTRAL_WEIGHT*good_neutral_wins/5
         return team.neutral_score
 
-    #TODO: Use Quad 1A or whatever?
     #calculate score for a team's top 10 wins (scale: 1.000 = 3, 0.000 = 0)
+        #sliding scale. #1-#5: full win. #6-#14: decreases win count by 0.1 for each rank down.
+    #param team: Team object to calculate score for
     def get_top10_score(self, team):
         top_10_wins = 0
         for game in team.games:
@@ -214,13 +227,15 @@ class Scraper:
                 if game.opp_NET <= 5:
                     top_10_wins += 1
                 elif game.opp_NET <= 15:
-                    top_10_wins += (16 - game.opp_NET)/10
+                    top_10_wins += (15 - game.opp_NET)/10
         if self.verbose:
             print("top 10 wins", top_10_wins)
         team.top10_score = TOP_10_WEIGHT*top_10_wins/5
         return team.top10_score
 
     #calculate score for a team's top 25 wins (Quad 1A) (scale: 1.000 = 5, 0.000 = 0)
+        #sliding scale. Quad 1A is 1-15 (H), 1-25 (N), 1-40 (A). win count decreases by 0.1 for each rank down when within 5 of end.
+    #param team: Team object to calculate score for
     def get_top25_score(self, team):
         top_25_wins = 0
         for game in team.games:
@@ -229,23 +244,24 @@ class Scraper:
                     if game.opp_NET <= 10:
                         top_25_wins += 1
                     elif game.opp_NET <= 20:
-                        top_25_wins += (21 - game.opp_NET)/10
+                        top_25_wins += (20 - game.opp_NET)/10
                 elif game.location == "N":
                     if game.opp_NET <= 20:
                         top_25_wins += 1
                     elif game.opp_NET <= 30:
-                        top_25_wins += (31 - game.opp_NET)/10
+                        top_25_wins += (30 - game.opp_NET)/10
                 elif game.location == "A":
                     if game.opp_NET <= 35:
                         top_25_wins += 1
                     elif game.opp_NET <= 45:
-                        top_25_wins += (46 - game.opp_NET)/10
+                        top_25_wins += (45 - game.opp_NET)/10
         if self.verbose:
             print("top 25 wins", top_25_wins)
         team.top25_score = TOP_25_WEIGHT*top_25_wins/5
         return team.top25_score
 
     #calculate score for a team's strength of schedule (scale: 1.000 = 1, 0.000 = 150)
+    #param team: Team object to calculate score for
     def get_SOS_score(self, team):
         if self.verbose:
             print("SOS", team.NET_SOS)
@@ -253,6 +269,7 @@ class Scraper:
         return team.SOS_score
 
     #calculate score for a team's nonconference strength of schedule (scale: 1.000 = 1, 0.000 = 150)
+    #param team: Team object to calculate score for
     def get_NCSOS_score(self, team):
         if self.verbose:
             print("Noncon SOS", team.noncon_SOS)
@@ -260,20 +277,23 @@ class Scraper:
         return team.NCSOS_score
 
     #calculate score for a team's awful (NET > 200) losses (scale: 1.000 = 0, 0.000 = 1)
+        #sliding scale. loss count increases by 0.02 for each rank down past 175. #225 and worse are a full loss.
+    #param team: Team object to calculate score for
     def get_awful_loss_score(self,team):
         awful_losses = 0
         for game in team.games:
             if game.margin < 0:
-                if game.opp_NET > 230:
+                if game.opp_NET > 225:
                     awful_losses += 1
-                elif game.opp_NET > 170:
-                    awful_losses += (game.opp_NET - 170)/60
+                elif game.opp_NET > 175:
+                    awful_losses += (game.opp_NET - 175)/50
         if self.verbose:
             print("awful losses", awful_losses)
         team.awful_loss_score = AWFUL_LOSS_WEIGHT*(1 - awful_losses)
         return team.awful_loss_score
 
-    #calculate score for a team's bad losses (scale: 1.000 = 0, 0.000 = 3)
+    #calculate score for a team's bad (sub-Q1) losses (scale: 1.000 = 0, 0.000 = 3)
+    #param team: Team object to calculate score for
     def get_bad_loss_score(self,team):
         bad_losses = 0
         bad_losses += int(team.Q2_record.split("-")[1])
@@ -284,8 +304,8 @@ class Scraper:
         team.bad_loss_score = BAD_LOSS_WEIGHT*(1 - bad_losses/3)
         return team.bad_loss_score
 
-    #calculate a team's resume score
-    def build_score(self):
+    #calculate resume score for all teams
+    def build_scores(self):
         self.sum_weights()
         for team in self.teams:
             if self.verbose:
@@ -412,41 +432,44 @@ def process_args():
     outputfile = ""
     datadir = "data/"
     should_scrape = True
+    force_scrape = False
     verbose = False
     while argindex < len(sys.argv):
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-d datadir] [-o outputfile] [-e] [-v]")
+            print("./scraper.py [-h] [-d datadir] [-o outputfile] [-e|-s] [-v]")
             print("     -h: print this help message")
             print("     -d: set a directory where the scraped data will live")
             print("     -o: set a csv filename where the final ranking will live")
             print("     -e: override the scraping and use data currently stored")
+            print("     -s: scrape data anew regardless of whether data has been scraped today")
             print("     -v: verbose")
             sys.exit()
         elif sys.argv[argindex] == '-o':
             outputfile = sys.argv[argindex + 1]
-            argindex += 2
+            argindex += 1
         elif sys.argv[argindex] == '-d':
             datadir = sys.argv[argindex + 1]
             if datadir[-1] != "/":
                 datadir = datadir + ["/"]
-            argindex += 2
+            argindex += 1
         elif sys.argv[argindex] == '-e':
             should_scrape = False
-            argindex += 1
         elif sys.argv[argindex] == '-v':
             verbose = True
-            argindex += 1
-    return outputfile, datadir, should_scrape, verbose
+        elif sys.argv[argindex] == '-s':
+            force_scrape = True
+        argindex += 1
+    return outputfile, datadir, should_scrape, force_scrape, verbose
 
 if __name__ == '__main__':
-    outputfile, datadir, should_scrape, verbose = process_args()
+    outputfile, datadir, should_scrape, force_scrape, verbose = process_args()
     scraper = Scraper()
     scraper.verbose = verbose
     scraper.outputfile = outputfile
-    scraper.load_data(datadir, should_scrape)
-    scraper.build_score()
+    scraper.load_data(datadir, should_scrape, force_scrape)
+    scraper.build_scores()
     scraper.print_results()
     if outputfile:
         scraper.output_scores()

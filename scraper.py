@@ -32,6 +32,39 @@ NONCON_SOS_WEIGHT = 0.025
 AWFUL_LOSS_WEIGHT = 0.02
 BAD_LOSS_WEIGHT = 0.04
 
+team_dict = {
+        "Kansas-State": "Kansas State",
+        "San-Diego-State": "San Diego State",
+        "Iowa-State": "Iowa State",
+        "West-Virginia": "West Virginia",
+        "Saint-Marys-College": "Saint Mary's",
+        "Michigan-State": "Michigan State",
+        "Miami-FL": "Miami (FL)",
+        "FAU": "Florida Atlantic",
+        "Texas-AM": "Texas A&M",
+        "Boise-State": "Boise State",
+        "Oral-Roberts": "Oral Roberts",
+        "Mississippi-State": "Mississippi State",
+        "Texas-Tech": "Texas Tech",
+        "Oklahoma-State": "Oklahoma State",
+        "North-Carolina": "North Carolina",
+        "North-Carolina-State": "NC State",
+        "Sam-Houston-State": "Sam Houston State",
+        "Southern-Miss": "Southern Miss",
+        "Kent-State": "Kent State",
+        "Montana-State": "Montana State",
+        "Norfolk-State": "Norfolk State",
+        "Grambling-State": "Grambling State",
+        "Youngstown-State": "Youngstown State",
+        "Morehead-State": "Morehead State",
+        "Texas-AM-Corpus-Christi": "Texas A&M-Corpus Christi",
+        "Utah-State": "Utah State",
+        "Arizona-State": "Arizona State",
+        "Penn-State": "Penn State",
+        "New-Mexico": "New Mexico"
+}
+
+
 #class to turn the Team and Game objects into jsonifyable strings
 class ComplexEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -328,6 +361,11 @@ class Scraper:
             score += self.get_bad_loss_score(self.teams[team])
             self.teams[team].score = score
 
+    def get_team_out(self, team):
+        if team in team_dict:
+            return team_dict[team]
+        return team
+
     #seed and print the field, including a bubble section
     def print_results(self):
         curr_seed = 1
@@ -346,12 +384,13 @@ class Scraper:
                 if at_large_bids < AT_LARGE_MAX:
                     at_large_bids += 1
                     at_large_bid = True
+                    self.teams[team].at_large_bid = True
                 elif bubble_count < 4:
-                    bubble_string += (team + " - First Four Out\n")
+                    bubble_string += (self.get_team_out(team) + " - First Four Out\n")
                     bubble_count += 1
                     continue
                 elif bubble_count < 8:
-                    bubble_string += (team + " - Next Four Out\n")
+                    bubble_string += (self.get_team_out(team) + " - Next Four Out\n")
                     bubble_count += 1
                     continue
                 else:
@@ -360,18 +399,18 @@ class Scraper:
                 if auto_bids < AUTO_MAX:
                     auto_bids += 1
                     confs_used.add(self.teams[team].conference)
+                    self.teams[team].auto_bid = True
                 else:
                     continue
-            #TODO: print a better team name? e.g. Saint Mary's instead of Saint-Marys-College
-            print("(" + str(curr_seed) + ")" + team, end="")
+            print("(" + str(curr_seed) + ")" + self.get_team_out(team), end="")
             if at_large_bid:
                 if at_large_bids >= AT_LARGE_MAX - 3:
                     if at_large_bids % 2 == 1:
                         curr_seed_max += 1
-                    bubble_string += (team + " - Last Four In\n")
+                    bubble_string += (self.get_team_out(team) + " - Last Four In\n")
                     print(" - Last Four In")
                 elif at_large_bids >= AT_LARGE_MAX - 7:
-                    bubble_string += (team + " - Last Four Byes\n")
+                    bubble_string += (self.get_team_out(team) + " - Last Four Byes\n")
                     print(" - Last Four Byes")
                 else:
                     print()
@@ -386,6 +425,10 @@ class Scraper:
 
         print()
         print(bubble_string)
+
+    #def build_bracket(self):
+     #   for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
+      #      if self.teams[team].auto_bid or self.teams[team].at_large_bid:
 
     def output_scores(self):
         with open(self.outputfile, "w") as f:

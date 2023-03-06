@@ -11,26 +11,27 @@ import math
 
 NITTY_GRITTY_URL = "https://www.warrennolan.com/basketball/2023/net-nitty"
 TEAM_URL_START = "https://www.warrennolan.com"
+TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/2023/team-net-sheet?team="
 SCRAPE_DATE_FILE = "scrapedate.txt"
 
 AT_LARGE_MAX = 36
 AUTO_MAX = 32
 
-LOSS_WEIGHT = 0.07
-NET_WEIGHT = 0.12
+LOSS_WEIGHT = 0.08
+NET_WEIGHT = 0.125
 POWER_WEIGHT = 0.11
-Q1_WEIGHT = 0.21
-Q2_WEIGHT = 0.09
+Q1_WEIGHT = 0.23
+Q2_WEIGHT = 0.08
 Q3_WEIGHT = 0.03
 Q4_WEIGHT = 0.02
-ROAD_WEIGHT = 0.05
+ROAD_WEIGHT = 0.06
 NEUTRAL_WEIGHT = 0.035
 TOP_10_WEIGHT = 0.07
-TOP_25_WEIGHT = 0.07
-SOS_WEIGHT = 0.04
-NONCON_SOS_WEIGHT = 0.025
+TOP_25_WEIGHT = 0.065
+SOS_WEIGHT = 0.03
+NONCON_SOS_WEIGHT = 0.015
 AWFUL_LOSS_WEIGHT = 0.02
-BAD_LOSS_WEIGHT = 0.04
+BAD_LOSS_WEIGHT = 0.03
 
 team_dict = {
         "Kansas-State": "Kansas State",
@@ -61,7 +62,11 @@ team_dict = {
         "Utah-State": "Utah State",
         "Arizona-State": "Arizona State",
         "Penn-State": "Penn State",
-        "New-Mexico": "New Mexico"
+        "New-Mexico": "New Mexico",
+        "North-Texas": "North Texas",
+        "Southeast-Missouri": "Southeast Missouri State",
+        "Fairleigh-Dickinson": "Fairleigh Dickinson",
+        "Kennesaw-State": "Kennesaw State"
 }
 
 
@@ -132,10 +137,22 @@ class Scraper:
                         team_obj["noncon_SOS"], games)
                 self.teams[filename[:filename.find(".json")]] = curr_team
     
+    #scrape one team's data
+    def scrape_team_data(self, team):
+        team_url = TEAM_NITTY_URL_START + team
+        if self.verbose:
+            print("Scraping", team)
+        self.teams[team] = Team()
+        self.teams[team].scrape_data(team_url)
+        f = open(datadir + team + ".json", "w+")
+        f.write(json.dumps(self.teams[team], cls=ComplexEncoder))
+        f.close()
+
     #scrape college basketball data from the web
     #param datadir: directory where the data should be stored
     #param today_date: MM-DD representation of today's date. written to file to record that scraping took place
     def do_scrape(self, datadir, today_date):
+        extra_scrapes = ["Southeast-Missouri", "Fairleigh-Dickinson", "Kennesaw-State"]
         nittygrittypage = requests.get(NITTY_GRITTY_URL)
         if nittygrittypage.status_code != 200:
             print('scraper problem!')
@@ -149,14 +166,9 @@ class Scraper:
                 continue
             if "team-net-sheet" in line:
                 team = line[line.find("sheet")+11:line.find("<img")-2]
-                team_url = TEAM_URL_START + line[line.find("href")+6:line.find("<img")-2]
-                if self.verbose:
-                    print("Scraping", team)
-                self.teams[team] = Team()
-                self.teams[team].scrape_data(team_url)
-                f = open(datadir + team + ".json", "w+")
-                f.write(json.dumps(self.teams[team], cls=ComplexEncoder))
-                f.close()
+                self.scrape_team_data(team)
+        for team in extra_scrapes:
+            self.scrape_team_data(team)
 
         f = open(datadir + SCRAPE_DATE_FILE, "w+")
         f.write(today_date)
@@ -334,7 +346,7 @@ class Scraper:
         bad_losses += int(team.Q4_record.split("-")[1])
         if self.verbose:
             print("bad losses", bad_losses)
-        team.bad_loss_score = BAD_LOSS_WEIGHT*(1 - bad_losses/3)
+        team.bad_loss_score = BAD_LOSS_WEIGHT*(1 - bad_losses/5)
         return team.bad_loss_score
 
     #calculate resume score for all teams
@@ -376,6 +388,7 @@ class Scraper:
         confs_used = set()
         bubble_count = 0
         bubble_string = "BUBBLE: \n"
+        eliminated_teams = ["Morehead-State", "Southern-Miss", "Merrimack", "Liberty", "Bradley"]
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             at_large_bid = False
             if self.teams[team].conference in confs_used:
@@ -396,7 +409,7 @@ class Scraper:
                 else:
                     continue
             else:
-                if auto_bids < AUTO_MAX:
+                if team not in eliminated_teams and auto_bids < AUTO_MAX:
                     auto_bids += 1
                     confs_used.add(self.teams[team].conference)
                     self.teams[team].auto_bid = True
@@ -426,9 +439,11 @@ class Scraper:
         print()
         print(bubble_string)
 
-    #def build_bracket(self):
-     #   for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
-      #      if self.teams[team].auto_bid or self.teams[team].at_large_bid:
+#    def build_bracket(self):
+#        bracket = ["|"]*32
+#        for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
+#            if self.teams[team].auto_bid or self.teams[team].at_large_bid:
+
 
     def output_scores(self):
         with open(self.outputfile, "w") as f:
@@ -450,7 +465,7 @@ class Scraper:
                     "), Bad losses(" + str(round(BAD_LOSS_WEIGHT, 5)) + \
                     "), Total Score\n")
             for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
-                line = team + "," + \
+                line = self.get_team_out(team) + "," + \
                         str(round(self.teams[team].loss_score, 5)) + "," + \
                         str(round(self.teams[team].NET_score, 5)) + "," + \
                         str(round(self.teams[team].power_score, 5)) + "," + \

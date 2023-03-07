@@ -20,6 +20,8 @@ class Team:
         self.NET_SOS = 0
         self.noncon_SOS = 0
         self.games = set()
+        self.auto_bid = False
+        self.at_large_bid = False
     
     def fill_data(self, conf, net, kp, bpi, sag, kpi, sor, netsos, ncsos, gms):
         self.conference = conf

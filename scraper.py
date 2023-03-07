@@ -252,6 +252,7 @@ class Scraper:
     #param datadir: directory where the data should be stored
     #param today_date: MM-DD representation of today's date. written to file to record that scraping took place
     def do_scrape(self, datadir, today_date):
+        #TODO: update and make sure all the auto qualifiers are actually being scraped
         extra_scrapes = ["Cleveland-State"]
         nittygrittypage = requests.get(NITTY_GRITTY_URL)
         if nittygrittypage.status_code != 200:
@@ -314,8 +315,8 @@ class Scraper:
         team.Q2_score = Q2_WEIGHT*(team.get_derived_pct(2)-0.5)/0.5
         return team.Q2_score
 
-    #TODO: are these good scales, here and Q4?
     #calculate score for a team's record in quadrant 3 (scale: 1.000 = 1, 0.000 = .800)
+    #param team: Team object to calculate score for
     def get_Q3_score(self, team):
         if self.verbose:
             print("Quadrant 3", team.get_derived_pct(3))
@@ -437,7 +438,7 @@ class Scraper:
         team.awful_loss_score = AWFUL_LOSS_WEIGHT*(1 - awful_losses)
         return team.awful_loss_score
 
-    #calculate score for a team's bad (sub-Q1) losses (scale: 1.000 = 0, 0.000 = 3)
+    #calculate score for a team's bad (sub-Q1) losses (scale: 1.000 = 0, 0.000 = 5)
     #param team: Team object to calculate score for
     def get_bad_loss_score(self,team):
         bad_losses = 0
@@ -473,6 +474,8 @@ class Scraper:
             score += self.get_bad_loss_score(self.teams[team])
             self.teams[team].score = score
 
+    #return a nicer-looking representation of a team's name, if one is present
+    #param team: string containing a team's name
     def get_team_out(self, team):
         if team in team_dict:
             return team_dict[team]
@@ -488,10 +491,12 @@ class Scraper:
         confs_used = set()
         bubble_count = 0
         bubble_string = "BUBBLE: \n"
+        #TODO: update and make sure teams who have been eliminated and shouldn't be getting automatic bids are not getting them
         eliminated_teams = ["Morehead-State", "Southern-Miss", "Merrimack", "Liberty", "Bradley", "Youngstown-State"]
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             at_large_bid = False
             if self.teams[team].conference in confs_used:
+                #teams under .500 are ineligible for at-large bids
                 if self.teams[team].record_pct < 0.5:
                     continue
                 if at_large_bids < AT_LARGE_MAX:
@@ -515,7 +520,7 @@ class Scraper:
                     self.teams[team].auto_bid = True
                 else:
                     continue
-            print("(" + str(curr_seed) + ")" + self.get_team_out(team), end="")
+            print("(" + str(curr_seed) + ") " + self.get_team_out(team), end="")
             if at_large_bid:
                 if at_large_bids >= AT_LARGE_MAX - 3:
                     if at_large_bids % 2 == 1:
@@ -539,6 +544,8 @@ class Scraper:
         print()
         print(bubble_string)
 
+    #get the maximum length of a line when printing the bracket (two team names + their seeds + some buffer)
+    #param regions: region dictionaries containing seeded teams
     def get_max_len(self, regions):
         l = []
         for coords in [[0, 1], [3, 2]]:
@@ -546,6 +553,15 @@ class Scraper:
                 l.append(len(regions[coords[0]][seed]) + len(regions[coords[1]][seed]))
         return 15 + max(l)
 
+    #print a line of the bracket
+    #param max_len: maximum length of a line containing two teams
+    #param regions: region dictionaries containing seeded teams
+    #param region_1: 0 or 3, corresponding to one of the regions on the left side of the bracket
+    #param region_2: 1 or 2, corresponding to one of the regions on the right side of the bracket
+    #param seed: seed of the teams to print
+    #param region_num_to_name: dictionary to translate a region's number to its location
+    #param first_weekend_name_to_num: dictionary to translate a first weekend site's location to its coordinates (two possibilities)
+    #param first_weekend_num_to_name: dictionary to translate a first weekend site's coordinates to its location
     def print_line(self, max_len, regions, region_1, region_2, seed, region_num_to_name, first_weekend_name_to_num, first_weekend_num_to_name):
         team_1 = self.get_team_out(regions[region_1][seed])
         team_2 = self.get_team_out(regions[region_2][seed])
@@ -580,6 +596,12 @@ class Scraper:
         else:
             print()
 
+    #check if placing a team in a particular bracket location will follow all the rules
+    #param regions: region dictionaries containing seeded teams
+    #param conferences: dictionary of conference names and lists of teams already in the tournament
+    #param team: name of team to attempt to place
+    #param region_num: region number (0-3) to try to place the team in
+    #param seed_num: seed number (1-16) to try to place the team in
     def check_rules(self, regions, conferences, team, region_num, seed_num):
         if team == "":
             return True
@@ -633,6 +655,9 @@ class Scraper:
                 return False
         return True
 
+    #remove all teams from their seed lines in order to attempt to reorganize them
+    #param regions: region dictionaries containing seeded teams
+    #param seed_num: seed number to delete
     def delete_and_save_seed(self, regions, seed_num):
         teams_to_fix = list()
         for region in regions:
@@ -642,10 +667,16 @@ class Scraper:
                 self.teams[save_team].region = -1
                 self.teams[save_team].seed = -1
                 del region[seed_num]
+        #if the seed wasn't fully filled out, put placeholders in
         while len(teams_to_fix) < 4:
             teams_to_fix.append("")
         return teams_to_fix
 
+    #check a permutation of four teams to see if the bracket can accept it
+    #param regions: region dictionaries containing seeded teams
+    #param conferences: dictionary of conference names and lists of teams already in the tournament
+    #param perm: permutation of four teams on the same seed line
+    #param seed_num: seed of teams
     def check_perm(self, regions, conferences, perm, seed_num):
         if self.check_rules(regions, conferences, perm[0], 0, seed_num) and \
             self.check_rules(regions, conferences, perm[1], 1, seed_num) and \
@@ -653,6 +684,10 @@ class Scraper:
             self.check_rules(regions, conferences, perm[3], 3, seed_num):
             return True
     
+    #insert a permutation of four teams into the bracket
+    #param regions: region dictionaries containing seeded teams
+    #param seed_num: seed of teams
+    #param perm: permutation of four teams on the same seed line
     def save_and_print_perm(self, regions, seed_num, perm):
         for region_num in range(0, 4):
             if not perm[region_num]:
@@ -663,17 +698,11 @@ class Scraper:
             if self.verbose:
                 print("Placed (" + str(seed_num) + ") " + perm[region_num] + ": region (" + str(region_num) + ")")
 
-    def get_region_num(self, bracket_pos):
-        if bracket_pos % 8 == 1 or bracket_pos % 8 == 0:
-            region_num = 0
-        if bracket_pos % 8 == 2 or bracket_pos % 8 == 7:
-            region_num = 1
-        if bracket_pos % 8 == 3 or bracket_pos % 8 == 6:
-            region_num = 2
-        if bracket_pos % 8 == 4 or bracket_pos % 8 == 5:
-            region_num = 3
-        return region_num
-
+    #return a list of a team's regional preferences
+    #param team: string of team to get preferences for
+    #param seed_num: seed of team. if higher (i.e. lower number) than 5, use regional sites; otherwise, use first-weekend sites
+    #param region_name_to_num: dictionary to translate region sites to coordinate
+    #param first_weekend_num_to_name: dictionary to translate first weekend site coordinates to locations
     def get_region_order(self, team, seed_num, region_name_to_num, first_weekend_num_to_name):
         order = list()
         if seed_num < 5:
@@ -733,7 +762,7 @@ class Scraper:
                 region_order = self.get_region_order(team, seed_num, region_name_to_num, first_weekend_num_to_name)
                 region_num = region_order[0]
             else:
-                region_num = self.get_region_num(bracket_pos)
+                region_num = bracket_pos - 1
 
             #get a region that is empty for the current seed
             while seed_num in regions[region_num]:
@@ -764,7 +793,8 @@ class Scraper:
                 bad_regions = set()
                 check_switch = False
                 orig_region_num = region_num
-
+                
+                #if this placement didn't pass the rules, try more options
                 while not self.check_rules(regions, conferences, team, region_num, seed_num):
                     if self.verbose:
                         print('rules failed for', str(region_num))
@@ -809,7 +839,7 @@ class Scraper:
                         region_num = orig_region_num
                         continue
 
-                    #if we have tried to switch teams, try every permutation
+                    #if we have tried to switch teams, try every permutation for the current seed
                     if len(bad_regions) == 4 and check_switch == True:
                         if self.verbose:
                             print("can't make just one switch to fix this. Let's try to brute force it.")
@@ -897,6 +927,7 @@ class Scraper:
                     print("Placed (" + str(seed_num) + ") " + team + ": region (" + str(region_num) + ") " + region_num_to_name[region_num])
                     print()
 
+            #if we just placed the first play in team, save its coordinates
             if (self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1)) or \
                     (self.teams[team].auto_bid and (auto_count == AUTO_MAX - 3 or auto_count == AUTO_MAX - 1)):
                 play_in_pos = (region_num, seed_num)
@@ -910,6 +941,7 @@ class Scraper:
                 self.print_line(max_len, regions, region_nums[0], region_nums[1], seed_num, \
                         region_num_to_name, first_weekend_name_to_num, first_weekend_num_to_name)
 
+    #write all team scores for each category to specified file
     def output_scores(self):
         with open(self.outputfile, "w") as f:
             f.write("Team," + \

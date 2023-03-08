@@ -68,7 +68,8 @@ team_dict = {
         "North-Texas": "North Texas",
         "Southeast-Missouri": "Southeast Missouri State",
         "Fairleigh-Dickinson": "Fairleigh Dickinson",
-        "Kennesaw-State": "Kennesaw State"
+        "Kennesaw-State": "Kennesaw State",
+        "Northern-Kentucky": "Northern Kentucky"
 }
 
 region_rankings = {
@@ -93,7 +94,9 @@ region_rankings = {
     "Iowa-State": ["Kansas City", "Louisville", "New York", "Las Vegas"],
     "Indiana": ["Louisville", "Kansas City", "New York", "Las Vegas"],
     "Kentucky": ["Louisville", "Kansas City", "New York", "Las Vegas"],
-    "TCU": ["Kansas City", "Louisville", "Las Vegas", "New York"]
+    "TCU": ["Kansas City", "Louisville", "Las Vegas", "New York"],
+    "Virginia": ["Louisville", "New York", "Kansas City", "Las Vegas"],
+    "Miami-FL": ["Louisville", "New York", "Kansas City", "Las Vegas"],
 }
 
 first_weekend_rankings = {
@@ -168,6 +171,13 @@ first_weekend_rankings = {
     "Utah-State": ["Denver", "Sacramento", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
     "Norfolk-State": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
     "Rutgers": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
+    "Northern-Kentucky": ["Columbus", "Greensboro", "Birmingham", "Orlando", "Albany", "Des Moines", "Denver", "Sacramento"],
+    "North-Carolina": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
+    "Oregon": ["Sacramento", "Denver", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
+    "Michigan": ["Columbus", "Des Moines", "Albany", "Birmingham", "Greensboro", "Orlando", "Denver", "Sacramento"],
+    "Arizona-State": ["Denver", "Sacramento", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
+    "North-Texas": ["Birmingham", "Des Moines", "Denver", "Orlando", "Greensboro", "Columbus", "Sacramento", "Albany"],
+    "Pittsburgh": ["Columbus", "Albany", "Greensboro", "Birmingham", "Des Moines", "Orlando", "Denver", "Sacramento"],
 }
 
 
@@ -281,7 +291,7 @@ class Scraper:
     def get_loss_score(self, team):
         if self.verbose:
             print("losses", int(team.record.split("-")[1]))
-        team.loss_score = LOSS_WEIGHT*(10-int(team.record.split("-")[1]))/12
+        team.loss_score = LOSS_WEIGHT*(10-int(team.record.split("-")[1]))/10
         return team.loss_score
 
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
@@ -480,6 +490,8 @@ class Scraper:
     def get_team_out(self, team):
         if team in team_dict:
             return team_dict[team]
+        if "/" in team:
+            return self.get_team_out(team.split("/")[0]) + "/" + self.get_team_out(team.split("/")[1])
         return team
 
     #seed and print the field, including a bubble section
@@ -546,31 +558,27 @@ class Scraper:
         print(bubble_string)
 
     #get the maximum length of a line when printing the bracket (two team names + their seeds + some buffer)
-    #param regions: region dictionaries containing seeded teams
-    def get_max_len(self, regions):
+    def get_max_len(self):
         l = []
         for coords in [[0, 1], [3, 2]]:
             for seed in range(1, 17):
-                l.append(len(regions[coords[0]][seed]) + len(regions[coords[1]][seed]))
+                l.append(len(self.regions[coords[0]][seed]) + len(self.regions[coords[1]][seed]))
         return 15 + max(l)
 
     #print a line of the bracket
     #param max_len: maximum length of a line containing two teams
-    #param regions: region dictionaries containing seeded teams
     #param region_1: 0 or 3, corresponding to one of the regions on the left side of the bracket
     #param region_2: 1 or 2, corresponding to one of the regions on the right side of the bracket
     #param seed: seed of the teams to print
     #param region_num_to_name: dictionary to translate a region's number to its location
-    #param first_weekend_name_to_num: dictionary to translate a first weekend site's location to its coordinates (two possibilities)
-    #param first_weekend_num_to_name: dictionary to translate a first weekend site's coordinates to its location
-    def print_line(self, max_len, regions, region_1, region_2, seed, region_num_to_name, first_weekend_name_to_num, first_weekend_num_to_name):
-        team_1 = self.get_team_out(regions[region_1][seed])
-        team_2 = self.get_team_out(regions[region_2][seed])
-        if (seed == 16) or ("/" not in team_1 and self.teams[regions[region_1][seed]].auto_bid):
+    def print_line(self, max_len, region_1, region_2, seed, region_num_to_name):
+        team_1 = self.get_team_out(self.regions[region_1][seed])
+        team_2 = self.get_team_out(self.regions[region_2][seed])
+        if (seed == 16) or ("/" not in team_1 and self.teams[self.regions[region_1][seed]].auto_bid):
             team_1 += "*"
-        if (seed == 16) or ("/" not in team_2 and self.teams[regions[region_2][seed]].auto_bid):
+        if (seed == 16) or ("/" not in team_2 and self.teams[self.regions[region_2][seed]].auto_bid):
             team_2 += "*"
-        max_site_len = max([len(x) for x in first_weekend_name_to_num])
+        max_site_len = max([len(x) for x in self.first_weekend_name_to_num])
         print(" "*max_site_len + "(" + str(seed) + ") " + team_1 + \
                 " "*(max_len - (len(team_1) + len(team_2)) - (len(str(seed)) + 3)*2) + \
                 " (" + str(seed) + ") " + team_2)
@@ -579,32 +587,31 @@ class Scraper:
             region_2_name = region_num_to_name[region_2]
             print(" "*(20 + max_site_len) + region_1_name + " "*(max_len - (len(region_1_name) + len(region_2_name) + 40)) + region_2_name)
         elif seed == 16:
-            site_1 = first_weekend_num_to_name[region_1][1]
-            site_2 = first_weekend_num_to_name[region_2][1]
+            site_1 = self.first_weekend_num_to_name[region_1][1]
+            site_2 = self.first_weekend_num_to_name[region_2][1]
             print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
         elif seed == 12: 
-            site_1 = first_weekend_num_to_name[region_1][4]
-            site_2 = first_weekend_num_to_name[region_2][4]
+            site_1 = self.first_weekend_num_to_name[region_1][4]
+            site_2 = self.first_weekend_num_to_name[region_2][4]
             print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
         elif seed == 11: 
-            site_1 = first_weekend_num_to_name[region_1][3]
-            site_2 = first_weekend_num_to_name[region_2][3]
+            site_1 = self.first_weekend_num_to_name[region_1][3]
+            site_2 = self.first_weekend_num_to_name[region_2][3]
             print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
         elif seed == 10:
-            site_1 = first_weekend_num_to_name[region_1][2]
-            site_2 = first_weekend_num_to_name[region_2][2]
+            site_1 = self.first_weekend_num_to_name[region_1][2]
+            site_2 = self.first_weekend_num_to_name[region_2][2]
             print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
         else:
             print()
 
     #check if placing a team in a particular bracket location will follow all the rules
-    #param regions: region dictionaries containing seeded teams
     #param conferences: dictionary of conference names and lists of teams already in the tournament
     #param team: name of team to attempt to place
     #param region_num: region number (0-3) to try to place the team in
     #param seed_num: seed number (1-16) to try to place the team in
-    def check_rules(self, regions, conferences, team, region_num, seed_num):
-        if team == "":
+    def check_rules(self, conferences, team, region_num, seed_num):
+        if team == "" or "/" in team:
             return True
         team_conference = self.teams[team].conference
 
@@ -657,66 +664,77 @@ class Scraper:
         return True
 
     #remove all teams from their seed lines in order to attempt to reorganize them
-    #param regions: region dictionaries containing seeded teams
     #param seed_num: seed number to delete
-    def delete_and_save_seed(self, regions, seed_num, first_weekend_num_to_name):
+    def delete_and_save_seed(self, seed_num):
         teams_to_fix = list()
         sites = list()
-        for region_num, region in enumerate(regions):
+        for region_num, region in enumerate(self.regions):
             if seed_num in region:
                 save_team = region[seed_num]
                 teams_to_fix.append(save_team)
-                self.teams[save_team].region = -1
-                self.teams[save_team].seed = -1
+                if "/" in save_team:
+                    self.teams[save_team.split("/")[0]].region = -1
+                    self.teams[save_team.split("/")[1]].region = -1
+                    self.teams[save_team.split("/")[0]].seed = -1
+                    self.teams[save_team.split("/")[1]].seed = -1
+                else:
+                    self.teams[save_team].region = -1
+                    self.teams[save_team].seed = -1
                 del region[seed_num]
                 if seed_num < 5:
-                    if seed_num in first_weekend_num_to_name[region_num]:
-                        sites.append(tuple([save_team, region_num, first_weekend_num_to_name[region_num][seed_num]]))
-                        del first_weekend_num_to_name[region_num][seed_num]
+                    if seed_num in self.first_weekend_num_to_name[region_num]:
+                        sites.append([save_team, region_num, self.first_weekend_num_to_name[region_num][seed_num]])
+                        del self.first_weekend_num_to_name[region_num][seed_num]
         #if the seed wasn't fully filled out, put placeholders in
         while len(teams_to_fix) < 4:
             teams_to_fix.append("")
         return teams_to_fix, sites
 
     #check a permutation of four teams to see if the bracket can accept it
-    #param regions: region dictionaries containing seeded teams
     #param conferences: dictionary of conference names and lists of teams already in the tournament
     #param perm: permutation of four teams on the same seed line
     #param seed_num: seed of teams
-    def check_perm(self, regions, conferences, perm, seed_num):
-        if self.check_rules(regions, conferences, perm[0], 0, seed_num) and \
-            self.check_rules(regions, conferences, perm[1], 1, seed_num) and \
-            self.check_rules(regions, conferences, perm[2], 2, seed_num) and \
-            self.check_rules(regions, conferences, perm[3], 3, seed_num):
+    def check_perm(self, conferences, perm, seed_num):
+        if self.check_rules(conferences, perm[0], 0, seed_num) and \
+            self.check_rules(conferences, perm[1], 1, seed_num) and \
+            self.check_rules(conferences, perm[2], 2, seed_num) and \
+            self.check_rules(conferences, perm[3], 3, seed_num):
             return True
     
     #insert a permutation of four teams into the bracket
-    #param regions: region dictionaries containing seeded teams
     #param seed_num: seed of teams
     #param perm: permutation of four teams on the same seed line
-    def save_and_print_perm(self, regions, seed_num, perm, first_weekend_num_to_name, first_weekend_name_to_num, sites):
+    #param sites: saved locations of sites, if the seed is 1-4
+    def save_and_print_perm(self, seed_num, perm, sites):
         for region_num in range(0, 4):
-            if not perm[region_num]:
-                if seed_num in first_weekend_num_to_name[region_num]:
-                    del first_weekend_num_to_name[region_num][seed_num]
+            team = perm[region_num]
+            if not team:
+                if seed_num in self.first_weekend_num_to_name[region_num]:
+                    del self.first_weekend_num_to_name[region_num][seed_num]
                 continue
-            regions[region_num][seed_num] = perm[region_num]
-            self.teams[perm[region_num]].region = region_num
-            self.teams[perm[region_num]].seed = seed_num
+            self.regions[region_num][seed_num] = team
+            if "/" in team:
+                self.teams[team.split("/")[0]].region = region_num
+                self.teams[team.split("/")[1]].region = region_num
+                self.teams[team.split("/")[0]].seed = seed_num
+                self.teams[team.split("/")[1]].seed = seed_num
+            else:
+                self.teams[team].region = region_num
+                self.teams[team].seed = seed_num
             if seed_num < 5:
                 for team_site in sites:
-                    if team_site[0] == perm[region_num]:
-                        first_weekend_num_to_name[region_num][seed_num] = team_site[2]
-                        first_weekend_name_to_num[team_site[2]][first_weekend_name_to_num[team_site[2]].index([team_site[1], seed_num])] = [region_num, seed_num]
+                    if team_site[0] == team:
+                        self.first_weekend_num_to_name[region_num][seed_num] = team_site[2]
+                        self.first_weekend_name_to_num[team_site[2]][self.first_weekend_name_to_num[team_site[2]].index([team_site[1], seed_num])] = [region_num, seed_num]
+                        team_site[1] = region_num
             if self.verbose:
-                print("Placed (" + str(seed_num) + ") " + perm[region_num] + ": region (" + str(region_num) + ")")
+                print("Placed (" + str(seed_num) + ") " + team + ": region (" + str(region_num) + ")")
 
     #return a list of a team's regional preferences
     #param team: string of team to get preferences for
     #param seed_num: seed of team. if higher (i.e. lower number) than 5, use regional sites; otherwise, use first-weekend sites
     #param region_name_to_num: dictionary to translate region sites to coordinate
-    #param first_weekend_num_to_name: dictionary to translate first weekend site coordinates to locations
-    def get_region_order(self, team, seed_num, region_name_to_num, first_weekend_num_to_name):
+    def get_region_order(self, team, seed_num, region_name_to_num):
         order = list()
         if seed_num < 5:
             for site in region_rankings[team]:
@@ -732,7 +750,7 @@ class Scraper:
                 host_seed = 3
             elif seed_num in [7, 10, 15]:
                 host_seed = 2
-            for index, region in enumerate(first_weekend_num_to_name):
+            for index, region in enumerate(self.first_weekend_num_to_name):
                 possible_sites.append(region[host_seed])
             for site in first_weekend_rankings[team]:
                 while site in possible_sites:
@@ -748,11 +766,11 @@ class Scraper:
             print("Placed (" + str(seed_num) + ") " + team + ": region (" + str(region_num) + ")")
 
     def build_bracket(self):
-        regions = [dict(), dict(), dict(), dict()]
+        self.regions = [dict(), dict(), dict(), dict()]
         region_num_to_name = dict()
         region_name_to_num = dict()
-        first_weekend_num_to_name = [dict(), dict(), dict(), dict()]
-        first_weekend_name_to_num = dict()
+        self.first_weekend_num_to_name = [dict(), dict(), dict(), dict()]
+        self.first_weekend_name_to_num = dict()
         auto_count = 0
         at_large_count = 0
         bracket_pos = 1
@@ -772,13 +790,13 @@ class Scraper:
             conferences[team_conference].append(team)
             seed_num = (bracket_pos + 3) // 4
             if seed_num > 1:
-                region_order = self.get_region_order(team, seed_num, region_name_to_num, first_weekend_num_to_name)
+                region_order = self.get_region_order(team, seed_num, region_name_to_num)
                 region_num = region_order[0]
             else:
                 region_num = bracket_pos - 1
 
             #get a region that is empty for the current seed
-            while seed_num in regions[region_num]:
+            while seed_num in self.regions[region_num]:
                 if self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1):
                     break
                 elif self.teams[team].auto_bid and (auto_count == AUTO_MAX - 3 or auto_count == AUTO_MAX - 1):
@@ -787,19 +805,19 @@ class Scraper:
                     region_num = region_order[region_order.index(region_num)+1]
                 else:
                     region_num = (region_num + 1) % 4
-            region = regions[region_num]
+            region = self.regions[region_num]
 
             #if this is the second team in a play in game, just place them. (TODO: fix)
             if self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1):
                 region_num = play_in_pos[0]
                 seed = play_in_pos[1]
                 at_large_count += 1
-                self.place_and_print_play_in_team(regions[play_in_pos[0]], play_in_pos[1], team, region_num)
+                self.place_and_print_play_in_team(self.regions[play_in_pos[0]], play_in_pos[1], team, region_num)
             elif self.teams[team].auto_bid and (auto_count == AUTO_MAX - 3 or auto_count == AUTO_MAX - 1):
                 region_num = play_in_pos[0]
                 seed = play_in_pos[1]
                 auto_count += 1
-                self.place_and_print_play_in_team(regions[play_in_pos[0]], play_in_pos[1], team, region_num)
+                self.place_and_print_play_in_team(self.regions[play_in_pos[0]], play_in_pos[1], team, region_num)
 
             #if this is a normal bid, follow the rules to place the team in the bracket
             else:
@@ -808,7 +826,7 @@ class Scraper:
                 orig_region_num = region_num
                 
                 #if this placement didn't pass the rules, try more options
-                while not self.check_rules(regions, conferences, team, region_num, seed_num):
+                while not self.check_rules(conferences, team, region_num, seed_num):
                     if self.verbose:
                         print('rules failed for', str(region_num))
                     bad_regions.add(region_num)
@@ -817,19 +835,19 @@ class Scraper:
                         print('edited region to', region_num)
 
                     #find a region that doesn't have this seed in it (or, if switching is on, try to switch that team for current team)
-                    while seed_num in regions[region_num]:
+                    while seed_num in self.regions[region_num]:
                         if self.verbose:
                             print('already this seed in', str(region_num))
-                        new_team = regions[region_num][seed_num]
-                        if check_switch and self.check_rules(regions, conferences, team, region_num, seed_num) and \
-                                self.check_rules(regions, conferences, new_team, orig_region_num, seed_num):
-                            regions[orig_region_num][seed_num] = new_team
+                        new_team = self.regions[region_num][seed_num]
+                        if check_switch and self.check_rules(conferences, team, region_num, seed_num) and \
+                                self.check_rules(conferences, new_team, orig_region_num, seed_num):
+                            self.regions[orig_region_num][seed_num] = new_team
                             self.teams[new_team].region = orig_region_num
                             if seed_num < 5:
-                                site = first_weekend_num_to_name[region_num][seed_num]
-                                first_weekend_num_to_name[orig_region_num][seed_num] = site
-                                del first_weekend_num_to_name[region_num][seed_num]
-                                first_weekend_name_to_num[site][first_weekend_name_to_num[site].index([region_num, seed_num])] = [orig_region_num, seed_num]
+                                site = self.first_weekend_num_to_name[region_num][seed_num]
+                                self.first_weekend_num_to_name[orig_region_num][seed_num] = site
+                                del self.first_weekend_num_to_name[region_num][seed_num]
+                                self.first_weekend_name_to_num[site][self.first_weekend_name_to_num[site].index([region_num, seed_num])] = [orig_region_num, seed_num]
                             if self.verbose:
                                 print("Switched (" + str(seed_num) + ") " + new_team + " to: region (" + str(orig_region_num) + ")")
                             bad_regions = set()
@@ -857,15 +875,16 @@ class Scraper:
                         if self.verbose:
                             print("can't make just one switch to fix this. Let's try to brute force it.")
                         reorg_seed = seed_num
-                        teams_to_fix, sites = self.delete_and_save_seed(regions, seed_num, first_weekend_num_to_name)
+                        teams_to_fix, sites = self.delete_and_save_seed(seed_num)
                         if team not in teams_to_fix:
                             teams_to_fix[-1] = team
                         self.teams[team].region = -1
                         self.teams[team].seed = -1
                         found_perm = False
                         for perm in permutations(teams_to_fix):
-                            if self.check_perm(regions, conferences, perm, seed_num):
-                                self.save_and_print_perm(regions, seed_num, perm, first_weekend_num_to_name, first_weekend_name_to_num, sites)
+                            if self.check_perm(conferences, perm, seed_num):
+                                self.save_and_print_perm(seed_num, perm, sites)
+                                region_num = perm.index(team)
                                 found_perm = True
                                 break
 
@@ -886,15 +905,15 @@ class Scraper:
                                     curr_reorg_max -= 1
                             if self.verbose:
                                 print('trying the next seed up', reorg_seed)
-                            other_teams_to_fix, other_sites = self.delete_and_save_seed(regions, reorg_seed, first_weekend_num_to_name)
+                            other_teams_to_fix, other_sites = self.delete_and_save_seed(reorg_seed)
                             perm_to_save = list()
                             for other_perm in permutations(other_teams_to_fix):
-                                if self.check_perm(regions, conferences, other_perm, reorg_seed):
-                                    self.save_and_print_perm(regions, reorg_seed, other_perm, first_weekend_num_to_name, first_weekend_name_to_num, other_sites)
+                                if self.check_perm(conferences, other_perm, reorg_seed):
+                                    self.save_and_print_perm(reorg_seed, other_perm, other_sites)
                                     perm_to_save = other_perm
                                     for perm in permutations(teams_to_fix):
-                                        if self.check_perm(regions, conferences, perm, seed_num):
-                                            self.save_and_print_perm(regions, seed_num, perm, first_weekend_num_to_name, first_weekend_name_to_num, sites)
+                                        if self.check_perm(conferences, perm, seed_num):
+                                            self.save_and_print_perm(seed_num, perm, sites)
                                             region_num = perm.index(team)
                                             found_perm = True
                                             break
@@ -903,9 +922,9 @@ class Scraper:
                             if not found_perm:
                                 #if nothing worked, save the most recent successful try for this seed and recurse up the seed list
                                 #this also allows us to loop back through the seeds and have different results
-                                self.save_and_print_perm(regions, reorg_seed, perm_to_save, first_weekend_num_to_name, first_weekend_name_to_num, other_sites)
+                                self.save_and_print_perm(reorg_seed, perm_to_save, other_sites)
 
-                regions[region_num][seed_num] = team
+                self.regions[region_num][seed_num] = team
                 self.teams[team].region = region_num
                 self.teams[team].seed = seed_num
                 if self.teams[team].auto_bid:
@@ -930,11 +949,11 @@ class Scraper:
                             if self.verbose:
                                 print("Choosing", site_name)
                             first_weekend_sites.remove(site_name)
-                            if site_name in first_weekend_name_to_num:
-                                first_weekend_name_to_num[site_name].append([region_num, seed_num])
+                            if site_name in self.first_weekend_name_to_num:
+                                self.first_weekend_name_to_num[site_name].append([region_num, seed_num])
                             else:
-                                first_weekend_name_to_num[site_name] = [[region_num, seed_num]]
-                            first_weekend_num_to_name[region_num][seed_num] = site_name
+                                self.first_weekend_name_to_num[site_name] = [[region_num, seed_num]]
+                            self.first_weekend_num_to_name[region_num][seed_num] = site_name
                             break
                 if self.verbose:
                     print("Placed (" + str(seed_num) + ") " + team + ": region (" + str(region_num) + ") " + region_num_to_name[region_num])
@@ -947,12 +966,11 @@ class Scraper:
             else:
                 bracket_pos += 1
                 play_in_pos = (0, 0)
-        max_len = self.get_max_len(regions)
+        max_len = self.get_max_len()
         print()
         for region_nums in [[0, 1], [3, 2]]:
             for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
-                self.print_line(max_len, regions, region_nums[0], region_nums[1], seed_num, \
-                        region_num_to_name, first_weekend_name_to_num, first_weekend_num_to_name)
+                self.print_line(max_len, region_nums[0], region_nums[1], seed_num, region_num_to_name)
 
     #write all team scores for each category to specified file
     def output_scores(self):

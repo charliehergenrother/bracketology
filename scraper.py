@@ -18,20 +18,20 @@ SCRAPE_DATE_FILE = "scrapedate.txt"
 AT_LARGE_MAX = 36
 AUTO_MAX = 32
 
-LOSS_WEIGHT = 0.08
+LOSS_WEIGHT = 0.09
 NET_WEIGHT = 0.125
 POWER_WEIGHT = 0.11
-Q1_WEIGHT = 0.23
+Q1_WEIGHT = 0.24
 Q2_WEIGHT = 0.08
-Q3_WEIGHT = 0.03
-Q4_WEIGHT = 0.02
+Q3_WEIGHT = 0.02
+Q4_WEIGHT = 0.015
 ROAD_WEIGHT = 0.06
 NEUTRAL_WEIGHT = 0.035
 TOP_10_WEIGHT = 0.07
 TOP_25_WEIGHT = 0.065
 SOS_WEIGHT = 0.03
 NONCON_SOS_WEIGHT = 0.015
-AWFUL_LOSS_WEIGHT = 0.02
+AWFUL_LOSS_WEIGHT = 0.015
 BAD_LOSS_WEIGHT = 0.03
 
 team_dict = {
@@ -167,6 +167,7 @@ first_weekend_rankings = {
     "Fairleigh-Dickinson": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
     "Utah-State": ["Denver", "Sacramento", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
     "Norfolk-State": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
+    "Rutgers": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
 }
 
 
@@ -253,7 +254,7 @@ class Scraper:
     #param today_date: MM-DD representation of today's date. written to file to record that scraping took place
     def do_scrape(self, datadir, today_date):
         #TODO: update and make sure all the auto qualifiers are actually being scraped
-        extra_scrapes = ["Cleveland-State"]
+        extra_scrapes = ["Northern-Kentucky"]
         nittygrittypage = requests.get(NITTY_GRITTY_URL)
         if nittygrittypage.status_code != 200:
             print('scraper problem!')
@@ -275,12 +276,12 @@ class Scraper:
         f.write(today_date)
         f.close()
 
-    #calculate score for a team's raw number of losses (scale: 1.000 = 0, 0.000 = 12)
+    #calculate score for a team's raw number of losses (scale: 1.000 = 0, 0.000 = 10)
     #param team: Team object to calculate score for
     def get_loss_score(self, team):
         if self.verbose:
             print("losses", int(team.record.split("-")[1]))
-        team.loss_score = LOSS_WEIGHT*(12-int(team.record.split("-")[1]))/12
+        team.loss_score = LOSS_WEIGHT*(10-int(team.record.split("-")[1]))/12
         return team.loss_score
 
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
@@ -492,7 +493,7 @@ class Scraper:
         bubble_count = 0
         bubble_string = "BUBBLE: \n"
         #TODO: update and make sure teams who have been eliminated and shouldn't be getting automatic bids are not getting them
-        eliminated_teams = ["Morehead-State", "Southern-Miss", "Merrimack", "Liberty", "Bradley", "Youngstown-State"]
+        eliminated_teams = ["Morehead-State", "Southern-Miss", "Merrimack", "Liberty", "Bradley", "Youngstown-State", "Cleveland-State"]
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             at_large_bid = False
             if self.teams[team].conference in confs_used:
@@ -580,19 +581,19 @@ class Scraper:
         elif seed == 16:
             site_1 = first_weekend_num_to_name[region_1][1]
             site_2 = first_weekend_num_to_name[region_2][1]
-            print(site_1 + " "*(max_site_len - len(site_1)) + " "*max_len + site_2)
+            print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
         elif seed == 12: 
             site_1 = first_weekend_num_to_name[region_1][4]
             site_2 = first_weekend_num_to_name[region_2][4]
-            print(site_1 + " "*(max_site_len - len(site_1)) + " "*max_len + site_2)
+            print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
         elif seed == 11: 
             site_1 = first_weekend_num_to_name[region_1][3]
             site_2 = first_weekend_num_to_name[region_2][3]
-            print(site_1 + " "*(max_site_len - len(site_1)) + " "*max_len + site_2)
+            print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
         elif seed == 10:
             site_1 = first_weekend_num_to_name[region_1][2]
             site_2 = first_weekend_num_to_name[region_2][2]
-            print(site_1 + " "*(max_site_len - len(site_1)) + " "*max_len + site_2)
+            print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
         else:
             print()
 
@@ -658,19 +659,24 @@ class Scraper:
     #remove all teams from their seed lines in order to attempt to reorganize them
     #param regions: region dictionaries containing seeded teams
     #param seed_num: seed number to delete
-    def delete_and_save_seed(self, regions, seed_num):
+    def delete_and_save_seed(self, regions, seed_num, first_weekend_num_to_name):
         teams_to_fix = list()
-        for region in regions:
+        sites = list()
+        for region_num, region in enumerate(regions):
             if seed_num in region:
                 save_team = region[seed_num]
                 teams_to_fix.append(save_team)
                 self.teams[save_team].region = -1
                 self.teams[save_team].seed = -1
                 del region[seed_num]
+                if seed_num < 5:
+                    if seed_num in first_weekend_num_to_name[region_num]:
+                        sites.append(tuple([save_team, region_num, first_weekend_num_to_name[region_num][seed_num]]))
+                        del first_weekend_num_to_name[region_num][seed_num]
         #if the seed wasn't fully filled out, put placeholders in
         while len(teams_to_fix) < 4:
             teams_to_fix.append("")
-        return teams_to_fix
+        return teams_to_fix, sites
 
     #check a permutation of four teams to see if the bracket can accept it
     #param regions: region dictionaries containing seeded teams
@@ -688,13 +694,20 @@ class Scraper:
     #param regions: region dictionaries containing seeded teams
     #param seed_num: seed of teams
     #param perm: permutation of four teams on the same seed line
-    def save_and_print_perm(self, regions, seed_num, perm):
+    def save_and_print_perm(self, regions, seed_num, perm, first_weekend_num_to_name, first_weekend_name_to_num, sites):
         for region_num in range(0, 4):
             if not perm[region_num]:
+                if seed_num in first_weekend_num_to_name[region_num]:
+                    del first_weekend_num_to_name[region_num][seed_num]
                 continue
             regions[region_num][seed_num] = perm[region_num]
             self.teams[perm[region_num]].region = region_num
             self.teams[perm[region_num]].seed = seed_num
+            if seed_num < 5:
+                for team_site in sites:
+                    if team_site[0] == perm[region_num]:
+                        first_weekend_num_to_name[region_num][seed_num] = team_site[2]
+                        first_weekend_name_to_num[team_site[2]][first_weekend_name_to_num[team_site[2]].index([team_site[1], seed_num])] = [region_num, seed_num]
             if self.verbose:
                 print("Placed (" + str(seed_num) + ") " + perm[region_num] + ": region (" + str(region_num) + ")")
 
@@ -844,7 +857,7 @@ class Scraper:
                         if self.verbose:
                             print("can't make just one switch to fix this. Let's try to brute force it.")
                         reorg_seed = seed_num
-                        teams_to_fix = self.delete_and_save_seed(regions, seed_num)
+                        teams_to_fix, sites = self.delete_and_save_seed(regions, seed_num, first_weekend_num_to_name)
                         if team not in teams_to_fix:
                             teams_to_fix[-1] = team
                         self.teams[team].region = -1
@@ -852,7 +865,7 @@ class Scraper:
                         found_perm = False
                         for perm in permutations(teams_to_fix):
                             if self.check_perm(regions, conferences, perm, seed_num):
-                                self.save_and_print_perm(regions, seed_num, perm)
+                                self.save_and_print_perm(regions, seed_num, perm, first_weekend_num_to_name, first_weekend_name_to_num, sites)
                                 found_perm = True
                                 break
 
@@ -873,15 +886,15 @@ class Scraper:
                                     curr_reorg_max -= 1
                             if self.verbose:
                                 print('trying the next seed up', reorg_seed)
-                            other_teams_to_fix = self.delete_and_save_seed(regions, reorg_seed)
+                            other_teams_to_fix, other_sites = self.delete_and_save_seed(regions, reorg_seed, first_weekend_num_to_name)
                             perm_to_save = list()
                             for other_perm in permutations(other_teams_to_fix):
                                 if self.check_perm(regions, conferences, other_perm, reorg_seed):
-                                    self.save_and_print_perm(regions, reorg_seed, other_perm)
+                                    self.save_and_print_perm(regions, reorg_seed, other_perm, first_weekend_num_to_name, first_weekend_name_to_num, other_sites)
                                     perm_to_save = other_perm
                                     for perm in permutations(teams_to_fix):
                                         if self.check_perm(regions, conferences, perm, seed_num):
-                                            self.save_and_print_perm(regions, seed_num, perm)
+                                            self.save_and_print_perm(regions, seed_num, perm, first_weekend_num_to_name, first_weekend_name_to_num, sites)
                                             region_num = perm.index(team)
                                             found_perm = True
                                             break
@@ -890,7 +903,7 @@ class Scraper:
                             if not found_perm:
                                 #if nothing worked, save the most recent successful try for this seed and recurse up the seed list
                                 #this also allows us to loop back through the seeds and have different results
-                                self.save_and_print_perm(regions, reorg_seed, perm_to_save)
+                                self.save_and_print_perm(regions, reorg_seed, perm_to_save, first_weekend_num_to_name, first_weekend_name_to_num, other_sites)
 
                 regions[region_num][seed_num] = team
                 self.teams[team].region = region_num

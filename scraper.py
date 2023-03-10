@@ -18,6 +18,7 @@ SCRAPE_DATE_FILE = "scrapedate.txt"
 AT_LARGE_MAX = 36
 AUTO_MAX = 32
 
+#WEIGHTS: MUST ADD TO 1
 LOSS_WEIGHT = 0.09
 NET_WEIGHT = 0.125
 POWER_WEIGHT = 0.11
@@ -178,6 +179,12 @@ first_weekend_rankings = {
     "Arizona-State": ["Denver", "Sacramento", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
     "North-Texas": ["Birmingham", "Des Moines", "Denver", "Orlando", "Greensboro", "Columbus", "Sacramento", "Albany"],
     "Pittsburgh": ["Columbus", "Albany", "Greensboro", "Birmingham", "Des Moines", "Orlando", "Denver", "Sacramento"],
+    "Vanderbilt": ["Greensboro", "Orlando", "Columbus", "Des Moines", "Albany", "Denver", "Sacramento"],
+    "New-Mexico": ["Denver", "Sacramento", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
+    "Oklahoma": ["Birmingham", "Des Moines", "Denver", "Orlando", "Greensboro", "Columbus", "Sacramento", "Albany"],
+    "Florida": ["Orlando", "Birmingham", "Greensboro", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
+    "Clemson": ["Greensboro", "Birmingham", "Orlando", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
+    "Toledo": ["Columbus", "Des Moines", "Greensboro", "Albany", "Birmingham", "Orlando", "Denver", "Sacramento"],
 }
 
 
@@ -310,12 +317,12 @@ class Scraper:
         team.power_score = POWER_WEIGHT*(-math.log(team.predictive + 19, 2)/2 + 3.12)#(60-team.predictive)/59
         return team.power_score
 
-    #calculate score for a team's record in quadrant 1 (scale: 1.000 = 1, 0.000 = .000)
+    #calculate score for a team's record in quadrant 1 (scale: 0.800 = 1, 0.000 = .000)
     #param team: Team object to calculate score for
     def get_Q1_score(self, team):
         if self.verbose:
             print("Quadrant 1", team.get_derived_pct(1))
-        team.Q1_score = Q1_WEIGHT*team.get_derived_pct(1)
+        team.Q1_score = Q1_WEIGHT*(team.get_derived_pct(1)/0.8)
         return team.Q1_score
 
     #calculate score for a team's record in quadrant 2 (scale: 1.000 = 1, 0.000 = .500)
@@ -611,8 +618,11 @@ class Scraper:
     #param region_num: region number (0-3) to try to place the team in
     #param seed_num: seed number (1-16) to try to place the team in
     def check_rules(self, conferences, team, region_num, seed_num):
-        if team == "" or "/" in team:
+        if team == "":
             return True
+        if "/" in team:
+            return (self.check_rules(conferences, team.split("/")[0], region_num, seed_num) and \
+                    self.check_rules(conferences, team.split("/")[1], region_num, seed_num))
         team_conference = self.teams[team].conference
 
         #the top three teams from a conference must be in different regions
@@ -890,8 +900,8 @@ class Scraper:
 
                         #if no permutation works, work backward through the seed list trying every permutation of those seeds as well as ours
                         tries = 0
+                        curr_reorg_max = 5
                         while not found_perm:
-                            curr_reorg_max = 5
                             reorg_seed -= 1
                             if reorg_seed < curr_reorg_max:
                                 tries += 1
@@ -1030,7 +1040,7 @@ def process_args():
             print("     -o: set a csv filename where the final ranking will live")
             print("     -e: override the scraping and use data currently stored")
             print("     -s: scrape data anew regardless of whether data has been scraped today")
-            print("     -v: verbose")
+            print("     -v: verbose. Print team resumes and bracketing procedure")
             sys.exit()
         elif sys.argv[argindex] == '-o':
             outputfile = sys.argv[argindex + 1]

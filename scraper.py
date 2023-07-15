@@ -10,9 +10,12 @@ import json
 import requests
 import math
 
-NITTY_GRITTY_URL = "https://www.warrennolan.com/basketball/2023/net-nitty"
+YEAR = "2023"
+
+NITTY_GRITTY_URL = "https://www.warrennolan.com/basketball/" + YEAR + "/net-nitty"
+NET_URL = "https://www.warrennolan.com/basketball/" + YEAR + "/net"
 TEAM_URL_START = "https://www.warrennolan.com"
-TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/2023/team-net-sheet?team="
+TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/" + YEAR + "/team-net-sheet?team="
 SCRAPE_DATE_FILE = "scrapedate.txt"
 
 AT_LARGE_MAX = 36
@@ -35,43 +38,9 @@ NONCON_SOS_WEIGHT = 0.015
 AWFUL_LOSS_WEIGHT = 0.015
 BAD_LOSS_WEIGHT = 0.03
 
-team_dict = {
-        "Kansas-State": "Kansas State",
-        "San-Diego-State": "San Diego State",
-        "Iowa-State": "Iowa State",
-        "West-Virginia": "West Virginia",
-        "Saint-Marys-College": "Saint Mary's",
-        "Michigan-State": "Michigan State",
-        "Miami-FL": "Miami (FL)",
-        "FAU": "Florida Atlantic",
-        "Texas-AM": "Texas A&M",
-        "Boise-State": "Boise State",
-        "Oral-Roberts": "Oral Roberts",
-        "Mississippi-State": "Mississippi State",
-        "Texas-Tech": "Texas Tech",
-        "Oklahoma-State": "Oklahoma State",
-        "North-Carolina": "North Carolina",
-        "North-Carolina-State": "NC State",
-        "Sam-Houston-State": "Sam Houston State",
-        "Southern-Miss": "Southern Miss",
-        "Kent-State": "Kent State",
-        "Montana-State": "Montana State",
-        "Norfolk-State": "Norfolk State",
-        "Grambling-State": "Grambling State",
-        "Cleveland-State": "Cleveland State",
-        "Youngstown-State": "Youngstown State",
-        "Morehead-State": "Morehead State",
-        "Texas-AM-Corpus-Christi": "Texas A&M-Corpus Christi",
-        "Utah-State": "Utah State",
-        "Arizona-State": "Arizona State",
-        "Penn-State": "Penn State",
-        "New-Mexico": "New Mexico",
-        "North-Texas": "North Texas",
-        "Southeast-Missouri": "Southeast Missouri State",
-        "Fairleigh-Dickinson": "Fairleigh Dickinson",
-        "Kennesaw-State": "Kennesaw State",
-        "Northern-Kentucky": "Northern Kentucky"
-}
+team_dict = dict()
+
+reverse_team_dict = dict()
 
 region_rankings = {
     "Houston": ["Kansas City", "Louisville", "Las Vegas", "New York"],
@@ -98,6 +67,7 @@ region_rankings = {
     "TCU": ["Kansas City", "Louisville", "Las Vegas", "New York"],
     "Virginia": ["Louisville", "New York", "Kansas City", "Las Vegas"],
     "Miami-FL": ["Louisville", "New York", "Kansas City", "Las Vegas"],
+    "Duke": ["Louisville", "New York", "Kansas City", "Las Vegas"],
 }
 
 first_weekend_rankings = {
@@ -124,13 +94,16 @@ first_weekend_rankings = {
     "Kentucky": ["Columbus", "Greensboro", "Birmingham", "Orlando", "Albany", "Des Moines", "Denver", "Sacramento"],
     "TCU": ["Birmingham", "Des Moines", "Orlando", "Greensboro", "Denver", "Columbus", "Sacramento", "Albany"],
     "Virginia": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
+    "Liberty": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
     "West-Virginia": ["Columbus", "Greensboro", "Albany", "Birmingham", "Orlando", "Des Moines", "Denver", "Sacramento"],
     "Duke": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
     "Michigan-State": ["Des Moines", "Columbus", "Albany", "Birmingham", "Greensboro", "Orlando", "Denver", "Sacramento"],
     "Texas-AM": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Denver", "Columbus", "Albany", "Sacramento"],
     "Northwestern": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
+    "Chicago-State": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
     "Missouri": ["Des Moines", "Columbus", "Denver", "Birmingham", "Greensboro", "Albany", "Orlando", "Sacramento"],
     "Illinois": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
+    "SIUE": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
     "Miami-FL": ["Orlando", "Birmingham", "Greensboro", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
     "Arkansas": ["Birmingham", "Des Moines", "Greensboro", "Orlando", "Denver", "Columbus", "Albany", "Sacramento"],
     "Maryland": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
@@ -145,6 +118,7 @@ first_weekend_rankings = {
     "Oral-Roberts": ["Birmingham", "Des Moines", "Denver", "Orlando", "Greensboro", "Columbus", "Sacramento", "Albany"],
     "Nevada": ["Sacramento", "Denver", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
     "North-Carolina-State": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
+    "North-Carolina-Central": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
     "Wisconsin": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
     "Texas-Tech": ["Denver", "Birmingham", "Des Moines", "Orlando", "Greensboro", "Columbus", "Sacramento", "Albany"],
     "Penn-State": ["Columbus", "Albany", "Greensboro", "Birmingham", "Orlando", "Des Moines", "Denver", "Sacramento"],
@@ -155,6 +129,8 @@ first_weekend_rankings = {
     "Kent-State": ["Columbus", "Des Moines", "Greensboro", "Albany", "Birmingham", "Orlando", "Denver", "Sacramento"],
     "Yale": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
     "Louisiana": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Columbus", "Denver", "Albany", "Sacramento"],
+    "Northwestern-State": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Columbus", "Denver", "Albany", "Sacramento"],
+    "Southern": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Columbus", "Denver", "Albany", "Sacramento"],
     "UC-Irvine": ["Sacramento", "Denver", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
     "Kennesaw-State": ["Birmingham", "Orlando", "Greensboro", "Columbus", "Des Moines", "Albany", "Denver", "Sacramento"],
     "Iona": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
@@ -172,6 +148,7 @@ first_weekend_rankings = {
     "Utah-State": ["Denver", "Sacramento", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
     "Norfolk-State": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
     "Rutgers": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
+    "Princeton": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
     "Northern-Kentucky": ["Columbus", "Greensboro", "Birmingham", "Orlando", "Albany", "Des Moines", "Denver", "Sacramento"],
     "North-Carolina": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
     "Oregon": ["Sacramento", "Denver", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
@@ -185,6 +162,10 @@ first_weekend_rankings = {
     "Florida": ["Orlando", "Birmingham", "Greensboro", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
     "Clemson": ["Greensboro", "Birmingham", "Orlando", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
     "Toledo": ["Columbus", "Des Moines", "Greensboro", "Albany", "Birmingham", "Orlando", "Denver", "Sacramento"],
+    "Southern-Utah": ["Denver", "Sacramento", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
+    "UC-Santa-Barbara": ["Sacramento", "Denver", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
+    "Grand-Canyon": ["Denver", "Sacramento", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
+    "Texas-Southern": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Denver", "Columbus", "Albany", "Sacramento"],
 }
 
 
@@ -265,29 +246,29 @@ class Scraper:
         f = open(datadir + team + ".json", "w+")
         f.write(json.dumps(self.teams[team], cls=ComplexEncoder))
         f.close()
+        team_dict[team] = self.teams[team].team_out
+        reverse_team_dict[self.teams[team].team_out] = team
 
     #scrape college basketball data from the web
     #param datadir: directory where the data should be stored
     #param today_date: MM-DD representation of today's date. written to file to record that scraping took place
     def do_scrape(self, datadir, today_date):
-        #TODO: update and make sure all the auto qualifiers are actually being scraped
-        extra_scrapes = ["Northern-Kentucky"]
-        nittygrittypage = requests.get(NITTY_GRITTY_URL)
-        if nittygrittypage.status_code != 200:
+        net_page = requests.get(NET_URL)
+        if net_page.status_code != 200:
             print('scraper problem!')
             sys.exit()
         print("NET page obtained!")
         table_start = False
-        for line in nittygrittypage.text.split("\n"):
+        for line in net_page.text.split("\n"):
             if not table_start:
                 if "tbody" in line:
                     table_start = True
                 continue
-            if "team-net-sheet" in line:
-                team = line[line.find("sheet")+11:line.find("<img")-2]
+            if "blue-black" in line:
+                team_start_index = line.find("schedule/")+9
+                team = line[team_start_index:line.find('">', team_start_index)]
                 self.scrape_team_data(team)
-        for team in extra_scrapes:
-            self.scrape_team_data(team)
+                print("scraped", team + "!")
 
         f = open(datadir + SCRAPE_DATE_FILE, "w+")
         f.write(today_date)
@@ -512,10 +493,10 @@ class Scraper:
         bubble_count = 0
         bubble_string = "BUBBLE: \n"
         #TODO: update and make sure teams who have been eliminated and shouldn't be getting automatic bids are not getting them
-        eliminated_teams = ["Morehead-State", "Southern-Miss", "Merrimack", "Liberty", "Bradley", "Youngstown-State", "Cleveland-State"]
+        eliminated_teams = []
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             at_large_bid = False
-            if self.teams[team].conference in confs_used:
+            if team in eliminated_teams or self.teams[team].conference in confs_used:
                 #teams under .500 are ineligible for at-large bids
                 if self.teams[team].record_pct < 0.5:
                     continue
@@ -617,60 +598,79 @@ class Scraper:
     #param team: name of team to attempt to place
     #param region_num: region number (0-3) to try to place the team in
     #param seed_num: seed number (1-16) to try to place the team in
-    def check_rules(self, conferences, team, region_num, seed_num):
+    def check_rules(self, conferences, team, region_num, seed_num, for_play_in=False):
         if team == "":
             return True
         if "/" in team:
-            return (self.check_rules(conferences, team.split("/")[0], region_num, seed_num) and \
-                    self.check_rules(conferences, team.split("/")[1], region_num, seed_num))
+            return (self.check_rules(conferences, team.split("/")[0], region_num, seed_num, True) and \
+                    self.check_rules(conferences, team.split("/")[1], region_num, seed_num, True))
         team_conference = self.teams[team].conference
 
-        #the top three teams from a conference must be in different regions
-        if conferences[team_conference].index(team) < 3:
+        #the top four teams from a conference must be in different regions if they are on the top four seed lines
+        if conferences[team_conference].index(team) < 4 and seed_num <= 4:
             for test_team in conferences[team_conference][:3]:
                 if test_team == team:
                     continue
                 if self.teams[test_team].region == region_num:
                     if self.verbose:
-                        print("multiple top three teams can't all go here", region_num, conferences[team_conference])
+                        print("multiple top four teams can't all go here", region_num, conferences[team_conference])
                     return False
 
         #unless there are nine teams from a conference, three teams from that conference cannot be in the same region
-        if len(conferences[team_conference]) < 9:
-            team_conf_counter = 0
-            for test_team in conferences[team_conference]:
-                if test_team == team:
-                    continue
-                if self.teams[test_team].region == region_num:
-                    team_conf_counter += 1
-                if team_conf_counter >= 2:
-                    if self.verbose:
-                        print("three top eight teams can't all go here", region_num, conferences[team_conference])
-                    return False
+        #if len(conferences[team_conference]) < 9 and not for_play_in:
+        #    team_conf_counter = 0
+        #    for test_team in conferences[team_conference]:
+        #        if test_team == team:
+        #            continue
+        #        if self.teams[test_team].region == region_num:
+        #            team_conf_counter += 1
+        #        if team_conf_counter >= 2:
+        #            if self.verbose:
+        #                print("three top eight teams can't all go here", region_num, conferences[team_conference])
+        #            return False
 
         #unless a conference has 5 teams seeded 1-4, all teams from a conference seeded 1-4 must be in different regions
-        if len(conferences[team_conference]) < 5 and seed_num <= 4:
-            for test_team in conferences[team_conference]:
-                if test_team == team:
-                    continue
-                if self.teams[test_team].seed >= 5:
-                    break
-                if self.teams[test_team].region == region_num:
-                    if self.verbose:
-                        print("multiple top 4 seed teams can't go here", region_num, conferences[team_conference])
-                    return False
-
-        #two teams from the same conference cannot meet before the regional semifinal (Sweet 16)
+        #if len(conferences[team_conference]) < 5 and seed_num <= 4:
+        #    for test_team in conferences[team_conference]:
+        #        if test_team == team:
+        #            continue
+        #        if self.teams[test_team].seed >= 5:
+        #            break
+        #        if self.teams[test_team].region == region_num:
+        #            if self.verbose:
+        #                print("multiple top 4 seed teams can't go here", region_num, conferences[team_conference])
+        #            return False
+        
+        #two teams from the same conference cannot meet before the...
+            #...regional final (Elite 8) if they've played 3 times
+            #...regional semifinal (Sweet 16) if they've played 2 times
+            #...second round if they've played 1 time
         for test_team in conferences[team_conference]:
             if test_team == team:
                 continue
-            if self.teams[test_team].region == region_num and \
-                    (self.teams[test_team].seed + seed_num == 17 or self.teams[test_team].seed + seed_num == 9 or \
-                    self.teams[test_team].seed + seed_num == 25 or abs(self.teams[test_team].seed - seed_num) == 8 or \
-                    self.teams[test_team].seed == seed_num):
-                if self.verbose:
-                    print("teams are meeting too early in this region", region_num, conferences[team_conference])
-                return False
+            if self.teams[test_team].region != region_num:
+                continue
+            game_count = 0
+            for game in self.teams[test_team].games:
+                if reverse_team_dict[game.opponent] == team:
+                    game_count += 1
+            if game_count >= 1:
+                if self.teams[test_team].seed + seed_num == 17: #first round matchup
+                    if self.verbose:
+                        print("teams are meeting too early in this region", region_num, conferences[team_conference])
+                    return False
+            if game_count >= 2:
+                for seed_set in [[1, 16, 8, 9], [5, 12, 4, 13], [6, 11, 3, 14], [7, 10, 2, 15]]:
+                    if self.teams[test_team].seed in seed_set and seed_num in seed_set:
+                        if self.verbose:
+                            print("teams are meeting too early in this region", region_num, conferences[team_conference])
+                        return False
+            if game_count >= 3:
+                for seed_set in [[1, 16, 8, 9, 5, 12, 4, 13], [6, 11, 3, 14, 7, 10, 2, 15]]:
+                    if self.teams[test_team].seed in seed_set and seed_num in seed_set:
+                        if self.verbose:
+                            print("teams are meeting too early in this region", region_num, conferences[team_conference])
+                        return False
         return True
 
     #remove all teams from their seed lines in order to attempt to reorganize them
@@ -704,12 +704,16 @@ class Scraper:
     #param conferences: dictionary of conference names and lists of teams already in the tournament
     #param perm: permutation of four teams on the same seed line
     #param seed_num: seed of teams
-    def check_perm(self, conferences, perm, seed_num):
-        if self.check_rules(conferences, perm[0], 0, seed_num) and \
-            self.check_rules(conferences, perm[1], 1, seed_num) and \
-            self.check_rules(conferences, perm[2], 2, seed_num) and \
-            self.check_rules(conferences, perm[3], 3, seed_num):
-            return True
+    def check_perm(self, conferences, perm, seed_num, team="", for_play_in=False):
+        play_in = dict()
+        for counter, perm_team in enumerate(perm):
+            if perm_team and team == perm_team and for_play_in: 
+                if not self.check_rules(conferences, perm_team, counter, seed_num, True):
+                    return False
+            else:
+                if not self.check_rules(conferences, perm_team, counter, seed_num, False):
+                    return False
+        return True
     
     #insert a permutation of four teams into the bracket
     #param seed_num: seed of teams
@@ -787,13 +791,19 @@ class Scraper:
         conferences = dict()
         play_in_teams = list()
         play_in_pos = ()
+        save_team = list()
         first_weekend_sites = ["Birmingham", "Birmingham", "Orlando", "Orlando", "Greensboro", "Greensboro", "Albany", "Albany", \
                 "Columbus", "Columbus", "Des Moines", "Des Moines", "Denver", "Denver", "Sacramento", "Sacramento"]
 
         #traverse seed list, placing teams in bracket as you go
-        for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
+        sorted_teams = sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True)
+        team_index = 0
+        while team_index < len(sorted_teams):
+            team = sorted_teams[team_index]
             team_conference = self.teams[team].conference
+            for_play_in = False
             if not (self.teams[team].auto_bid or self.teams[team].at_large_bid):
+                team_index += 1
                 continue
             if team_conference not in conferences:
                 conferences[team_conference] = list()
@@ -805,6 +815,14 @@ class Scraper:
             else:
                 region_num = bracket_pos - 1
 
+            #if we moved a team down a seed line, try to place it
+            if save_team and save_team[1] != seed_num:
+                if self.verbose:
+                    print("now that we're at", seed_num, "trying", save_team)
+                team = save_team[0]
+                save_team = list()
+                team_index -= 1
+            print("placing", team, seed_num)
             #get a region that is empty for the current seed
             while seed_num in self.regions[region_num]:
                 if self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1):
@@ -818,6 +836,8 @@ class Scraper:
             region = self.regions[region_num]
 
             #if this is the second team in a play in game, just place them. (TODO: fix)
+            if self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 4 or at_large_count == AT_LARGE_MAX - 2):
+                for_play_in = True
             if self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1):
                 region_num = play_in_pos[0]
                 seed = play_in_pos[1]
@@ -836,7 +856,9 @@ class Scraper:
                 orig_region_num = region_num
                 
                 #if this placement didn't pass the rules, try more options
-                while not self.check_rules(conferences, team, region_num, seed_num):
+                while not self.check_rules(conferences, team, region_num, seed_num, for_play_in):
+                    if len(save_team):
+                        break
                     if self.verbose:
                         print('rules failed for', str(region_num))
                     bad_regions.add(region_num)
@@ -849,7 +871,7 @@ class Scraper:
                         if self.verbose:
                             print('already this seed in', str(region_num))
                         new_team = self.regions[region_num][seed_num]
-                        if check_switch and self.check_rules(conferences, team, region_num, seed_num) and \
+                        if check_switch and self.check_rules(conferences, team, region_num, seed_num, for_play_in) and \
                                 self.check_rules(conferences, new_team, orig_region_num, seed_num):
                             self.regions[orig_region_num][seed_num] = new_team
                             self.teams[new_team].region = orig_region_num
@@ -862,16 +884,18 @@ class Scraper:
                                 print("Switched (" + str(seed_num) + ") " + new_team + " to: region (" + str(orig_region_num) + ")")
                             bad_regions = set()
                             break
+                        bad_regions.add(region_num)
 
                         #if we've tried every region, try something else
-                        bad_regions.add(region_num)
                         if len(bad_regions) == 4:
                             break
+
+                        #otherwise, try another region for this team
                         region_num = region_order[(region_order.index(region_num)+1) % 4]
                         if self.verbose:
                             print('changed region to', region_num)
 
-                    #if we haven't tried to switch teams yet, try that
+                    #if we haven't tried to switch teams with each other yet, try that
                     if len(bad_regions) == 4 and check_switch == False:
                         check_switch = True
                         if self.verbose:
@@ -892,7 +916,7 @@ class Scraper:
                         self.teams[team].seed = -1
                         found_perm = False
                         for perm in permutations(teams_to_fix):
-                            if self.check_perm(conferences, perm, seed_num):
+                            if self.check_perm(conferences, perm, seed_num, team, for_play_in):
                                 self.save_and_print_perm(seed_num, perm, sites)
                                 region_num = perm.index(team)
                                 found_perm = True
@@ -900,19 +924,31 @@ class Scraper:
 
                         #if no permutation works, work backward through the seed list trying every permutation of those seeds as well as ours
                         tries = 0
-                        curr_reorg_max = 5
+                        curr_reorg_max = 5  #lowest-numbered seed to try reorganizing
                         while not found_perm:
                             reorg_seed -= 1
                             if reorg_seed < curr_reorg_max:
+                                #run through it 100 times
                                 tries += 1
-                                if tries <= 50:
+                                if tries <= 100:
                                     #don't want to mess up region positioning if possible
                                     if self.verbose:
                                         print("Retrying from beginning")
                                     reorg_seed = seed_num - 1
                                 else:
                                     tries = 0
-                                    curr_reorg_max -= 1
+                                    curr_reorg_max -= 1     #can start trying to reorganize with lower seeds as we go
+                                    if curr_reorg_max < 3:
+                                        #if self.verbose:
+                                        print("moving", team, "down from", seed_num)
+                                        save_team = [team, seed_num]
+                                        if self.verbose:
+                                            print("saving", save_team)
+                                        teams_to_fix.remove(team)
+                                        for fixing_count, fixing_team in enumerate(teams_to_fix):
+                                            if fixing_team:
+                                                self.regions[fixing_count][seed_num] = fixing_team
+                                        break
                             if self.verbose:
                                 print('trying the next seed up', reorg_seed)
                             other_teams_to_fix, other_sites = self.delete_and_save_seed(reorg_seed)
@@ -922,7 +958,7 @@ class Scraper:
                                     self.save_and_print_perm(reorg_seed, other_perm, other_sites)
                                     perm_to_save = other_perm
                                     for perm in permutations(teams_to_fix):
-                                        if self.check_perm(conferences, perm, seed_num):
+                                        if self.check_perm(conferences, perm, seed_num, team, for_play_in):
                                             self.save_and_print_perm(seed_num, perm, sites)
                                             region_num = perm.index(team)
                                             found_perm = True
@@ -933,7 +969,14 @@ class Scraper:
                                 #if nothing worked, save the most recent successful try for this seed and recurse up the seed list
                                 #this also allows us to loop back through the seeds and have different results
                                 self.save_and_print_perm(reorg_seed, perm_to_save, other_sites)
-
+                
+                if len(save_team) and save_team[0] == team:
+                    for bigolregion in self.regions:
+                        if seed_num in bigolregion and bigolregion[seed_num] == team:
+                            print("deleting", team, "from", bigolregion)
+                            del bigolregion[seed_num]
+                    team_index += 1
+                    continue
                 self.regions[region_num][seed_num] = team
                 self.teams[team].region = region_num
                 self.teams[team].seed = seed_num
@@ -969,13 +1012,20 @@ class Scraper:
                     print("Placed (" + str(seed_num) + ") " + team + ": region (" + str(region_num) + ") " + region_num_to_name[region_num])
                     print()
 
-            #if we just placed the first play in team, save its coordinates
+            #if we just placed the first play in-team in a matchup, save its coordinates to put the other team there
             if (self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1)) or \
                     (self.teams[team].auto_bid and (auto_count == AUTO_MAX - 3 or auto_count == AUTO_MAX - 1)):
                 play_in_pos = (region_num, seed_num)
             else:
                 bracket_pos += 1
                 play_in_pos = (0, 0)
+
+            if not len(save_team) or team != save_team[0]:
+                team_index += 1
+            else:
+                print("placed", save_team)
+                save_team = list()
+
         max_len = self.get_max_len()
         print()
         for region_nums in [[0, 1], [3, 2]]:

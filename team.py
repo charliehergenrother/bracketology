@@ -7,10 +7,11 @@ import sys
 class Team:
 
     def reprJSON(self):
-        return dict(conference=self.conference, NET=self.NET, KenPom=self.KenPom, BPI=self.BPI, Sagarin=self.Sagarin, KPI=self.KPI, SOR=self.SOR, NET_SOS=self.NET_SOS, noncon_SOS=self.noncon_SOS, games=self.games)
+        return dict(conference=self.conference, NET=self.NET, KenPom=self.KenPom, BPI=self.BPI, Sagarin=self.Sagarin, KPI=self.KPI, SOR=self.SOR, NET_SOS=self.NET_SOS, noncon_SOS=self.noncon_SOS, games=self.games, team_out=self.team_out)
 
     def __init__(self):
         self.conference = ""
+        self.team_out = ""
         self.NET = 0
         self.KenPom = 0
         self.BPI = 0
@@ -49,6 +50,8 @@ class Team:
         for line in team_page.text.split("\n"):
             if "Non-Division I Games" in line:
                 break
+            if "team-menu__name\"" in line:
+                self.team_out = line[line.find(">")+1:line.find(" <span")]
             if "team-menu__conference" in line:
                 self.conference = line[line.find('">', line.find("/conference/"))+2:line.find("</a>")]
                 continue
@@ -140,7 +143,13 @@ class Team:
                 continue
             if game_line == 5:
                 curr_game.opp_score = int(line[line.find(">")+1:line.find("</div>")])
-                self.games.add(curr_game)
+                game_line += 1
+                continue
+            if game_line == 6:
+                date = line[line.find(">")+1:line.find("</div>")]
+                # cut out NCAA tournament games. 2023 Selection Sunday: 3/12
+                if int(date[1]) != 4 and (int(date[1]) != 3 or int(date[3:]) <= 12):
+                    self.games.add(curr_game)
                 game_line = 0
                 continue
 

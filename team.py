@@ -67,11 +67,17 @@ class Team:
                 SOS_line += 1
                 continue
             elif SOS_line == 4:
-                self.NET_SOS = int(line.strip()[:line.strip().find("<")])
+                if line.strip()[:line.strip().find("<")] == "N/A":
+                    self.NET_SOS = 150
+                else:
+                    self.NET_SOS = int(line.strip()[:line.strip().find("<")])
                 SOS_line += 1
                 continue
             elif SOS_line == 5:
-                self.noncon_SOS = int(line.strip())
+                if line.strip() == "N/A":   #2020-21 was crazy
+                    self.noncon_SOS = 150
+                else:
+                    self.noncon_SOS = int(line.strip())
                 SOS_line += 1
                 continue
             
@@ -149,7 +155,7 @@ class Team:
             if game_line == 6:
                 date = line[line.find(">")+1:line.find("</div>")]
                 # cut out NCAA tournament games. 2023 Selection Sunday: 3/12
-                if int(date[1]) != 4 and (int(date[1]) != 3 or int(date[3:]) <= 12):
+                if int(date[1]) != 4 and (int(date[1]) != 3 or int(date[3:]) <= 13):
                     self.games.add(curr_game)
                 game_line = 0
                 continue
@@ -169,6 +175,8 @@ class Team:
         record = self.record
         wins = int(record.split("-")[0])
         losses = int(record.split("-")[1])
+        if not wins:
+            return 0
         return wins/(wins + losses)
 
     def get_Q1_record(self):

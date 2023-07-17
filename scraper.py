@@ -10,7 +10,7 @@ import json
 import requests
 import math
 
-YEAR = "2023"
+YEAR = "2021"
 
 NITTY_GRITTY_URL = "https://www.warrennolan.com/basketball/" + YEAR + "/net-nitty"
 NET_URL = "https://www.warrennolan.com/basketball/" + YEAR + "/net"
@@ -18,7 +18,7 @@ TEAM_URL_START = "https://www.warrennolan.com"
 TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/" + YEAR + "/team-net-sheet?team="
 SCRAPE_DATE_FILE = "scrapedate.txt"
 TEAM_COORDINATES_FILE = "team_locations.txt"
-SITE_COORDINATES_FILE = "site_locations.txt"
+SITE_COORDINATES_FILE = "site_locations_" + YEAR + ".txt"
 
 AT_LARGE_MAX = 36
 AUTO_MAX = 32
@@ -73,6 +73,7 @@ class Scraper:
     def load_coordinates(self):
         first_sites = dict()
         regional_sites = dict()
+        self.first_weekend_sites = list()
         f = open(SITE_COORDINATES_FILE, "r")
         for count, line in enumerate(f):
             site_name = line[:line.find("[")]
@@ -80,6 +81,8 @@ class Scraper:
             longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
             if count < 8:
                 first_sites[site_name] = [latitude, longitude]
+                self.first_weekend_sites.append(site_name)
+                self.first_weekend_sites.append(site_name)
             else:
                 regional_sites[site_name] = [latitude, longitude]
         f.close()
@@ -88,7 +91,10 @@ class Scraper:
             team = line[:line.find("[")]
             latitude = float(line[line.find("[")+1:line.find(" N, ")-1])
             longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
-            self.teams[team].latitude = latitude
+            try:
+                self.teams[team].latitude = latitude
+            except KeyError:    #this team didn't exist this year
+                continue
             self.teams[team].longitude = longitude
             first_distances = dict()
             regional_distances = dict()
@@ -107,7 +113,6 @@ class Scraper:
             first_weekend_rankings[team] = first_order
             region_rankings[team] = regional_order
         f.close()
-
 
     #grab the data from where it's stored on disk or scrape it if necessary
     #param datadir: directory where the data is stored
@@ -411,10 +416,12 @@ class Scraper:
         confs_used = set()
         bubble_count = 0
         bubble_string = "BUBBLE: \n"
-        #TODO: update and make sure teams who have been eliminated and shouldn't be getting automatic bids are not getting them
         eliminated_teams = []
+        ineligible_teams = []   #Arizona was ineligible in 2021
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             at_large_bid = False
+            if team in ineligible_teams:
+                continue
             if team in eliminated_teams or self.teams[team].conference in confs_used:
                 #teams under .500 are ineligible for at-large bids
                 if self.teams[team].record_pct < 0.5:
@@ -470,7 +477,7 @@ class Scraper:
         for coords in [[0, 1], [3, 2]]:
             for seed in range(1, 17):
                 l.append(len(self.regions[coords[0]][seed]) + len(self.regions[coords[1]][seed]))
-        return 15 + max(l)
+        return 30 + max(l)
 
     #print a line of the bracket
     #param max_len: maximum length of a line containing two teams
@@ -492,7 +499,7 @@ class Scraper:
         if seed == 13:
             region_1_name = region_num_to_name[region_1]
             region_2_name = region_num_to_name[region_2]
-            print(" "*(20 + max_site_len) + region_1_name + " "*(max_len - (len(region_1_name) + len(region_2_name) + 40)) + region_2_name)
+            print(" "*(20 + max_site_len) + region_1_name + " "*max([max_len - (len(region_1_name) + len(region_2_name) + 40), 5]) + region_2_name)
         elif seed == 16:
             site_1 = self.first_weekend_num_to_name[region_1][1]
             site_2 = self.first_weekend_num_to_name[region_2][1]
@@ -743,8 +750,6 @@ class Scraper:
         play_in_teams = list()
         play_in_pos = ()
         save_team = list()
-        first_weekend_sites = ["Birmingham", "Birmingham", "Orlando", "Orlando", "Greensboro", "Greensboro", "Albany", "Albany", \
-                "Columbus", "Columbus", "Des Moines", "Des Moines", "Denver", "Denver", "Sacramento", "Sacramento"]
 
         #traverse seed list, placing teams in bracket as you go
         sorted_teams = sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True)
@@ -927,7 +932,6 @@ class Scraper:
                 if len(save_team) and save_team[0] == team:
                     for bigolregion in self.regions:
                         if seed_num in bigolregion and bigolregion[seed_num] == team:
-                            print("deleting", team, "from", bigolregion)
                             del bigolregion[seed_num]
                     team_index += 1
                     continue
@@ -952,10 +956,10 @@ class Scraper:
                 #if we're placing a top-4 seed, pick a first weekend site for it
                 if seed_num < 5:
                     for site_name in first_weekend_rankings[team]:
-                        if site_name in first_weekend_sites:
+                        if site_name in self.first_weekend_sites:
                             if self.verbose:
                                 print("Choosing", site_name)
-                            first_weekend_sites.remove(site_name)
+                            self.first_weekend_sites.remove(site_name)
                             if site_name in self.first_weekend_name_to_num:
                                 self.first_weekend_name_to_num[site_name].append([region_num, seed_num])
                             else:
@@ -1030,7 +1034,7 @@ class Scraper:
 def process_args():
     argindex = 1
     outputfile = ""
-    datadir = "data/"
+    datadir = "data/" + YEAR + "/"
     should_scrape = True
     force_scrape = False
     verbose = False

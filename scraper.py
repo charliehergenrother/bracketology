@@ -17,6 +17,8 @@ NET_URL = "https://www.warrennolan.com/basketball/" + YEAR + "/net"
 TEAM_URL_START = "https://www.warrennolan.com"
 TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/" + YEAR + "/team-net-sheet?team="
 SCRAPE_DATE_FILE = "scrapedate.txt"
+TEAM_COORDINATES_FILE = "team_locations.txt"
+SITE_COORDINATES_FILE = "site_locations.txt"
 
 AT_LARGE_MAX = 36
 AUTO_MAX = 32
@@ -39,135 +41,9 @@ AWFUL_LOSS_WEIGHT = 0.015
 BAD_LOSS_WEIGHT = 0.03
 
 team_dict = dict()
-
 reverse_team_dict = dict()
-
-region_rankings = {
-    "Houston": ["Kansas City", "Louisville", "Las Vegas", "New York"],
-    "Alabama": ["Louisville", "Kansas City", "New York", "Las Vegas"],
-    "Tennessee": ["Louisville", "New York", "Kansas City", "Las Vegas"],
-    "UCLA": ["Las Vegas", "Kansas City", "Louisville", "New York"],
-    "Purdue": ["Louisville", "Kansas City", "New York", "Las Vegas"],
-    "Connecticut": ["New York", "Louisville", "Kansas City", "Las Vegas"],
-    "Kansas": ["Kansas City", "Louisville", "New York", "Las Vegas"],
-    "Saint-Marys-College": ["Las Vegas", "Kansas City", "Louisville", "New York"],
-    "Gonzaga": ["Las Vegas", "Kansas City", "Louisville", "New York"],
-    "Texas": ["Kansas City", "Louisville", "Las Vegas", "New York"],
-    "Arizona": ["Las Vegas", "Kansas City", "Louisville", "New York"],
-    "Baylor": ["Kansas City", "Louisville", "Las Vegas", "New York"],
-    "Marquette": ["Kansas City", "Louisville", "New York", "Las Vegas"],
-    "Creighton": ["Kansas City", "Louisville", "New York", "Las Vegas"],
-    "FAU": ["Louisville", "New York", "Kansas City", "Las Vegas"],
-    "San-Diego-State": ["Las Vegas", "Kansas City", "Louisville", "New York"],
-    "Kansas-State": ["Kansas City", "Louisville", "New York", "Las Vegas"],
-    "Xavier": ["Louisville", "Kansas City", "New York", "Las Vegas"],
-    "Iowa-State": ["Kansas City", "Louisville", "New York", "Las Vegas"],
-    "Indiana": ["Louisville", "Kansas City", "New York", "Las Vegas"],
-    "Kentucky": ["Louisville", "Kansas City", "New York", "Las Vegas"],
-    "TCU": ["Kansas City", "Louisville", "Las Vegas", "New York"],
-    "Virginia": ["Louisville", "New York", "Kansas City", "Las Vegas"],
-    "Miami-FL": ["Louisville", "New York", "Kansas City", "Las Vegas"],
-    "Duke": ["Louisville", "New York", "Kansas City", "Las Vegas"],
-}
-
-first_weekend_rankings = {
-    "Houston": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Denver", "Columbus", "Albany", "Sacramento"],
-    "Alabama": ["Birmingham", "Orlando", "Greensboro", "Columbus", "Des Moines", "Albany", "Denver", "Sacramento"],
-    "Tennessee": ["Greensboro", "Birmingham", "Orlando", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
-    "UCLA": ["Sacramento", "Denver", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
-    "Purdue": ["Columbus", "Des Moines", "Greensboro", "Birmingham", "Albany", "Orlando", "Denver", "Sacramento"],
-    "Connecticut": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Kansas": ["Des Moines", "Denver", "Columbus", "Birmingham", "Greensboro", "Albany", "Orlando", "Sacramento"],
-    "Saint-Marys-College": ["Sacramento", "Denver", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
-    "Gonzaga": ["Sacramento", "Denver", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
-    "Texas": ["Birmingham", "Des Moines", "Orlando", "Greensboro", "Denver", "Columbus", "Sacramento", "Albany"],
-    "Arizona": ["Denver", "Sacramento", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
-    "Baylor": ["Birmingham", "Des Moines", "Orlando", "Greensboro", "Denver", "Columbus", "Sacramento", "Albany"],
-    "Marquette": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "Creighton": ["Des Moines", "Denver", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Sacramento"],
-    "FAU": ["Orlando", "Birmingham", "Greensboro", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
-    "San-Diego-State": ["Sacramento", "Denver", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
-    "Kansas-State": ["Des Moines", "Denver", "Columbus", "Birmingham", "Greensboro", "Albany", "Orlando", "Sacramento"],
-    "Xavier": ["Columbus", "Des Moines", "Greensboro", "Birmingham", "Albany", "Orlando", "Denver", "Sacramento"],
-    "Iowa-State": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "Indiana": ["Columbus", "Des Moines", "Greensboro", "Birmingham", "Albany", "Orlando", "Denver", "Sacramento"],
-    "Kentucky": ["Columbus", "Greensboro", "Birmingham", "Orlando", "Albany", "Des Moines", "Denver", "Sacramento"],
-    "TCU": ["Birmingham", "Des Moines", "Orlando", "Greensboro", "Denver", "Columbus", "Sacramento", "Albany"],
-    "Virginia": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Liberty": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "West-Virginia": ["Columbus", "Greensboro", "Albany", "Birmingham", "Orlando", "Des Moines", "Denver", "Sacramento"],
-    "Duke": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Michigan-State": ["Des Moines", "Columbus", "Albany", "Birmingham", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "Texas-AM": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Denver", "Columbus", "Albany", "Sacramento"],
-    "Northwestern": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "Chicago-State": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "Missouri": ["Des Moines", "Columbus", "Denver", "Birmingham", "Greensboro", "Albany", "Orlando", "Sacramento"],
-    "Illinois": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "SIUE": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "Miami-FL": ["Orlando", "Birmingham", "Greensboro", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
-    "Arkansas": ["Birmingham", "Des Moines", "Greensboro", "Orlando", "Denver", "Columbus", "Albany", "Sacramento"],
-    "Maryland": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Auburn": ["Birmingham", "Orlando", "Greensboro", "Columbus", "Des Moines", "Albany", "Denver", "Sacramento"],
-    "Boise-State": ["Sacramento", "Denver", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
-    "Memphis": ["Birmingham", "Des Moines", "Greensboro", "Orlando", "Columbus", "Denver", "Albany", "Sacramento"],
-    "Oklahoma-State": ["Birmingham", "Des Moines", "Denver", "Orlando", "Greensboro", "Columbus", "Sacramento", "Albany"],
-    "Iowa": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "Providence": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "USC": ["Sacramento", "Denver", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
-    "Mississippi-State": ["Birmingham", "Orlando", "Greensboro", "Des Moines", "Columbus", "Albany", "Denver", "Sacramento"],
-    "Oral-Roberts": ["Birmingham", "Des Moines", "Denver", "Orlando", "Greensboro", "Columbus", "Sacramento", "Albany"],
-    "Nevada": ["Sacramento", "Denver", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
-    "North-Carolina-State": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "North-Carolina-Central": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Wisconsin": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "Texas-Tech": ["Denver", "Birmingham", "Des Moines", "Orlando", "Greensboro", "Columbus", "Sacramento", "Albany"],
-    "Penn-State": ["Columbus", "Albany", "Greensboro", "Birmingham", "Orlando", "Des Moines", "Denver", "Sacramento"],
-    "Sam-Houston-State": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Denver", "Columbus", "Albany", "Sacramento"],
-    "Charleston": ["Greensboro", "Orlando", "Birmingham", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
-    "Drake": ["Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "VCU": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Kent-State": ["Columbus", "Des Moines", "Greensboro", "Albany", "Birmingham", "Orlando", "Denver", "Sacramento"],
-    "Yale": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Louisiana": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Columbus", "Denver", "Albany", "Sacramento"],
-    "Northwestern-State": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Columbus", "Denver", "Albany", "Sacramento"],
-    "Southern": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Columbus", "Denver", "Albany", "Sacramento"],
-    "UC-Irvine": ["Sacramento", "Denver", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
-    "Kennesaw-State": ["Birmingham", "Orlando", "Greensboro", "Columbus", "Des Moines", "Albany", "Denver", "Sacramento"],
-    "Iona": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Montana-State": ["Denver", "Sacramento", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
-    "Vermont": ["Albany", "Columbus", "Greensboro", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Furman": ["Greensboro", "Birmingham", "Orlando", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
-    "UNC-Asheville": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Colgate": ["Albany", "Columbus", "Greensboro", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Grambling-State": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Columbus", "Denver", "Albany", "Sacramento"],
-    "Cleveland-State": ["Columbus", "Des Moines", "Greensboro", "Albany", "Birmingham", "Orlando", "Denver", "Sacramento"],
-    "Howard": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Texas-AM-Corpus-Christi": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Denver", "Columbus", "Albany", "Sacramento"],
-    "Southeast-Missouri": ["Birmingham", "Des Moines", "Greensboro", "Orlando", "Columbus", "Denver", "Albany", "Sacramento"],
-    "Fairleigh-Dickinson": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Utah-State": ["Denver", "Sacramento", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
-    "Norfolk-State": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Rutgers": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Princeton": ["Albany", "Greensboro", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Northern-Kentucky": ["Columbus", "Greensboro", "Birmingham", "Orlando", "Albany", "Des Moines", "Denver", "Sacramento"],
-    "North-Carolina": ["Greensboro", "Albany", "Columbus", "Orlando", "Birmingham", "Des Moines", "Denver", "Sacramento"],
-    "Oregon": ["Sacramento", "Denver", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
-    "Michigan": ["Columbus", "Des Moines", "Albany", "Birmingham", "Greensboro", "Orlando", "Denver", "Sacramento"],
-    "Arizona-State": ["Denver", "Sacramento", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
-    "North-Texas": ["Birmingham", "Des Moines", "Denver", "Orlando", "Greensboro", "Columbus", "Sacramento", "Albany"],
-    "Pittsburgh": ["Columbus", "Albany", "Greensboro", "Birmingham", "Des Moines", "Orlando", "Denver", "Sacramento"],
-    "Vanderbilt": ["Greensboro", "Orlando", "Columbus", "Des Moines", "Albany", "Denver", "Sacramento"],
-    "New-Mexico": ["Denver", "Sacramento", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
-    "Oklahoma": ["Birmingham", "Des Moines", "Denver", "Orlando", "Greensboro", "Columbus", "Sacramento", "Albany"],
-    "Florida": ["Orlando", "Birmingham", "Greensboro", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
-    "Clemson": ["Greensboro", "Birmingham", "Orlando", "Columbus", "Albany", "Des Moines", "Denver", "Sacramento"],
-    "Toledo": ["Columbus", "Des Moines", "Greensboro", "Albany", "Birmingham", "Orlando", "Denver", "Sacramento"],
-    "Southern-Utah": ["Denver", "Sacramento", "Des Moines", "Columbus", "Birmingham", "Albany", "Greensboro", "Orlando"],
-    "UC-Santa-Barbara": ["Sacramento", "Denver", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
-    "Grand-Canyon": ["Denver", "Sacramento", "Des Moines", "Birmingham", "Columbus", "Orlando", "Greensboro", "Albany"],
-    "Texas-Southern": ["Birmingham", "Orlando", "Des Moines", "Greensboro", "Denver", "Columbus", "Albany", "Sacramento"],
-}
-
+first_weekend_rankings = dict()
+region_rankings = dict()
 
 #class to turn the Team and Game objects into jsonifyable strings
 class ComplexEncoder(json.JSONEncoder):
@@ -194,6 +70,45 @@ class Scraper:
             print("ya dun goofed with your weights")
             sys.exit()
 
+    def load_coordinates(self):
+        first_sites = dict()
+        regional_sites = dict()
+        f = open(SITE_COORDINATES_FILE, "r")
+        for count, line in enumerate(f):
+            site_name = line[:line.find("[")]
+            latitude = float(line[line.find("[")+1:line.find(" N, ")-1])
+            longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
+            if count < 8:
+                first_sites[site_name] = [latitude, longitude]
+            else:
+                regional_sites[site_name] = [latitude, longitude]
+        f.close()
+        f = open(TEAM_COORDINATES_FILE, "r")
+        for line in f:
+            team = line[:line.find("[")]
+            latitude = float(line[line.find("[")+1:line.find(" N, ")-1])
+            longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
+            self.teams[team].latitude = latitude
+            self.teams[team].longitude = longitude
+            first_distances = dict()
+            regional_distances = dict()
+            for site in first_sites:
+                distance = math.sqrt((latitude - first_sites[site][0])**2 + (longitude - first_sites[site][1])**2)
+                first_distances[site] = distance
+            for site in regional_sites:
+                distance = math.sqrt((latitude - regional_sites[site][0])**2 + (longitude - regional_sites[site][1])**2)
+                regional_distances[site] = distance
+            first_order = list()
+            regional_order = list()
+            for site in sorted(first_distances, key=lambda x: first_distances[x]):
+                first_order.append(site)
+            for site in sorted(regional_distances, key=lambda x: regional_distances[x]):
+                regional_order.append(site)
+            first_weekend_rankings[team] = first_order
+            region_rankings[team] = regional_order
+        f.close()
+
+
     #grab the data from where it's stored on disk or scrape it if necessary
     #param datadir: directory where the data is stored
     #param should_scrape: If true, scrape the data from the web if we haven't yet today
@@ -214,6 +129,7 @@ class Scraper:
             self.do_scrape(datadir, today_date)
         else:
             self.do_load(datadir)
+        self.load_coordinates()
 
     #load the data that has previously been scraped
     #param datadir: directory where the data is stored
@@ -233,8 +149,11 @@ class Scraper:
                 curr_team = Team()
                 curr_team.fill_data(team_obj["conference"], team_obj["NET"], team_obj["KenPom"], team_obj["BPI"],
                         team_obj["Sagarin"], team_obj["KPI"], team_obj["SOR"], team_obj["NET_SOS"], \
-                        team_obj["noncon_SOS"], games)
+                        team_obj["noncon_SOS"], games, team_obj["team_out"])
                 self.teams[filename[:filename.find(".json")]] = curr_team
+                team = filename[:filename.find(".json")]
+                team_dict[team] = curr_team.team_out
+                reverse_team_dict[curr_team.team_out] = team
     
     #scrape one team's data
     def scrape_team_data(self, team):
@@ -654,18 +573,17 @@ class Scraper:
             for game in self.teams[test_team].games:
                 if reverse_team_dict[game.opponent] == team:
                     game_count += 1
-            if game_count >= 1:
-                if self.teams[test_team].seed + seed_num == 17: #first round matchup
-                    if self.verbose:
-                        print("teams are meeting too early in this region", region_num, conferences[team_conference])
-                    return False
-            if game_count >= 2:
+            if self.teams[test_team].seed + seed_num == 17: #first round matchup
+                if self.verbose:
+                    print("teams are meeting too early in this region", region_num, conferences[team_conference])
+                return False
+            if game_count >= 2:     #sweet 16 matchup
                 for seed_set in [[1, 16, 8, 9], [5, 12, 4, 13], [6, 11, 3, 14], [7, 10, 2, 15]]:
                     if self.teams[test_team].seed in seed_set and seed_num in seed_set:
                         if self.verbose:
                             print("teams are meeting too early in this region", region_num, conferences[team_conference])
                         return False
-            if game_count >= 3:
+            if game_count >= 3:     #elite 8 matchup
                 for seed_set in [[1, 16, 8, 9, 5, 12, 4, 13], [6, 11, 3, 14, 7, 10, 2, 15]]:
                     if self.teams[test_team].seed in seed_set and seed_num in seed_set:
                         if self.verbose:
@@ -779,6 +697,39 @@ class Scraper:
         if self.verbose:
             print("Placed (" + str(seed_num) + ") " + team + ": region (" + str(region_num) + ")")
 
+    def get_region_scores(self, sorted_teams):
+        scores = list()
+        for region in self.regions:
+            region_score = 0
+            for seed in region:
+                if seed == "score":
+                    continue
+                region_score += sorted_teams.index(region[seed])
+            region["score"] = region_score
+            scores.append(region_score)
+        return scores
+
+    def ensure_region_balance(self, sorted_teams, conferences):
+        scores = self.get_region_scores(sorted_teams)
+        bad_perms = list()
+        while max(scores) > min(scores) + 5:
+            print("have to rearrange regions, one is too strong/weak")
+            if 4 not in self.regions[0]:
+                #couldn't find one that worked. eh. we tried.
+                self.save_and_print_perm(4, bad_perms[0], sites)
+                break
+            teams_to_fix, sites = self.delete_and_save_seed(4)
+            bad_perms.append(tuple(teams_to_fix))
+            for perm in permutations(teams_to_fix):
+                if perm in bad_perms:
+                    continue
+                if self.check_perm(conferences, perm, 4, "", False):
+                    self.save_and_print_perm(4, perm, sites)
+                    break
+            scores = self.get_region_scores(sorted_teams)
+        for region in self.regions:
+            del region["score"]
+
     def build_bracket(self):
         self.regions = [dict(), dict(), dict(), dict()]
         region_num_to_name = dict()
@@ -799,6 +750,9 @@ class Scraper:
         sorted_teams = sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True)
         team_index = 0
         while team_index < len(sorted_teams):
+            #once all the top-four seeds are placed, make sure the regions are reasonably equal
+            if team_index == 16:
+                self.ensure_region_balance(sorted_teams, conferences)
             team = sorted_teams[team_index]
             team_conference = self.teams[team].conference
             for_play_in = False

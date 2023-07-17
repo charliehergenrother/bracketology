@@ -24,8 +24,9 @@ class Team:
         self.auto_bid = False
         self.at_large_bid = False
     
-    def fill_data(self, conf, net, kp, bpi, sag, kpi, sor, netsos, ncsos, gms):
+    def fill_data(self, conf, net, kp, bpi, sag, kpi, sor, netsos, ncsos, gms, to):
         self.conference = conf
+        self.team_out = to
         self.NET = net
         self.KenPom = kp
         self.BPI = bpi

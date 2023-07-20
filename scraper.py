@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import date
-from team import Team
+from team import Team, SELECTION_SUNDAYS
 from game import Game
 from itertools import permutations
 import os
@@ -25,17 +25,17 @@ AUTO_MAX = 32
 
 #WEIGHTS: MUST ADD TO 1
 LOSS_WEIGHT = 0.09
-NET_WEIGHT = 0.125
-POWER_WEIGHT = 0.11
+NET_WEIGHT = 0.11
+POWER_WEIGHT = 0.13
 Q1_WEIGHT = 0.24
 Q2_WEIGHT = 0.08
-Q3_WEIGHT = 0.02
+Q3_WEIGHT = 0.015
 Q4_WEIGHT = 0.015
 ROAD_WEIGHT = 0.06
 NEUTRAL_WEIGHT = 0.035
 TOP_10_WEIGHT = 0.07
-TOP_25_WEIGHT = 0.065
-SOS_WEIGHT = 0.03
+TOP_25_WEIGHT = 0.055
+SOS_WEIGHT = 0.04
 NONCON_SOS_WEIGHT = 0.015
 AWFUL_LOSS_WEIGHT = 0.015
 BAD_LOSS_WEIGHT = 0.03
@@ -150,7 +150,7 @@ class Scraper:
                     team_obj = json.loads(f.read())
                 games = set()
                 for game in team_obj["games"]:
-                    games.add(Game(game["opponent"], game["location"], game["opp_NET"], game["team_score"], game["opp_score"]))
+                    games.add(Game(game["opponent"], game["location"], game["opp_NET"], game["team_score"], game["opp_score"], game["date"]))
                 curr_team = Team()
                 curr_team.fill_data(team_obj["conference"], team_obj["NET"], team_obj["KenPom"], team_obj["BPI"],
                         team_obj["Sagarin"], team_obj["KPI"], team_obj["SOR"], team_obj["NET_SOS"], \
@@ -166,7 +166,7 @@ class Scraper:
         if self.verbose:
             print("Scraping", team)
         self.teams[team] = Team()
-        self.teams[team].scrape_data(team_url)
+        self.teams[team].scrape_data(team_url, YEAR)
         f = open(datadir + team + ".json", "w+")
         f.write(json.dumps(self.teams[team], cls=ComplexEncoder))
         f.close()
@@ -251,7 +251,10 @@ class Scraper:
     def get_Q4_score(self, team):
         if self.verbose:
             print("Quadrant 4", team.get_derived_pct(4))
-        team.Q4_score = Q4_WEIGHT*(team.get_derived_pct(4)-0.95)/0.05
+        if team.get_derived_pct(4) >= 0.95:
+            team.Q4_score = Q4_WEIGHT*(team.get_derived_pct(4)-0.95)/0.05
+        else:   #limit how bad multiple Q4 losses can hurt you
+            team.Q4_score = Q4_WEIGHT*(team.get_derived_pct(4)-0.95)/0.3
         return team.Q4_score
 
     #calculate score for a team's road wins (scale: 1.000 = 5, 0.000 = 0)
@@ -272,15 +275,21 @@ class Scraper:
 
     #calculate score for a team's neutral court wins (scale: 1.000 = 5, 0.000 = 0)
         #sliding scale. #1-#50: full win. #51-#99: decreases win count by 0.02 for each rank down.
+        #also, sliding penalty for conference tournament games. this is done for accuracy, not cause I like it.
     #param team: Team object to calculate score for
     def get_neutral_score(self, team):
         good_neutral_wins = 0
         for game in team.games:
             if game.margin > 0 and game.location == "N":
+                conf_tourn_multiplier = 1
+                date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                if date_month == 3:
+                    if date_num > SELECTION_SUNDAYS[YEAR] - 7:
+                        conf_tourn_multiplier = (SELECTION_SUNDAYS[YEAR] - date_num)/7
                 if game.opp_NET <= 50:
-                    good_neutral_wins += 1
+                    good_neutral_wins += conf_tourn_multiplier * 1
                 elif game.opp_NET <= 100:
-                    good_neutral_wins += (100 - game.opp_NET)/50
+                    good_neutral_wins += conf_tourn_multiplier * (100 - game.opp_NET)/50
         if self.verbose:
             print("neutral wins", good_neutral_wins)
         team.neutral_score = NEUTRAL_WEIGHT*good_neutral_wins/5
@@ -288,15 +297,21 @@ class Scraper:
 
     #calculate score for a team's top 10 wins (scale: 1.000 = 3, 0.000 = 0)
         #sliding scale. #1-#5: full win. #6-#14: decreases win count by 0.1 for each rank down.
+        #also, sliding penalty for conference tournament games. this is done for accuracy, not cause I like it.
     #param team: Team object to calculate score for
     def get_top10_score(self, team):
         top_10_wins = 0
         for game in team.games:
             if game.margin > 0:
+                conf_tourn_multiplier = 1
+                date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                if date_month == 3:
+                    if date_num > SELECTION_SUNDAYS[YEAR] - 7:
+                        conf_tourn_multiplier = (SELECTION_SUNDAYS[YEAR] - date_num)/7
                 if game.opp_NET <= 5:
-                    top_10_wins += 1
+                    top_10_wins += conf_tourn_multiplier * 1
                 elif game.opp_NET <= 15:
-                    top_10_wins += (15 - game.opp_NET)/10
+                    top_10_wins += conf_tourn_multiplier * (15 - game.opp_NET)/10
         if self.verbose:
             print("top 10 wins", top_10_wins)
         team.top10_score = TOP_10_WEIGHT*top_10_wins/5
@@ -309,21 +324,26 @@ class Scraper:
         top_25_wins = 0
         for game in team.games:
             if game.margin > 0:
+                conf_tourn_multiplier = 1
+                date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                if date_month == 3:
+                    if date_num > SELECTION_SUNDAYS[YEAR] - 7:
+                        conf_tourn_multiplier = (SELECTION_SUNDAYS[YEAR] - date_num)/7
                 if game.location == "H":
                     if game.opp_NET <= 10:
-                        top_25_wins += 1
+                        top_25_wins += conf_tourn_multiplier * 1
                     elif game.opp_NET <= 20:
-                        top_25_wins += (20 - game.opp_NET)/10
+                        top_25_wins += conf_tourn_multiplier * (20 - game.opp_NET)/10
                 elif game.location == "N":
                     if game.opp_NET <= 20:
-                        top_25_wins += 1
+                        top_25_wins += conf_tourn_multiplier * 1
                     elif game.opp_NET <= 30:
-                        top_25_wins += (30 - game.opp_NET)/10
+                        top_25_wins += conf_tourn_multiplier * (30 - game.opp_NET)/10
                 elif game.location == "A":
                     if game.opp_NET <= 35:
-                        top_25_wins += 1
+                        top_25_wins += conf_tourn_multiplier * 1
                     elif game.opp_NET <= 45:
-                        top_25_wins += (45 - game.opp_NET)/10
+                        top_25_wins += conf_tourn_multiplier * (45 - game.opp_NET)/10
         if self.verbose:
             print("top 25 wins", top_25_wins)
         team.top25_score = TOP_25_WEIGHT*top_25_wins/5
@@ -342,7 +362,10 @@ class Scraper:
     def get_NCSOS_score(self, team):
         if self.verbose:
             print("Noncon SOS", team.noncon_SOS)
-        team.NCSOS_score = NONCON_SOS_WEIGHT*(151 - team.noncon_SOS)/150
+        if team.noncon_SOS > 151:
+            team.NCSOS_score = NONCON_SOS_WEIGHT*(151 - team.noncon_SOS)/150
+        else:   #limit how bad a really bad noncon schedule can hurt you
+            team.NCSOS_score = NONCON_SOS_WEIGHT*(151 - team.noncon_SOS)/450
         return team.NCSOS_score
 
     #calculate score for a team's awful (NET > 200) losses (scale: 1.000 = 0, 0.000 = 1)

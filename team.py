@@ -4,6 +4,8 @@ from game import Game
 import requests
 import sys
 
+SELECTION_SUNDAYS = {"2023": 12, "2022": 13, "2021": 14}
+
 class Team:
 
     def reprJSON(self):
@@ -37,7 +39,7 @@ class Team:
         self.noncon_SOS = ncsos
         self.games = gms
 
-    def scrape_data(self, url):
+    def scrape_data(self, url, year):
         team_page = requests.get(url)
         if team_page.status_code != 200:
             print("team problem!", url)
@@ -132,7 +134,7 @@ class Team:
                 game_line = 0
                 continue
             if game_line == 1:
-                curr_game = Game("", "", 0, 0, 0)
+                curr_game = Game("", "", 0, 0, 0, "")
                 curr_game.opp_NET = int(line[line.find(">")+1:line.find("</div>")])
                 game_line += 1
                 continue
@@ -154,8 +156,9 @@ class Team:
                 continue
             if game_line == 6:
                 date = line[line.find(">")+1:line.find("</div>")]
-                # cut out NCAA tournament games. 2023 Selection Sunday: 3/12
-                if int(date[1]) != 4 and (int(date[1]) != 3 or int(date[3:]) <= 13):
+                curr_game.date = date
+                # cut out NCAA tournament games.
+                if int(date[1]) != 4 and (int(date[1]) != 3 or int(date[3:]) <= SELECTION_SUNDAYS[year]):
                     self.games.add(curr_game)
                 game_line = 0
                 continue

@@ -19,9 +19,11 @@ TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/" + YEAR + "/team
 SCRAPE_DATE_FILE = "scrapedate.txt"
 TEAM_COORDINATES_FILE = "team_locations.txt"
 SITE_COORDINATES_FILE = "site_locations_" + YEAR + ".txt"
+SPECIAL_TEAMS_FILE = "special_teams_" + YEAR + ".json"
+AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
 
-AT_LARGE_MAX = 36
-AUTO_MAX = 32
+AUTO_MAX = AUTO_MAXES[YEAR]
+AT_LARGE_MAX = 68 - AUTO_MAX
 
 #WEIGHTS: MUST ADD TO 1
 LOSS_WEIGHT = 0.09
@@ -40,7 +42,6 @@ NONCON_SOS_WEIGHT = 0.015
 AWFUL_LOSS_WEIGHT = 0.015
 BAD_LOSS_WEIGHT = 0.03
 
-team_dict = dict()
 reverse_team_dict = dict()
 first_weekend_rankings = dict()
 region_rankings = dict()
@@ -114,6 +115,16 @@ class Scraper:
             region_rankings[team] = regional_order
         f.close()
 
+    def load_special_teams(self):
+        with open(SPECIAL_TEAMS_FILE) as f:
+            special_teams = json.loads(f.read())
+        global eliminated_teams
+        global ineligible_teams
+        global conference_winners
+        eliminated_teams = special_teams["eliminated_teams"]
+        ineligible_teams = special_teams["ineligible_teams"]
+        conference_winners = special_teams["conference_winners"]
+
     #grab the data from where it's stored on disk or scrape it if necessary
     #param datadir: directory where the data is stored
     #param should_scrape: If true, scrape the data from the web if we haven't yet today
@@ -135,6 +146,7 @@ class Scraper:
         else:
             self.do_load(datadir)
         self.load_coordinates()
+        self.load_special_teams()
 
     #load the data that has previously been scraped
     #param datadir: directory where the data is stored
@@ -157,7 +169,6 @@ class Scraper:
                         team_obj["noncon_SOS"], games, team_obj["team_out"])
                 self.teams[filename[:filename.find(".json")]] = curr_team
                 team = filename[:filename.find(".json")]
-                team_dict[team] = curr_team.team_out
                 reverse_team_dict[curr_team.team_out] = team
     
     #scrape one team's data
@@ -170,7 +181,6 @@ class Scraper:
         f = open(datadir + team + ".json", "w+")
         f.write(json.dumps(self.teams[team], cls=ComplexEncoder))
         f.close()
-        team_dict[team] = self.teams[team].team_out
         reverse_team_dict[self.teams[team].team_out] = team
 
     #scrape college basketball data from the web
@@ -420,15 +430,6 @@ class Scraper:
             score += self.get_bad_loss_score(self.teams[team])
             self.teams[team].score = score
 
-    #return a nicer-looking representation of a team's name, if one is present
-    #param team: string containing a team's name
-    def get_team_out(self, team):
-        if team in team_dict:
-            return team_dict[team]
-        if "/" in team:
-            return self.get_team_out(team.split("/")[0]) + "/" + self.get_team_out(team.split("/")[1])
-        return team
-
     #seed and print the field, including a bubble section
     def print_results(self):
         curr_seed = 1
@@ -436,16 +437,14 @@ class Scraper:
         curr_seed_max = 4
         at_large_bids = 0
         auto_bids = 0
-        confs_used = set()
         bubble_count = 0
         bubble_string = "BUBBLE: \n"
-        eliminated_teams = []
-        ineligible_teams = []   #Arizona was ineligible in 2021
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             at_large_bid = False
             if team in ineligible_teams:
                 continue
-            if team in eliminated_teams or self.teams[team].conference in confs_used:
+            if team in eliminated_teams or (self.teams[team].conference in conference_winners and \
+                    conference_winners[self.teams[team].conference] != team):
                 #teams under .500 are ineligible for at-large bids
                 if self.teams[team].record_pct < 0.5:
                     continue
@@ -454,31 +453,33 @@ class Scraper:
                     at_large_bid = True
                     self.teams[team].at_large_bid = True
                 elif bubble_count < 4:
-                    bubble_string += (self.get_team_out(team) + " - First Four Out\n")
+                    bubble_string += (self.teams[team].team_out + " - First Four Out\n")
                     bubble_count += 1
                     continue
                 elif bubble_count < 8:
-                    bubble_string += (self.get_team_out(team) + " - Next Four Out\n")
+                    bubble_string += (self.teams[team].team_out + " - Next Four Out\n")
                     bubble_count += 1
                     continue
                 else:
                     continue
             else:
-                if team not in eliminated_teams and auto_bids < AUTO_MAX:
+                if conference_winners[self.teams[team].conference] == team or \
+                        (self.teams[team].conference not in conference_winners and \
+                        team not in eliminated_teams and auto_bids < AUTO_MAX):
                     auto_bids += 1
-                    confs_used.add(self.teams[team].conference)
+                    conference_winners[self.teams[team].conference] = team
                     self.teams[team].auto_bid = True
                 else:
                     continue
-            print("(" + str(curr_seed) + ") " + self.get_team_out(team), end="")
+            print("(" + str(curr_seed) + ") " + self.teams[team].team_out, end="")
             if at_large_bid:
                 if at_large_bids >= AT_LARGE_MAX - 3:
                     if at_large_bids % 2 == 1:
                         curr_seed_max += 1
-                    bubble_string += (self.get_team_out(team) + " - Last Four In\n")
+                    bubble_string += (self.teams[team].team_out + " - Last Four In\n")
                     print(" - Last Four In")
                 elif at_large_bids >= AT_LARGE_MAX - 7:
-                    bubble_string += (self.get_team_out(team) + " - Last Four Byes\n")
+                    bubble_string += (self.teams[team].team_out + " - Last Four Byes\n")
                     print(" - Last Four Byes")
                 else:
                     print()
@@ -502,6 +503,13 @@ class Scraper:
                 l.append(len(self.regions[coords[0]][seed]) + len(self.regions[coords[1]][seed]))
         return 30 + max(l)
 
+    #return a nicer-looking representation of a team's name, if one is present
+    #param team: string containing a team's name
+    def get_team_out(self, team):
+        if "/" in team:
+            return self.teams[team.split("/")[0]].team_out + "/" + self.teams[team.split("/")[1]].team_out
+        return self.teams[team].team_out
+    
     #print a line of the bracket
     #param max_len: maximum length of a line containing two teams
     #param region_1: 0 or 3, corresponding to one of the regions on the left side of the bracket
@@ -1034,7 +1042,7 @@ class Scraper:
                     "), Bad losses(" + str(round(BAD_LOSS_WEIGHT, 5)) + \
                     "), Total Score\n")
             for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
-                line = self.get_team_out(team) + "," + \
+                line = self.teams[team].team_out + "," + \
                         str(round(self.teams[team].loss_score, 5)) + "," + \
                         str(round(self.teams[team].NET_score, 5)) + "," + \
                         str(round(self.teams[team].power_score, 5)) + "," + \

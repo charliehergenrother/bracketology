@@ -11,7 +11,7 @@ import requests
 import math
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
-TEAM_COORDINATES_FILE = "team_locations.txt"
+TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 
 #WEIGHTS: MUST ADD TO 1
 LOSS_WEIGHT = 0.09
@@ -64,7 +64,7 @@ class Scraper:
         first_sites = dict()
         regional_sites = dict()
         self.first_weekend_sites = list()
-        SITE_COORDINATES_FILE = "site_locations_" + YEAR + ".txt"
+        SITE_COORDINATES_FILE = "lib/site_locations_" + YEAR + ".txt"
         f = open(SITE_COORDINATES_FILE, "r")
         for count, line in enumerate(f):
             site_name = line[:line.find("[")]
@@ -107,7 +107,7 @@ class Scraper:
         f.close()
 
     def load_special_teams(self):
-        SPECIAL_TEAMS_FILE = "special_teams_" + YEAR + ".json"
+        SPECIAL_TEAMS_FILE = "lib/special_teams_" + YEAR + ".json"
         with open(SPECIAL_TEAMS_FILE) as f:
             special_teams = json.loads(f.read())
         global eliminated_teams
@@ -165,7 +165,7 @@ class Scraper:
                 reverse_team_dict[curr_team.team_out] = team
     
     #scrape one team's data
-    def scrape_team_data(self, team):
+    def scrape_team_data(self, team, datadir):
         TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/" + YEAR + "/team-net-sheet?team="
         team_url = TEAM_NITTY_URL_START + team
         self.teams[team] = Team()
@@ -194,7 +194,7 @@ class Scraper:
             if "blue-black" in line:
                 team_start_index = line.find("schedule/")+9
                 team = line[team_start_index:line.find('">', team_start_index)]
-                self.scrape_team_data(team)
+                self.scrape_team_data(team, datadir)
                 print("scraped", team + "!")
 
         f = open(datadir + SCRAPE_DATE_FILE, "w+")
@@ -868,6 +868,7 @@ class Scraper:
                             conferences, sites)
         return save_team, region_num
 
+    #recurse up the seed list, trying to brute-force a fix to fit all of the teams in the bracket
     def try_reorganize(self, team, seed_num, reorg_seed, teams_to_fix, conferences, sites):
         tries = 0
         curr_reorg_max = 5  #lowest-numbered seed to try reorganizing
@@ -905,13 +906,12 @@ class Scraper:
                         if self.check_perm(conferences, perm, seed_num, team, for_play_in):
                             self.save_and_print_perm(seed_num, perm, sites)
                             region_num = perm.index(team)
-                            return True, save_team
+                            return True, []
             if not found_perm:
                 #if nothing worked, save the most recent successful try for this seed and recurse up the seed list
                 #this also allows us to loop back through the seeds and have different results
                 self.save_and_print_perm(reorg_seed, perm_to_save, other_sites)
-
-
+        return True, []
 
     #actually place a team in the bracket after finding a spot for it
     #param region_num: region in which to place the team
@@ -944,6 +944,7 @@ class Scraper:
         team_list.append(team)
         seed_list.append(seed_num)
 
+    #choose a regional site that a #1 seed will play at
     def choose_regional(self, team, seed_num, region_rankings, region_name_to_num, region_num_to_name, region_num):
         for site_name in region_rankings[team]:
             if site_name not in region_name_to_num:
@@ -952,7 +953,8 @@ class Scraper:
                 if self.verbose:
                     print(site_name, "chosen for", region_num)
                 break
-                
+    
+    #choose a first weekend site that a #1-#4 seed will be the highest-seeded team at
     def choose_first_weekend(self, team, region_num, seed_num, first_weekend_rankings):
         for site_name in first_weekend_rankings[team]:
             if site_name in self.first_weekend_sites:

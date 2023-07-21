@@ -10,20 +10,8 @@ import json
 import requests
 import math
 
-YEAR = "2021"
-
-NITTY_GRITTY_URL = "https://www.warrennolan.com/basketball/" + YEAR + "/net-nitty"
-NET_URL = "https://www.warrennolan.com/basketball/" + YEAR + "/net"
-TEAM_URL_START = "https://www.warrennolan.com"
-TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/" + YEAR + "/team-net-sheet?team="
 SCRAPE_DATE_FILE = "scrapedate.txt"
 TEAM_COORDINATES_FILE = "team_locations.txt"
-SITE_COORDINATES_FILE = "site_locations_" + YEAR + ".txt"
-SPECIAL_TEAMS_FILE = "special_teams_" + YEAR + ".json"
-AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
-
-AUTO_MAX = AUTO_MAXES[YEAR]
-AT_LARGE_MAX = 68 - AUTO_MAX
 
 #WEIGHTS: MUST ADD TO 1
 LOSS_WEIGHT = 0.09
@@ -71,10 +59,12 @@ class Scraper:
             print("ya dun goofed with your weights")
             sys.exit()
 
+    #load in team and site coordinates, compute every team's site preferences (closest as the crow flies)
     def load_coordinates(self):
         first_sites = dict()
         regional_sites = dict()
         self.first_weekend_sites = list()
+        SITE_COORDINATES_FILE = "site_locations_" + YEAR + ".txt"
         f = open(SITE_COORDINATES_FILE, "r")
         for count, line in enumerate(f):
             site_name = line[:line.find("[")]
@@ -82,6 +72,7 @@ class Scraper:
             longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
             if count < 8:
                 first_sites[site_name] = [latitude, longitude]
+                #two pods at each site, so append each site twice
                 self.first_weekend_sites.append(site_name)
                 self.first_weekend_sites.append(site_name)
             else:
@@ -116,6 +107,7 @@ class Scraper:
         f.close()
 
     def load_special_teams(self):
+        SPECIAL_TEAMS_FILE = "special_teams_" + YEAR + ".json"
         with open(SPECIAL_TEAMS_FILE) as f:
             special_teams = json.loads(f.read())
         global eliminated_teams
@@ -161,8 +153,9 @@ class Scraper:
                 with open(os.path.join(root, filename)) as f:
                     team_obj = json.loads(f.read())
                 games = set()
-                for game in team_obj["games"]:
-                    games.add(Game(game["opponent"], game["location"], game["opp_NET"], game["team_score"], game["opp_score"], game["date"]))
+                for game_obj in team_obj["games"]:
+                    games.add(Game(game_obj["opponent"], game_obj["location"], game_obj["opp_NET"], \
+                        game_obj["team_score"], game_obj["opp_score"], game_obj["date"]))
                 curr_team = Team()
                 curr_team.fill_data(team_obj["conference"], team_obj["NET"], team_obj["KenPom"], team_obj["BPI"],
                         team_obj["Sagarin"], team_obj["KPI"], team_obj["SOR"], team_obj["NET_SOS"], \
@@ -173,9 +166,8 @@ class Scraper:
     
     #scrape one team's data
     def scrape_team_data(self, team):
+        TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/" + YEAR + "/team-net-sheet?team="
         team_url = TEAM_NITTY_URL_START + team
-        if self.verbose:
-            print("Scraping", team)
         self.teams[team] = Team()
         self.teams[team].scrape_data(team_url, YEAR)
         f = open(datadir + team + ".json", "w+")
@@ -187,7 +179,8 @@ class Scraper:
     #param datadir: directory where the data should be stored
     #param today_date: MM-DD representation of today's date. written to file to record that scraping took place
     def do_scrape(self, datadir, today_date):
-        net_page = requests.get(NET_URL)
+        net_url = "https://www.warrennolan.com/basketball/" + YEAR + "/net"
+        net_page = requests.get(net_url)
         if net_page.status_code != 200:
             print('scraper problem!')
             sys.exit()
@@ -439,6 +432,10 @@ class Scraper:
         auto_bids = 0
         bubble_count = 0
         bubble_string = "BUBBLE: \n"
+        AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
+        AUTO_MAX = AUTO_MAXES[YEAR]
+        AT_LARGE_MAX = 68 - AUTO_MAX
+        
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             at_large_bid = False
             if team in ineligible_teams:
@@ -463,9 +460,11 @@ class Scraper:
                 else:
                     continue
             else:
-                if conference_winners[self.teams[team].conference] == team or \
+                if self.teams[team].conference != "Independent" and \
+                        ((self.teams[team].conference in conference_winners and \
+                        conference_winners[self.teams[team].conference] == team) or \
                         (self.teams[team].conference not in conference_winners and \
-                        team not in eliminated_teams and auto_bids < AUTO_MAX):
+                        team not in eliminated_teams and auto_bids < AUTO_MAX)):
                     auto_bids += 1
                     conference_winners[self.teams[team].conference] = team
                     self.teams[team].auto_bid = True
@@ -558,9 +557,9 @@ class Scraper:
     def check_rules(self, conferences, team, region_num, seed_num, for_play_in=False):
         if team == "":
             return True
-        if "/" in team:
-            return (self.check_rules(conferences, team.split("/")[0], region_num, seed_num, True) and \
-                    self.check_rules(conferences, team.split("/")[1], region_num, seed_num, True))
+        if for_play_in:
+            return (self.check_rules(conferences, team.split("/")[0], region_num, seed_num, False) and \
+                    self.check_rules(conferences, team.split("/")[1], region_num, seed_num, False))
         team_conference = self.teams[team].conference
 
         #the top four teams from a conference must be in different regions if they are on the top four seed lines
@@ -573,31 +572,6 @@ class Scraper:
                         print("multiple top four teams can't all go here", region_num, conferences[team_conference])
                     return False
 
-        #unless there are nine teams from a conference, three teams from that conference cannot be in the same region
-        #if len(conferences[team_conference]) < 9 and not for_play_in:
-        #    team_conf_counter = 0
-        #    for test_team in conferences[team_conference]:
-        #        if test_team == team:
-        #            continue
-        #        if self.teams[test_team].region == region_num:
-        #            team_conf_counter += 1
-        #        if team_conf_counter >= 2:
-        #            if self.verbose:
-        #                print("three top eight teams can't all go here", region_num, conferences[team_conference])
-        #            return False
-
-        #unless a conference has 5 teams seeded 1-4, all teams from a conference seeded 1-4 must be in different regions
-        #if len(conferences[team_conference]) < 5 and seed_num <= 4:
-        #    for test_team in conferences[team_conference]:
-        #        if test_team == team:
-        #            continue
-        #        if self.teams[test_team].seed >= 5:
-        #            break
-        #        if self.teams[test_team].region == region_num:
-        #            if self.verbose:
-        #                print("multiple top 4 seed teams can't go here", region_num, conferences[team_conference])
-        #            return False
-        
         #two teams from the same conference cannot meet before the...
             #...regional final (Elite 8) if they've played 3 times
             #...regional semifinal (Sweet 16) if they've played 2 times
@@ -605,7 +579,10 @@ class Scraper:
         for test_team in conferences[team_conference]:
             if test_team == team:
                 continue
-            if self.teams[test_team].region != region_num:
+            try:
+                if self.teams[test_team].region != region_num:
+                    continue
+            except AttributeError:      #there are two teams from this conference in the play-ins
                 continue
             game_count = 0
             for game in self.teams[test_team].games:
@@ -751,7 +728,8 @@ class Scraper:
         scores = self.get_region_scores(sorted_teams)
         bad_perms = list()
         while max(scores) > min(scores) + 5:
-            print("have to rearrange regions, one is too strong/weak")
+            if self.verbose:
+                print("have to rearrange regions, one is too strong/weak")
             if 4 not in self.regions[0]:
                 #couldn't find one that worked. eh. we tried.
                 self.save_and_print_perm(4, bad_perms[0], sites)
@@ -768,19 +746,197 @@ class Scraper:
         for region in self.regions:
             del region["score"]
 
+    #create matchups for the two play-in games. avoid matching up two teams from a conference if possible
+        #param teams: a list of four team names in the play-in
+    def get_play_in_matchups(self, teams):
+        if self.teams[teams[0]].conference == self.teams[teams[1]].conference or \
+            self.teams[teams[2]].conference == self.teams[teams[3]].conference:
+            teams[1], teams[2] = teams[2], teams[1]
+        return [[teams[0], teams[1]], [teams[2], teams[3]]]
+    
+    def place_play_in(self, teams, seeds, region_name_to_num, conferences):
+        matchups = self.get_play_in_matchups(teams)
+        
+        region_order = self.get_region_order(matchups[0][0], seeds[0], region_name_to_num)
+        _, region_num = self.find_team_spot('/'.join(matchups[0]), \
+                self.get_region_num(seeds[0], region_order[0], region_order), seeds[0],\
+                conferences, region_order, True)
+        self.place_team(region_num, seeds[0], '/'.join(matchups[0]))
+
+        region_order = self.get_region_order(matchups[1][0], seeds[2], region_name_to_num)
+        _, region_num = self.find_team_spot('/'.join(matchups[1]), \
+                self.get_region_num(seeds[2], region_order[0], region_order), seeds[2], \
+                conferences, region_order, True)
+        self.place_team(region_num, seeds[2], '/'.join(matchups[1]))
+            
+    def find_team_spot(self, team, region_num, seed_num, conferences, region_order, for_play_in):
+        save_team = ()
+        bad_regions = set()
+        check_switch = False
+        orig_region_num = region_num
+        
+        while not self.check_rules(conferences, team, region_num, seed_num, for_play_in):
+            if len(save_team):
+                return save_team, -1
+            if self.verbose:
+                print('rules failed for', str(region_num))
+            bad_regions.add(region_num)
+            region_num = region_order[(region_order.index(region_num)+1) % 4]
+            if self.verbose:
+                print('edited region to', region_num)
+
+            #find a region that doesn't have this seed in it (or, if switching is on, try to switch that team for current team)
+            while seed_num in self.regions[region_num]:
+                if self.verbose:
+                    print('already this seed in', str(region_num))
+                new_team = self.regions[region_num][seed_num]
+                if "/" in new_team:
+                    new_for_play_in = True
+                else:
+                    new_for_play_in = False
+                if check_switch and self.check_rules(conferences, team, region_num, seed_num, for_play_in) and \
+                        self.check_rules(conferences, new_team, orig_region_num, seed_num, new_for_play_in):
+                    self.regions[orig_region_num][seed_num] = new_team
+                    if new_for_play_in:
+                        self.teams[new_team.split('/')[0]].region = orig_region_num
+                        self.teams[new_team.split('/')[1]].region = orig_region_num
+                    else:
+                        self.teams[new_team].region = orig_region_num
+                    if seed_num < 5:
+                        site = self.first_weekend_num_to_name[region_num][seed_num]
+                        self.first_weekend_num_to_name[orig_region_num][seed_num] = site
+                        del self.first_weekend_num_to_name[region_num][seed_num]
+                        self.first_weekend_name_to_num[site][self.first_weekend_name_to_num[site].index([region_num, seed_num])] = [orig_region_num, seed_num]
+                    if self.verbose:
+                        print("Switched (" + str(seed_num) + ") " + new_team + " to: region (" + str(orig_region_num) + ")")
+                    bad_regions = set()
+                    break
+                bad_regions.add(region_num)
+
+                #if we've tried every region, try something else
+                if len(bad_regions) == 4:
+                    break
+
+                #otherwise, try another region for this team
+                region_num = region_order[(region_order.index(region_num)+1) % 4]
+                if self.verbose:
+                    print('changed region to', region_num)
+
+            #if we haven't tried to switch teams with each other yet, try that
+            if len(bad_regions) == 4 and check_switch == False:
+                check_switch = True
+                if self.verbose:
+                    print('turned switch on')
+                bad_regions = set()
+                region_num = orig_region_num
+                continue
+
+            #if we have tried to switch teams, try every permutation for the current seed
+            if len(bad_regions) == 4 and check_switch == True:
+                if self.verbose:
+                    print("can't make just one switch to fix this. Let's try to brute force it.")
+                reorg_seed = seed_num
+                teams_to_fix, sites = self.delete_and_save_seed(seed_num)
+                if team not in teams_to_fix:
+                    teams_to_fix[-1] = team
+                self.teams[team].region = -1
+                self.teams[team].seed = -1
+                found_perm = False
+                for perm in permutations(teams_to_fix):
+                    if self.check_perm(conferences, perm, seed_num, team, for_play_in):
+                        self.save_and_print_perm(seed_num, perm, sites)
+                        region_num = perm.index(team)
+                        found_perm = True
+                        break
+
+                #if no permutation works, work backward through the seed list trying every permutation of those seeds as well as ours
+                tries = 0
+                curr_reorg_max = 5  #lowest-numbered seed to try reorganizing
+                while not found_perm:
+                    reorg_seed -= 1
+                    if reorg_seed < curr_reorg_max:
+                        #run through it 100 times
+                        tries += 1
+                        if tries <= 100:
+                            #don't want to mess up region positioning if possible
+                            if self.verbose:
+                                print("Retrying from beginning")
+                            reorg_seed = seed_num - 1
+                        else:
+                            tries = 0
+                            curr_reorg_max -= 1     #can start trying to reorganize with lower seeds as we go
+                            if curr_reorg_max < 3:
+                                #if self.verbose:
+                                save_team = [team, seed_num]
+                                if self.verbose:
+                                    print("moving", team, "down from", seed_num)
+                                teams_to_fix.remove(team)
+                                for fixing_count, fixing_team in enumerate(teams_to_fix):
+                                    if fixing_team:
+                                        self.regions[fixing_count][seed_num] = fixing_team
+                                #TODO: you can't just put these teams back wherever, hoebag. try permutations
+                                return save_team, -1
+                    if self.verbose:
+                        print('trying the next seed up', reorg_seed)
+                    other_teams_to_fix, other_sites = self.delete_and_save_seed(reorg_seed)
+                    perm_to_save = list()
+                    for other_perm in permutations(other_teams_to_fix):
+                        if self.check_perm(conferences, other_perm, reorg_seed):
+                            self.save_and_print_perm(reorg_seed, other_perm, other_sites)
+                            perm_to_save = other_perm
+                            for perm in permutations(teams_to_fix):
+                                if self.check_perm(conferences, perm, seed_num, team, for_play_in):
+                                    self.save_and_print_perm(seed_num, perm, sites)
+                                    region_num = perm.index(team)
+                                    found_perm = True
+                                    break
+                            if found_perm:
+                                break
+                    if not found_perm:
+                        #if nothing worked, save the most recent successful try for this seed and recurse up the seed list
+                        #this also allows us to loop back through the seeds and have different results
+                        self.save_and_print_perm(reorg_seed, perm_to_save, other_sites)
+        return save_team, region_num
+
+    def place_team(self, region_num, seed_num, team):
+        self.regions[region_num][seed_num] = team
+        if "/" in team:
+            self.teams[team.split('/')[0]].region = region_num
+            self.teams[team.split('/')[0]].seed = seed_num
+            self.teams[team.split('/')[1]].region = region_num
+            self.teams[team.split('/')[1]].seed = seed_num
+        else:
+            self.teams[team].region = region_num
+            self.teams[team].seed = seed_num
+
+    def get_region_num(self, seed_num, region_num, region_order):
+        while seed_num in self.regions[region_num]:
+            if seed_num > 1:
+                region_num = region_order[region_order.index(region_num)+1]
+            else:
+                region_num = (region_num + 1) % 4
+        return region_num
+
     def build_bracket(self):
         self.regions = [dict(), dict(), dict(), dict()]
         region_num_to_name = dict()
         region_name_to_num = dict()
+        region_order = list()
         self.first_weekend_num_to_name = [dict(), dict(), dict(), dict()]
         self.first_weekend_name_to_num = dict()
         auto_count = 0
         at_large_count = 0
         bracket_pos = 1
         conferences = dict()
-        play_in_teams = list()
+        at_large_play_in_teams = list()
+        at_large_play_in_seeds = list()
+        auto_play_in_teams = list()
+        auto_play_in_seeds = list()
         play_in_pos = ()
         save_team = list()
+        AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
+        AUTO_MAX = AUTO_MAXES[YEAR]
+        AT_LARGE_MAX = 68 - AUTO_MAX
 
         #traverse seed list, placing teams in bracket as you go
         sorted_teams = sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True)
@@ -813,201 +969,78 @@ class Scraper:
                 save_team = list()
                 team_index -= 1
             print("placing", team, seed_num)
-            #get a region that is empty for the current seed
-            while seed_num in self.regions[region_num]:
-                if self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1):
-                    break
-                elif self.teams[team].auto_bid and (auto_count == AUTO_MAX - 3 or auto_count == AUTO_MAX - 1):
-                    break
-                if seed_num > 1:
-                    region_num = region_order[region_order.index(region_num)+1]
-                else:
-                    region_num = (region_num + 1) % 4
-            region = self.regions[region_num]
-
-            #if this is the second team in a play in game, just place them. (TODO: fix)
-            if self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 4 or at_large_count == AT_LARGE_MAX - 2):
-                for_play_in = True
-            if self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1):
-                region_num = play_in_pos[0]
-                seed = play_in_pos[1]
+            
+            if self.teams[team].at_large_bid and at_large_count >= AT_LARGE_MAX - 4:
+                at_large_play_in_teams.append(team)
+                at_large_play_in_seeds.append(seed_num)
+                #TODO: make sure the pos is correct after placing play in teams
+                if at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1:
+                    bracket_pos += 1
+                if at_large_count == AT_LARGE_MAX - 1:
+                    self.place_play_in(at_large_play_in_teams, at_large_play_in_seeds, \
+                            region_name_to_num, conferences)
                 at_large_count += 1
-                self.place_and_print_play_in_team(self.regions[play_in_pos[0]], play_in_pos[1], team, region_num)
-            elif self.teams[team].auto_bid and (auto_count == AUTO_MAX - 3 or auto_count == AUTO_MAX - 1):
-                region_num = play_in_pos[0]
-                seed = play_in_pos[1]
+                team_index += 1
+                continue
+            elif self.teams[team].auto_bid and auto_count >= AUTO_MAX - 4:
+                auto_play_in_teams.append(team)
+                auto_play_in_seeds.append(seed_num)
+                if auto_count == AUTO_MAX - 3 or auto_count == AUTO_MAX - 1:
+                    bracket_pos += 1
+                if auto_count == AUTO_MAX - 1:
+                    self.place_play_in(auto_play_in_teams, auto_play_in_seeds, \
+                            region_name_to_num, conferences)
                 auto_count += 1
-                self.place_and_print_play_in_team(self.regions[play_in_pos[0]], play_in_pos[1], team, region_num)
+                team_index += 1
+                continue
 
-            #if this is a normal bid, follow the rules to place the team in the bracket
-            else:
-                bad_regions = set()
-                check_switch = False
-                orig_region_num = region_num
-                
-                #if this placement didn't pass the rules, try more options
-                while not self.check_rules(conferences, team, region_num, seed_num, for_play_in):
-                    if len(save_team):
+            #get a region that is empty for the current seed
+            region_num = self.get_region_num(seed_num, region_num, region_order)
+
+            #follow the rules to place the team in the bracket
+            save_team, region_num = self.find_team_spot(team, region_num, seed_num, conferences, region_order, for_play_in)
+            self.place_team(region_num, seed_num, team)
+            if self.teams[team].auto_bid:
+                auto_count += 1
+            if self.teams[team].at_large_bid:
+                at_large_count += 1
+
+            #if this placement didn't pass the rules, try more options
+            #TODO: wtf man
+            if len(save_team) and save_team[0] == team:
+                for region in self.regions:
+                    if seed_num in region and region[seed_num] == team:
+                        del region[seed_num]
+                team_index += 1
+                continue
+            #if we're placing the top seed, pick a regional site for it
+            if seed_num == 1:
+                for site_name in region_rankings[team]:
+                    if site_name not in region_name_to_num:
+                        region_name_to_num[site_name] = region_num
+                        region_num_to_name[region_num] = site_name
+                        if self.verbose:
+                            print(site_name, "chosen for", region_num)
                         break
-                    if self.verbose:
-                        print('rules failed for', str(region_num))
-                    bad_regions.add(region_num)
-                    region_num = region_order[(region_order.index(region_num)+1) % 4]
-                    if self.verbose:
-                        print('edited region to', region_num)
 
-                    #find a region that doesn't have this seed in it (or, if switching is on, try to switch that team for current team)
-                    while seed_num in self.regions[region_num]:
+            #if we're placing a top-4 seed, pick a first weekend site for it
+            if seed_num < 5:
+                for site_name in first_weekend_rankings[team]:
+                    if site_name in self.first_weekend_sites:
                         if self.verbose:
-                            print('already this seed in', str(region_num))
-                        new_team = self.regions[region_num][seed_num]
-                        if check_switch and self.check_rules(conferences, team, region_num, seed_num, for_play_in) and \
-                                self.check_rules(conferences, new_team, orig_region_num, seed_num):
-                            self.regions[orig_region_num][seed_num] = new_team
-                            self.teams[new_team].region = orig_region_num
-                            if seed_num < 5:
-                                site = self.first_weekend_num_to_name[region_num][seed_num]
-                                self.first_weekend_num_to_name[orig_region_num][seed_num] = site
-                                del self.first_weekend_num_to_name[region_num][seed_num]
-                                self.first_weekend_name_to_num[site][self.first_weekend_name_to_num[site].index([region_num, seed_num])] = [orig_region_num, seed_num]
-                            if self.verbose:
-                                print("Switched (" + str(seed_num) + ") " + new_team + " to: region (" + str(orig_region_num) + ")")
-                            bad_regions = set()
-                            break
-                        bad_regions.add(region_num)
+                            print("Choosing", site_name)
+                        self.first_weekend_sites.remove(site_name)
+                        if site_name in self.first_weekend_name_to_num:
+                            self.first_weekend_name_to_num[site_name].append([region_num, seed_num])
+                        else:
+                            self.first_weekend_name_to_num[site_name] = [[region_num, seed_num]]
+                        self.first_weekend_num_to_name[region_num][seed_num] = site_name
+                        break
+            if self.verbose:
+                print("Placed (" + str(seed_num) + ") " + team + ": region (" + str(region_num) + ") " + region_num_to_name[region_num])
+                print()
 
-                        #if we've tried every region, try something else
-                        if len(bad_regions) == 4:
-                            break
-
-                        #otherwise, try another region for this team
-                        region_num = region_order[(region_order.index(region_num)+1) % 4]
-                        if self.verbose:
-                            print('changed region to', region_num)
-
-                    #if we haven't tried to switch teams with each other yet, try that
-                    if len(bad_regions) == 4 and check_switch == False:
-                        check_switch = True
-                        if self.verbose:
-                            print('turned switch on')
-                        bad_regions = set()
-                        region_num = orig_region_num
-                        continue
-
-                    #if we have tried to switch teams, try every permutation for the current seed
-                    if len(bad_regions) == 4 and check_switch == True:
-                        if self.verbose:
-                            print("can't make just one switch to fix this. Let's try to brute force it.")
-                        reorg_seed = seed_num
-                        teams_to_fix, sites = self.delete_and_save_seed(seed_num)
-                        if team not in teams_to_fix:
-                            teams_to_fix[-1] = team
-                        self.teams[team].region = -1
-                        self.teams[team].seed = -1
-                        found_perm = False
-                        for perm in permutations(teams_to_fix):
-                            if self.check_perm(conferences, perm, seed_num, team, for_play_in):
-                                self.save_and_print_perm(seed_num, perm, sites)
-                                region_num = perm.index(team)
-                                found_perm = True
-                                break
-
-                        #if no permutation works, work backward through the seed list trying every permutation of those seeds as well as ours
-                        tries = 0
-                        curr_reorg_max = 5  #lowest-numbered seed to try reorganizing
-                        while not found_perm:
-                            reorg_seed -= 1
-                            if reorg_seed < curr_reorg_max:
-                                #run through it 100 times
-                                tries += 1
-                                if tries <= 100:
-                                    #don't want to mess up region positioning if possible
-                                    if self.verbose:
-                                        print("Retrying from beginning")
-                                    reorg_seed = seed_num - 1
-                                else:
-                                    tries = 0
-                                    curr_reorg_max -= 1     #can start trying to reorganize with lower seeds as we go
-                                    if curr_reorg_max < 3:
-                                        #if self.verbose:
-                                        print("moving", team, "down from", seed_num)
-                                        save_team = [team, seed_num]
-                                        if self.verbose:
-                                            print("saving", save_team)
-                                        teams_to_fix.remove(team)
-                                        for fixing_count, fixing_team in enumerate(teams_to_fix):
-                                            if fixing_team:
-                                                self.regions[fixing_count][seed_num] = fixing_team
-                                        break
-                            if self.verbose:
-                                print('trying the next seed up', reorg_seed)
-                            other_teams_to_fix, other_sites = self.delete_and_save_seed(reorg_seed)
-                            perm_to_save = list()
-                            for other_perm in permutations(other_teams_to_fix):
-                                if self.check_perm(conferences, other_perm, reorg_seed):
-                                    self.save_and_print_perm(reorg_seed, other_perm, other_sites)
-                                    perm_to_save = other_perm
-                                    for perm in permutations(teams_to_fix):
-                                        if self.check_perm(conferences, perm, seed_num, team, for_play_in):
-                                            self.save_and_print_perm(seed_num, perm, sites)
-                                            region_num = perm.index(team)
-                                            found_perm = True
-                                            break
-                                    if found_perm:
-                                        break
-                            if not found_perm:
-                                #if nothing worked, save the most recent successful try for this seed and recurse up the seed list
-                                #this also allows us to loop back through the seeds and have different results
-                                self.save_and_print_perm(reorg_seed, perm_to_save, other_sites)
-                
-                if len(save_team) and save_team[0] == team:
-                    for bigolregion in self.regions:
-                        if seed_num in bigolregion and bigolregion[seed_num] == team:
-                            del bigolregion[seed_num]
-                    team_index += 1
-                    continue
-                self.regions[region_num][seed_num] = team
-                self.teams[team].region = region_num
-                self.teams[team].seed = seed_num
-                if self.teams[team].auto_bid:
-                    auto_count += 1
-                if self.teams[team].at_large_bid:
-                    at_large_count += 1
-
-                #if we're placing the top seed, pick a regional site for it
-                if seed_num == 1:
-                    for site_name in region_rankings[team]:
-                        if site_name not in region_name_to_num:
-                            region_name_to_num[site_name] = region_num
-                            region_num_to_name[region_num] = site_name
-                            if self.verbose:
-                                print(site_name, "chosen for", region_num)
-                            break
-
-                #if we're placing a top-4 seed, pick a first weekend site for it
-                if seed_num < 5:
-                    for site_name in first_weekend_rankings[team]:
-                        if site_name in self.first_weekend_sites:
-                            if self.verbose:
-                                print("Choosing", site_name)
-                            self.first_weekend_sites.remove(site_name)
-                            if site_name in self.first_weekend_name_to_num:
-                                self.first_weekend_name_to_num[site_name].append([region_num, seed_num])
-                            else:
-                                self.first_weekend_name_to_num[site_name] = [[region_num, seed_num]]
-                            self.first_weekend_num_to_name[region_num][seed_num] = site_name
-                            break
-                if self.verbose:
-                    print("Placed (" + str(seed_num) + ") " + team + ": region (" + str(region_num) + ") " + region_num_to_name[region_num])
-                    print()
-
-            #if we just placed the first play in-team in a matchup, save its coordinates to put the other team there
-            if (self.teams[team].at_large_bid and (at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1)) or \
-                    (self.teams[team].auto_bid and (auto_count == AUTO_MAX - 3 or auto_count == AUTO_MAX - 1)):
-                play_in_pos = (region_num, seed_num)
-            else:
-                bracket_pos += 1
-                play_in_pos = (0, 0)
+            bracket_pos += 1
 
             if not len(save_team) or team != save_team[0]:
                 team_index += 1
@@ -1063,18 +1096,22 @@ class Scraper:
 
 #accept command line arguments
 def process_args():
+    global YEAR
+    YEAR = "2023"
     argindex = 1
     outputfile = ""
-    datadir = "data/" + YEAR + "/"
+    datadir = ""
     should_scrape = True
     force_scrape = False
     verbose = False
+
     while argindex < len(sys.argv):
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-d datadir] [-o outputfile] [-e|-s] [-v]")
+            print("./scraper.py [-h] [-y year] [-d datadir] [-o outputfile] [-e|-s] [-v]")
             print("     -h: print this help message")
+            print("     -y: make a bracket for this year. 2021-present only")
             print("     -d: set a directory where the scraped data will live")
             print("     -o: set a csv filename where the final ranking will live")
             print("     -e: override the scraping and use data currently stored")
@@ -1095,7 +1132,14 @@ def process_args():
             verbose = True
         elif sys.argv[argindex] == '-s':
             force_scrape = True
+        elif sys.argv[argindex] == '-y':
+            if int(sys.argv[argindex + 1]) < 2021:
+                print("year not supported, sorry. Try 2021-present.")
+                sys.exit()
+            YEAR = sys.argv[argindex + 1]
         argindex += 1
+    if datadir == "":
+        datadir = "data/" + YEAR + "/"
     return outputfile, datadir, should_scrape, force_scrape, verbose
 
 if __name__ == '__main__':

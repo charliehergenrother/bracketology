@@ -14,19 +14,19 @@ SCRAPE_DATE_FILE = "scrapedate.txt"
 TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 
 #WEIGHTS: MUST ADD TO 1
-LOSS_WEIGHT = 0.09
+LOSS_WEIGHT = 0.12
 NET_WEIGHT = 0.11
-POWER_WEIGHT = 0.13
-Q1_WEIGHT = 0.24
-Q2_WEIGHT = 0.08
+POWER_WEIGHT = 0.12
+Q1_WEIGHT = 0.23
+Q2_WEIGHT = 0.07
 Q3_WEIGHT = 0.015
-Q4_WEIGHT = 0.015
+Q4_WEIGHT = 0.025
 ROAD_WEIGHT = 0.06
-NEUTRAL_WEIGHT = 0.035
+NEUTRAL_WEIGHT = 0.04
 TOP_10_WEIGHT = 0.07
-TOP_25_WEIGHT = 0.055
-SOS_WEIGHT = 0.04
-NONCON_SOS_WEIGHT = 0.015
+TOP_25_WEIGHT = 0.04
+SOS_WEIGHT = 0.025
+NONCON_SOS_WEIGHT = 0.03
 AWFUL_LOSS_WEIGHT = 0.015
 BAD_LOSS_WEIGHT = 0.03
 
@@ -473,7 +473,7 @@ class Scraper:
             print("(" + str(curr_seed) + ") " + self.teams[team].team_out, end="")
             if at_large_bid:
                 if at_large_bids >= AT_LARGE_MAX - 3:
-                    if at_large_bids % 2 == 1:
+                    if (AT_LARGE_MAX - at_large_bids) % 2 == 1:
                         curr_seed_max += 1
                     bubble_string += (self.teams[team].team_out + " - Last Four In\n")
                     print(" - Last Four In")

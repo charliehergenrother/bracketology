@@ -1,0 +1,10 @@
+__pycache__/
+data/
+excelPath
+lib/2023weights.txt
+lib/actual_results_2021.txt
+lib/actual_results_2022.txt
+lib/actual_results_2023.txt
+lib/oldweights.txt
+lib/special_teams_base.json
+testweights.txt

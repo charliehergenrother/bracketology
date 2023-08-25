@@ -9,30 +9,32 @@ import sys
 import json
 import requests
 import math
+import random
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
 TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 
-#WEIGHTS: MUST ADD TO 1
-LOSS_WEIGHT = 0.12
-NET_WEIGHT = 0.11
-POWER_WEIGHT = 0.12
-Q1_WEIGHT = 0.23
-Q2_WEIGHT = 0.07
-Q3_WEIGHT = 0.015
-Q4_WEIGHT = 0.025
-ROAD_WEIGHT = 0.06
-NEUTRAL_WEIGHT = 0.04
-TOP_10_WEIGHT = 0.07
-TOP_25_WEIGHT = 0.04
-SOS_WEIGHT = 0.025
-NONCON_SOS_WEIGHT = 0.03
-AWFUL_LOSS_WEIGHT = 0.015
-BAD_LOSS_WEIGHT = 0.03
-
+WEIGHTS = {
+        "LOSS_WEIGHT": 0,
+        "NET_WEIGHT": 0,
+        "POWER_WEIGHT": 0,
+        "Q1_WEIGHT": 0,
+        "Q2_WEIGHT": 0,
+        "Q3_WEIGHT": 0,
+        "Q4_WEIGHT": 0,
+        "ROAD_WEIGHT": 0,
+        "NEUTRAL_WEIGHT": 0,
+        "TOP_10_WEIGHT": 0,
+        "TOP_25_WEIGHT": 0,
+        "SOS_WEIGHT": 0,
+        "NONCON_SOS_WEIGHT": 0,
+        "AWFUL_LOSS_WEIGHT": 0,
+        "BAD_LOSS_WEIGHT": 0
+}
 reverse_team_dict = dict()
 first_weekend_rankings = dict()
 region_rankings = dict()
+AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
 
 #class to turn the Team and Game objects into jsonifyable strings
 class ComplexEncoder(json.JSONEncoder):
@@ -53,7 +55,23 @@ class Scraper:
 
     #sanity check to make sure my weights are added correctly
     def sum_weights(self):
-        s = round(sum([round(LOSS_WEIGHT, 5), round(NET_WEIGHT, 5), round(POWER_WEIGHT, 5), round(Q1_WEIGHT, 5), round(Q2_WEIGHT, 5), round(Q3_WEIGHT, 5), round(Q4_WEIGHT, 5), round(ROAD_WEIGHT, 5), round(NEUTRAL_WEIGHT, 5), round(TOP_10_WEIGHT, 5), round(TOP_25_WEIGHT, 5), round(SOS_WEIGHT, 5), round(NONCON_SOS_WEIGHT, 5), round(AWFUL_LOSS_WEIGHT, 5), round(BAD_LOSS_WEIGHT, 5)]), 5)
+        s = round(sum([\
+            round(WEIGHTS["LOSS_WEIGHT"], 5), \
+            round(WEIGHTS["NET_WEIGHT"], 5), \
+            round(WEIGHTS["POWER_WEIGHT"], 5), \
+            round(WEIGHTS["Q1_WEIGHT"], 5), \
+            round(WEIGHTS["Q2_WEIGHT"], 5), \
+            round(WEIGHTS["Q3_WEIGHT"], 5), \
+            round(WEIGHTS["Q4_WEIGHT"], 5), \
+            round(WEIGHTS["ROAD_WEIGHT"], 5), \
+            round(WEIGHTS["NEUTRAL_WEIGHT"], 5), \
+            round(WEIGHTS["TOP_10_WEIGHT"], 5), \
+            round(WEIGHTS["TOP_25_WEIGHT"], 5), \
+            round(WEIGHTS["SOS_WEIGHT"], 5), \
+            round(WEIGHTS["NONCON_SOS_WEIGHT"], 5), \
+            round(WEIGHTS["AWFUL_LOSS_WEIGHT"], 5), \
+            round(WEIGHTS["BAD_LOSS_WEIGHT"], 5) \
+            ]), 5)
         if s != 1:
             print(s)
             print("ya dun goofed with your weights")
@@ -108,7 +126,7 @@ class Scraper:
 
     def load_special_teams(self):
         SPECIAL_TEAMS_FILE = "lib/special_teams_" + YEAR + ".json"
-        with open(SPECIAL_TEAMS_FILE) as f:
+        with open(SPECIAL_TEAMS_FILE, "r") as f:
             special_teams = json.loads(f.read())
         global eliminated_teams
         global ineligible_teams
@@ -150,7 +168,7 @@ class Scraper:
                     continue
                 if self.verbose:
                     print("Loading", filename)
-                with open(os.path.join(root, filename)) as f:
+                with open(os.path.join(root, filename), "r") as f:
                     team_obj = json.loads(f.read())
                 games = set()
                 for game_obj in team_obj["games"]:
@@ -206,225 +224,280 @@ class Scraper:
     def get_loss_score(self, team):
         if self.verbose:
             print("losses", int(team.record.split("-")[1]))
-        team.loss_score = LOSS_WEIGHT*(10-int(team.record.split("-")[1]))/10
-        return team.loss_score
+        try:
+            return team.loss_score
+        except AttributeError:
+            team.loss_score = (10-int(team.record.split("-")[1]))/10
+            return team.loss_score
 
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
     #param team: Team object to calculate score for
     def get_NET_score(self, team):
         if self.verbose:
             print("NET", team.NET)
-        team.NET_score = NET_WEIGHT*(-math.log(team.NET + 19, 2)/2 + 3.12)#(60-team.NET)/59
-        return team.NET_score
+        try:
+            return team.NET_score
+        except AttributeError:
+            team.NET_score = (-math.log(team.NET + 19, 2)/2 + 3.12)#(60-team.NET)/59
+            return team.NET_score
 
     #calculate score for a team's predictive rating (scale: 1.000 = 1, 0.000 = 60)
     #param team: Team object to calculate score for
     def get_power_score(self, team):
         if self.verbose:
             print("power", team.predictive)
-        team.power_score = POWER_WEIGHT*(-math.log(team.predictive + 19, 2)/2 + 3.12)#(60-team.predictive)/59
-        return team.power_score
+        try:
+            return team.power_score
+        except AttributeError:
+            team.power_score = (-math.log(team.predictive + 19, 2)/2 + 3.12)#(60-team.predictive)/59
+            return team.power_score
 
     #calculate score for a team's record in quadrant 1 (scale: 0.800 = 1, 0.000 = .000)
     #param team: Team object to calculate score for
     def get_Q1_score(self, team):
         if self.verbose:
             print("Quadrant 1", team.get_derived_pct(1))
-        team.Q1_score = Q1_WEIGHT*(team.get_derived_pct(1)/0.8)
-        return team.Q1_score
+        try:
+            return team.Q1_score
+        except AttributeError:
+            team.Q1_score = (team.get_derived_pct(1)/0.8)
+            return team.Q1_score
 
     #calculate score for a team's record in quadrant 2 (scale: 1.000 = 1, 0.000 = .500)
     #param team: Team object to calculate score for
     def get_Q2_score(self, team):
         if self.verbose:
             print("Quadrant 2", team.get_derived_pct(2))
-        team.Q2_score = Q2_WEIGHT*(team.get_derived_pct(2)-0.5)/0.5
-        return team.Q2_score
+        try:
+            return team.Q2_score
+        except AttributeError:
+            team.Q2_score = (team.get_derived_pct(2)-0.5)/0.5
+            return team.Q2_score
 
     #calculate score for a team's record in quadrant 3 (scale: 1.000 = 1, 0.000 = .800)
     #param team: Team object to calculate score for
     def get_Q3_score(self, team):
         if self.verbose:
             print("Quadrant 3", team.get_derived_pct(3))
-        team.Q3_score = Q3_WEIGHT*(team.get_derived_pct(3)-0.8)/0.2
-        return team.Q3_score
+        try:
+            return team.Q3_score
+        except AttributeError:
+            team.Q3_score = (team.get_derived_pct(3)-0.8)/0.2
+            return team.Q3_score
 
     #calculate score for a team's record in quadrant 4 (scale: 1.000 = 1, 0.000 = .950)
     #param team: Team object to calculate score for
     def get_Q4_score(self, team):
         if self.verbose:
             print("Quadrant 4", team.get_derived_pct(4))
-        if team.get_derived_pct(4) >= 0.95:
-            team.Q4_score = Q4_WEIGHT*(team.get_derived_pct(4)-0.95)/0.05
-        else:   #limit how bad multiple Q4 losses can hurt you
-            team.Q4_score = Q4_WEIGHT*(team.get_derived_pct(4)-0.95)/0.3
-        return team.Q4_score
+        try:
+            return team.Q4_score
+        except AttributeError:
+            if team.get_derived_pct(4) >= 0.95:
+                team.Q4_score = (team.get_derived_pct(4)-0.95)/0.05
+            else:   #limit how bad multiple Q4 losses can hurt you
+                team.Q4_score = (team.get_derived_pct(4)-0.95)/0.3
+            return team.Q4_score
 
     #calculate score for a team's road wins (scale: 1.000 = 5, 0.000 = 0)
         #sliding scale. #1-#50: full win. #51-#99: decreases win count by 0.02 for each rank down.
     #param team: Team object to calculate score for
     def get_road_score(self, team):
-        good_road_wins = 0
-        for game in team.games:
-            if game.margin > 0 and game.location == "A":
-                if game.opp_NET <= 50:
-                    good_road_wins += 1
-                elif game.opp_NET <= 100:
-                    good_road_wins += (100 - game.opp_NET)/50
-        if self.verbose:
-            print("road wins", good_road_wins)
-        team.road_score = ROAD_WEIGHT*good_road_wins/5
-        return team.road_score
+        try:
+            return team.road_score
+        except AttributeError:
+            good_road_wins = 0
+            for game in team.games:
+                if game.margin > 0 and game.location == "A":
+                    if game.opp_NET <= 50:
+                        good_road_wins += 1
+                    elif game.opp_NET <= 100:
+                        good_road_wins += (100 - game.opp_NET)/50
+            if self.verbose:
+                print("road wins", good_road_wins)
+            team.road_score = good_road_wins/5
+            return team.road_score
 
     #calculate score for a team's neutral court wins (scale: 1.000 = 5, 0.000 = 0)
         #sliding scale. #1-#50: full win. #51-#99: decreases win count by 0.02 for each rank down.
         #also, sliding penalty for conference tournament games. this is done for accuracy, not cause I like it.
     #param team: Team object to calculate score for
     def get_neutral_score(self, team):
-        good_neutral_wins = 0
-        for game in team.games:
-            if game.margin > 0 and game.location == "N":
-                conf_tourn_multiplier = 1
-                date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
-                if date_month == 3:
-                    if date_num > SELECTION_SUNDAYS[YEAR] - 7:
-                        conf_tourn_multiplier = (SELECTION_SUNDAYS[YEAR] - date_num)/7
-                if game.opp_NET <= 50:
-                    good_neutral_wins += conf_tourn_multiplier * 1
-                elif game.opp_NET <= 100:
-                    good_neutral_wins += conf_tourn_multiplier * (100 - game.opp_NET)/50
-        if self.verbose:
-            print("neutral wins", good_neutral_wins)
-        team.neutral_score = NEUTRAL_WEIGHT*good_neutral_wins/5
-        return team.neutral_score
+        try:
+            return team.neutral_score
+        except AttributeError:
+            good_neutral_wins = 0
+            for game in team.games:
+                if game.margin > 0 and game.location == "N":
+                    conf_tourn_multiplier = 1
+                    date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                    if date_month == 3:
+                        if date_num > SELECTION_SUNDAYS[YEAR] - 7:
+                            conf_tourn_multiplier = (SELECTION_SUNDAYS[YEAR] - date_num)/7
+                    if game.opp_NET <= 50:
+                        good_neutral_wins += conf_tourn_multiplier * 1
+                    elif game.opp_NET <= 100:
+                        good_neutral_wins += conf_tourn_multiplier * (100 - game.opp_NET)/50
+            if self.verbose:
+                print("neutral wins", good_neutral_wins)
+            team.neutral_score = good_neutral_wins/5
+            return team.neutral_score
 
     #calculate score for a team's top 10 wins (scale: 1.000 = 3, 0.000 = 0)
         #sliding scale. #1-#5: full win. #6-#14: decreases win count by 0.1 for each rank down.
         #also, sliding penalty for conference tournament games. this is done for accuracy, not cause I like it.
     #param team: Team object to calculate score for
     def get_top10_score(self, team):
-        top_10_wins = 0
-        for game in team.games:
-            if game.margin > 0:
-                conf_tourn_multiplier = 1
-                date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
-                if date_month == 3:
-                    if date_num > SELECTION_SUNDAYS[YEAR] - 7:
-                        conf_tourn_multiplier = (SELECTION_SUNDAYS[YEAR] - date_num)/7
-                if game.opp_NET <= 5:
-                    top_10_wins += conf_tourn_multiplier * 1
-                elif game.opp_NET <= 15:
-                    top_10_wins += conf_tourn_multiplier * (15 - game.opp_NET)/10
-        if self.verbose:
-            print("top 10 wins", top_10_wins)
-        team.top10_score = TOP_10_WEIGHT*top_10_wins/5
-        return team.top10_score
+        try:
+            return team.top10_score
+        except AttributeError:
+            top_10_wins = 0
+            for game in team.games:
+                if game.margin > 0:
+                    conf_tourn_multiplier = 1
+                    date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                    if date_month == 3:
+                        if date_num > SELECTION_SUNDAYS[YEAR] - 7:
+                            conf_tourn_multiplier = (SELECTION_SUNDAYS[YEAR] - date_num)/7
+                    if game.opp_NET <= 5:
+                        top_10_wins += conf_tourn_multiplier * 1
+                    elif game.opp_NET <= 15:
+                        top_10_wins += conf_tourn_multiplier * (15 - game.opp_NET)/10
+            if self.verbose:
+                print("top 10 wins", top_10_wins)
+            team.top10_score = top_10_wins/5
+            return team.top10_score
 
     #calculate score for a team's top 25 wins (Quad 1A) (scale: 1.000 = 5, 0.000 = 0)
         #sliding scale. Quad 1A is 1-15 (H), 1-25 (N), 1-40 (A). win count decreases by 0.1 for each rank down when within 5 of end.
     #param team: Team object to calculate score for
     def get_top25_score(self, team):
-        top_25_wins = 0
-        for game in team.games:
-            if game.margin > 0:
-                conf_tourn_multiplier = 1
-                date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
-                if date_month == 3:
-                    if date_num > SELECTION_SUNDAYS[YEAR] - 7:
-                        conf_tourn_multiplier = (SELECTION_SUNDAYS[YEAR] - date_num)/7
-                if game.location == "H":
-                    if game.opp_NET <= 10:
-                        top_25_wins += conf_tourn_multiplier * 1
-                    elif game.opp_NET <= 20:
-                        top_25_wins += conf_tourn_multiplier * (20 - game.opp_NET)/10
-                elif game.location == "N":
-                    if game.opp_NET <= 20:
-                        top_25_wins += conf_tourn_multiplier * 1
-                    elif game.opp_NET <= 30:
-                        top_25_wins += conf_tourn_multiplier * (30 - game.opp_NET)/10
-                elif game.location == "A":
-                    if game.opp_NET <= 35:
-                        top_25_wins += conf_tourn_multiplier * 1
-                    elif game.opp_NET <= 45:
-                        top_25_wins += conf_tourn_multiplier * (45 - game.opp_NET)/10
-        if self.verbose:
-            print("top 25 wins", top_25_wins)
-        team.top25_score = TOP_25_WEIGHT*top_25_wins/5
-        return team.top25_score
+        try:
+            return team.top25_score
+        except AttributeError:
+            top_25_wins = 0
+            for game in team.games:
+                if game.margin > 0:
+                    conf_tourn_multiplier = 1
+                    date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                    if date_month == 3:
+                        if date_num > SELECTION_SUNDAYS[YEAR] - 7:
+                            conf_tourn_multiplier = (SELECTION_SUNDAYS[YEAR] - date_num)/7
+                    if game.location == "H":
+                        if game.opp_NET <= 10:
+                            top_25_wins += conf_tourn_multiplier * 1
+                        elif game.opp_NET <= 20:
+                            top_25_wins += conf_tourn_multiplier * (20 - game.opp_NET)/10
+                    elif game.location == "N":
+                        if game.opp_NET <= 20:
+                            top_25_wins += conf_tourn_multiplier * 1
+                        elif game.opp_NET <= 30:
+                            top_25_wins += conf_tourn_multiplier * (30 - game.opp_NET)/10
+                    elif game.location == "A":
+                        if game.opp_NET <= 35:
+                            top_25_wins += conf_tourn_multiplier * 1
+                        elif game.opp_NET <= 45:
+                            top_25_wins += conf_tourn_multiplier * (45 - game.opp_NET)/10
+            if self.verbose:
+                print("top 25 wins", top_25_wins)
+            team.top25_score = top_25_wins/5
+            return team.top25_score
 
     #calculate score for a team's strength of schedule (scale: 1.000 = 1, 0.000 = 150)
     #param team: Team object to calculate score for
     def get_SOS_score(self, team):
-        if self.verbose:
-            print("SOS", team.NET_SOS)
-        team.SOS_score = SOS_WEIGHT*(151 - team.NET_SOS)/150
-        return team.SOS_score
+        try:
+            return team.SOS_score
+        except AttributeError:
+            if self.verbose:
+                print("SOS", team.NET_SOS)
+            team.SOS_score = (151 - team.NET_SOS)/150
+            return team.SOS_score
 
     #calculate score for a team's nonconference strength of schedule (scale: 1.000 = 1, 0.000 = 150)
     #param team: Team object to calculate score for
     def get_NCSOS_score(self, team):
-        if self.verbose:
-            print("Noncon SOS", team.noncon_SOS)
-        if team.noncon_SOS > 151:
-            team.NCSOS_score = NONCON_SOS_WEIGHT*(151 - team.noncon_SOS)/150
-        else:   #limit how bad a really bad noncon schedule can hurt you
-            team.NCSOS_score = NONCON_SOS_WEIGHT*(151 - team.noncon_SOS)/450
-        return team.NCSOS_score
+        try:
+            return team.NCSOS_score
+        except AttributeError:
+            if self.verbose:
+                print("Noncon SOS", team.noncon_SOS)
+            if team.noncon_SOS > 151:
+                team.NCSOS_score = (151 - team.noncon_SOS)/150
+            else:   #limit how bad a really bad noncon schedule can hurt you
+                team.NCSOS_score = (151 - team.noncon_SOS)/450
+            return team.NCSOS_score
 
     #calculate score for a team's awful (NET > 200) losses (scale: 1.000 = 0, 0.000 = 1)
         #sliding scale. loss count increases by 0.02 for each rank down past 175. #225 and worse are a full loss.
     #param team: Team object to calculate score for
     def get_awful_loss_score(self,team):
-        awful_losses = 0
-        for game in team.games:
-            if game.margin < 0:
-                if game.opp_NET > 225:
-                    awful_losses += 1
-                elif game.opp_NET > 175:
-                    awful_losses += (game.opp_NET - 175)/50
-        if self.verbose:
-            print("awful losses", awful_losses)
-        team.awful_loss_score = AWFUL_LOSS_WEIGHT*(1 - awful_losses)
-        return team.awful_loss_score
+        try:
+            return team.awful_loss_score
+        except AttributeError:
+            awful_losses = 0
+            for game in team.games:
+                if game.margin < 0:
+                    if game.opp_NET > 225:
+                        awful_losses += 1
+                    elif game.opp_NET > 175:
+                        awful_losses += (game.opp_NET - 175)/50
+            if self.verbose:
+                print("awful losses", awful_losses)
+            team.awful_loss_score = (1 - awful_losses)
+            return team.awful_loss_score
 
     #calculate score for a team's bad (sub-Q1) losses (scale: 1.000 = 0, 0.000 = 5)
     #param team: Team object to calculate score for
     def get_bad_loss_score(self,team):
-        bad_losses = 0
-        bad_losses += int(team.Q2_record.split("-")[1])
-        bad_losses += int(team.Q3_record.split("-")[1])
-        bad_losses += int(team.Q4_record.split("-")[1])
-        if self.verbose:
-            print("bad losses", bad_losses)
-        team.bad_loss_score = BAD_LOSS_WEIGHT*(1 - bad_losses/5)
-        return team.bad_loss_score
+        try:
+            return team.bad_loss_score
+        except AttributeError:
+            bad_losses = 0
+            bad_losses += int(team.Q2_record.split("-")[1])
+            bad_losses += int(team.Q3_record.split("-")[1])
+            bad_losses += int(team.Q4_record.split("-")[1])
+            if self.verbose:
+                print("bad losses", bad_losses)
+            team.bad_loss_score = (1 - bad_losses/5)
+            return team.bad_loss_score
+    
+    def get_weights(self, weightfile):
+        with open(weightfile, "r") as f:
+            for line in f.read().split("\n"):
+                if not line:
+                    continue
+                weight_name, weight_val = line.split(" = ")
+                WEIGHTS[weight_name] = float(weight_val)
 
     #calculate resume score for all teams
-    def build_scores(self):
-        self.sum_weights()
+    def build_scores(self, weightfile):
+        if weightfile:
+            self.get_weights(weightfile)
+            self.sum_weights()
         for team in self.teams:
             if self.verbose:
                 print("Scoring", team)
             score = 0
-            score += self.get_loss_score(self.teams[team])
-            score += self.get_NET_score(self.teams[team])
-            score += self.get_power_score(self.teams[team])
-            score += self.get_Q1_score(self.teams[team])
-            score += self.get_Q2_score(self.teams[team])
-            score += self.get_Q3_score(self.teams[team])
-            score += self.get_Q4_score(self.teams[team])
-            score += self.get_road_score(self.teams[team])
-            score += self.get_neutral_score(self.teams[team])
-            score += self.get_top10_score(self.teams[team])
-            score += self.get_top25_score(self.teams[team])
-            score += self.get_SOS_score(self.teams[team])
-            score += self.get_NCSOS_score(self.teams[team])
-            score += self.get_awful_loss_score(self.teams[team])
-            score += self.get_bad_loss_score(self.teams[team])
+            score += WEIGHTS["LOSS_WEIGHT"]*self.get_loss_score(self.teams[team])
+            score += WEIGHTS["NET_WEIGHT"]*self.get_NET_score(self.teams[team])
+            score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team])
+            score += WEIGHTS["Q1_WEIGHT"]*self.get_Q1_score(self.teams[team])
+            score += WEIGHTS["Q2_WEIGHT"]*self.get_Q2_score(self.teams[team])
+            score += WEIGHTS["Q3_WEIGHT"]*self.get_Q3_score(self.teams[team])
+            score += WEIGHTS["Q4_WEIGHT"]*self.get_Q4_score(self.teams[team])
+            score += WEIGHTS["ROAD_WEIGHT"]*self.get_road_score(self.teams[team])
+            score += WEIGHTS["NEUTRAL_WEIGHT"]*self.get_neutral_score(self.teams[team])
+            score += WEIGHTS["TOP_10_WEIGHT"]*self.get_top10_score(self.teams[team])
+            score += WEIGHTS["TOP_25_WEIGHT"]*self.get_top25_score(self.teams[team])
+            score += WEIGHTS["SOS_WEIGHT"]*self.get_SOS_score(self.teams[team])
+            score += WEIGHTS["NONCON_SOS_WEIGHT"]*self.get_NCSOS_score(self.teams[team])
+            score += WEIGHTS["AWFUL_LOSS_WEIGHT"]*self.get_awful_loss_score(self.teams[team])
+            score += WEIGHTS["BAD_LOSS_WEIGHT"]*self.get_bad_loss_score(self.teams[team])
             self.teams[team].score = score
 
     #seed and print the field, including a bubble section
-    def select_seed_and_print_field(self):
+    def select_seed_and_print_field(self, do_print):
         curr_seed = 1
         num_curr_seed = 1
         curr_seed_max = 4
@@ -432,7 +505,6 @@ class Scraper:
         auto_bids = 0
         bubble_count = 0
         bubble_string = "BUBBLE: \n"
-        AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
         AUTO_MAX = AUTO_MAXES[YEAR]
         AT_LARGE_MAX = 68 - AUTO_MAX
         
@@ -470,19 +542,22 @@ class Scraper:
                     self.teams[team].auto_bid = True
                 else:
                     continue
-            print("(" + str(curr_seed) + ") " + self.teams[team].team_out, end="")
+            if do_print:
+                print("(" + str(curr_seed) + ") " + self.teams[team].team_out, end="")
             if at_large_bid:
                 if at_large_bids >= AT_LARGE_MAX - 3:
                     if (AT_LARGE_MAX - at_large_bids) % 2 == 1:
                         curr_seed_max += 1
-                    bubble_string += (self.teams[team].team_out + " - Last Four In\n")
-                    print(" - Last Four In")
+                    if do_print:
+                        bubble_string += (self.teams[team].team_out + " - Last Four In\n")
+                        print(" - Last Four In")
                 elif at_large_bids >= AT_LARGE_MAX - 7:
-                    bubble_string += (self.teams[team].team_out + " - Last Four Byes\n")
-                    print(" - Last Four Byes")
-                else:
+                    if do_print:
+                        bubble_string += (self.teams[team].team_out + " - Last Four Byes\n")
+                        print(" - Last Four Byes")
+                elif do_print:
                     print()
-            else:
+            elif do_print:
                 print("*")
             if num_curr_seed == curr_seed_max and curr_seed < 16:
                 curr_seed += 1
@@ -490,9 +565,9 @@ class Scraper:
                 curr_seed_max = 4
             else:
                 num_curr_seed += 1
-
-        print()
-        print(bubble_string)
+        if do_print:
+            print()
+            print(bubble_string)
 
     #get the maximum length of a line when printing the bracket (two team names + their seeds + some buffer)
     def get_max_len(self):
@@ -852,8 +927,13 @@ class Scraper:
                 teams_to_fix, sites = self.delete_and_save_seed(seed_num)
                 if team not in teams_to_fix:
                     teams_to_fix[-1] = team
-                self.teams[team].region = -1
-                self.teams[team].seed = -1
+                if "/" in team:
+                    for play_in_team in team.split("/"):
+                        self.teams[play_in_team].region = -1
+                        self.teams[play_in_team].seed = -1
+                else:
+                    self.teams[team].region = -1
+                    self.teams[team].seed = -1
                 found_perm = False
                 for perm in permutations(teams_to_fix):
                     if self.check_perm(conferences, perm, seed_num, team, for_play_in):
@@ -872,6 +952,7 @@ class Scraper:
     def try_reorganize(self, team, seed_num, reorg_seed, teams_to_fix, conferences, sites):
         tries = 0
         curr_reorg_max = 5  #lowest-numbered seed to try reorganizing
+        found_perm = False
         while not found_perm:
             reorg_seed -= 1
             if reorg_seed < curr_reorg_max:
@@ -903,7 +984,7 @@ class Scraper:
                     self.save_and_print_perm(reorg_seed, other_perm, other_sites)
                     perm_to_save = other_perm
                     for perm in permutations(teams_to_fix):
-                        if self.check_perm(conferences, perm, seed_num, team, for_play_in):
+                        if self.check_perm(conferences, perm, seed_num, team):
                             self.save_and_print_perm(seed_num, perm, sites)
                             region_num = perm.index(team)
                             return True, []
@@ -985,7 +1066,6 @@ class Scraper:
         auto_play_in_teams = list()
         auto_play_in_seeds = list()
         save_team = list()
-        AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
         AUTO_MAX = AUTO_MAXES[YEAR]
         AT_LARGE_MAX = 68 - AUTO_MAX
 
@@ -1093,6 +1173,143 @@ class Scraper:
             for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
                 self.print_line(max_len, region_nums[0], region_nums[1], seed_num, region_num_to_name)
 
+    def load_results(self):
+        actual_results = dict()
+        counter = 0
+        with open("lib/actual_results_" + YEAR + ".txt") as f:
+            for line in f.read().split("\n"):
+                if not line:
+                    break
+                actual_results[line] = counter
+                counter += 1
+        self.actual_max = counter
+        return actual_results
+
+    def run_tracker(self, weights_collected):
+        if len(weights_collected) == 1:
+            print("~~~~~~~~~~")
+        elif len(weights_collected) == 2:
+            print("~~~~~~~~")
+        elif len(weights_collected) == 3:
+            print("~~~~~~")
+
+        if len(weights_collected) in [3]:
+            for num in [26, 27]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [25, 26]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [24, 25]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [23, 24]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [22, 23]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [2]:
+            for num in [21, 22]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [20, 21]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [0]:
+            for num in [19, 20]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [18, 19]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [17, 18]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [16, 17]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [15, 16]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [14, 15]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [13, 14]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [12, 13]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [11, 12]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [10, 11]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [9]:
+            for num in [9, 10]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [8, 9]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [7, 8]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [7]:
+            for num in [6, 7]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [11]:
+            for num in [5, 6]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [8]:
+            for num in [4, 5]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [3, 4]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [2, 3]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [4, 5, 10, 12]:
+            for num in [1, 2]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [1, 6, 13, 14]:
+            for num in [0, 1]:
+                self.run_tracker(weights_collected + (num,))
+        else:
+            WEIGHTS["LOSS_WEIGHT"] = weights_collected[0]
+            WEIGHTS["NET_WEIGHT"] = weights_collected[1]
+            WEIGHTS["POWER_WEIGHT"] = weights_collected[2]
+            WEIGHTS["Q1_WEIGHT"] = weights_collected[3]
+            WEIGHTS["Q2_WEIGHT"] = weights_collected[4]
+            WEIGHTS["Q3_WEIGHT"] = weights_collected[5]
+            WEIGHTS["Q4_WEIGHT"] = weights_collected[6]
+            WEIGHTS["ROAD_WEIGHT"] = weights_collected[7]
+            WEIGHTS["NEUTRAL_WEIGHT"] = weights_collected[8]
+            WEIGHTS["TOP_10_WEIGHT"] = weights_collected[9]
+            WEIGHTS["TOP_25_WEIGHT"] = weights_collected[10]
+            WEIGHTS["SOS_WEIGHT"] = weights_collected[11]
+            WEIGHTS["NONCON_SOS_WEIGHT"] = weights_collected[12]
+            WEIGHTS["AWFUL_LOSS_WEIGHT"] = weights_collected[13]
+            WEIGHTS["BAD_LOSS_WEIGHT"] = weights_collected[14]
+            self.build_scores("")
+            self.assess_results(weights_collected)
+
+    def assess_results(self, weights_collected):
+        result_score = 0
+        bid_count = 0
+        actual_count = 0
+        for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
+            if team in ineligible_teams or self.teams[team].record_pct < 0.5:
+                continue
+            try:
+                result_score += abs(bid_count - self.actual_results[team])
+                actual_count += 1
+            except KeyError:
+                pass
+            bid_count += 1
+            if actual_count >= self.actual_max - 2:
+                break
+        self.weight_results[weights_collected] = result_score
+
     #write all team scores for each category to specified file
     def output_scores(self):
         with open(self.outputfile, "w") as f:
@@ -1139,59 +1356,72 @@ def process_args():
     YEAR = "2023"
     argindex = 1
     outputfile = ""
-    datadir = ""
     should_scrape = True
     force_scrape = False
     verbose = False
+    weightfile = "lib/weights.txt"
+    tracker = False
 
     while argindex < len(sys.argv):
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-y year] [-d datadir] [-o outputfile] [-e|-s] [-v]")
+            print("./scraper.py [-h] [-y year] [-w weightfile] [-o outputfile] [-e|-s] [-v]")
             print("     -h: print this help message")
             print("     -y: make a bracket for this year. 2021-present only")
-            print("     -d: set a directory where the scraped data will live")
+            print("     -w: use weights located in this file")
             print("     -o: set a csv filename where the final ranking will live")
             print("     -e: override the scraping and use data currently stored")
             print("     -s: scrape data anew regardless of whether data has been scraped today")
             print("     -v: verbose. Print team resumes and bracketing procedure")
+            print("     -t: tracker mode. Generate weights and test their effectiveness")
             sys.exit()
         elif sys.argv[argindex] == '-o':
             outputfile = sys.argv[argindex + 1]
             argindex += 1
-        elif sys.argv[argindex] == '-d':
-            datadir = sys.argv[argindex + 1]
-            if datadir[-1] != "/":
-                datadir = datadir + ["/"]
-            argindex += 1
         elif sys.argv[argindex] == '-e':
             should_scrape = False
+        elif sys.argv[argindex] == '-t':
+            tracker = True
         elif sys.argv[argindex] == '-v':
             verbose = True
         elif sys.argv[argindex] == '-s':
             force_scrape = True
+        elif sys.argv[argindex] == '-w':
+            weightfile = sys.argv[argindex + 1]
+            argindex += 1
         elif sys.argv[argindex] == '-y':
             if int(sys.argv[argindex + 1]) < 2021:
                 print("year not supported, sorry. Try 2021-present.")
                 sys.exit()
             YEAR = sys.argv[argindex + 1]
+            argindex += 1
         argindex += 1
-    if datadir == "":
-        datadir = "data/" + YEAR + "/"
-    return outputfile, datadir, should_scrape, force_scrape, verbose
+    datadir = "data/" + YEAR + "/"
+    return outputfile, datadir, should_scrape, force_scrape, verbose, tracker, weightfile
 
 def main():
-    outputfile, datadir, should_scrape, force_scrape, verbose = process_args()
     scraper = Scraper()
-    scraper.verbose = verbose
-    scraper.outputfile = outputfile
+    scraper.outputfile, datadir, should_scrape, force_scrape, scraper.verbose, \
+            scraper.tracker, weightfile = process_args()
     scraper.load_data(datadir, should_scrape, force_scrape)
-    scraper.build_scores()
-    scraper.select_seed_and_print_field()
-    scraper.build_bracket()
-    if outputfile:
-        scraper.output_scores()
+    if scraper.tracker:
+        scraper.results = dict()
+        scraper.actual_results = scraper.load_results()
+        scraper.weight_results = dict()
+        scraper.run_tracker(tuple())
+        counter = 0
+        for weights in sorted(scraper.weight_results, key=lambda x: scraper.weight_results[x]):
+            print([str(x).rjust(2) for x in weights], scraper.weight_results[weights])
+            counter += 1
+            if counter > 50:
+                break
+    else:
+        scraper.build_scores(weightfile)
+        scraper.select_seed_and_print_field(True)
+        scraper.build_bracket()
+        if scraper.outputfile:
+            scraper.output_scores()
 
 if __name__ == '__main__':
     main()

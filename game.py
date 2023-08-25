@@ -9,7 +9,6 @@ class Game:
         self.team_score = scr
         self.opp_score = oscr
         self.date = dt
-        #self.OT = ot TODO: figure out
 
     def get_margin(self):
         return self.team_score - self.opp_score

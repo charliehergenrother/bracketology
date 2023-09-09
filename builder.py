@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
 
-from datetime import date
-from team import Team, SELECTION_SUNDAYS
-from game import Game
+from team import SELECTION_SUNDAYS
 from itertools import permutations
-import os
 import sys
-import json
-import requests
 import math
-import random
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
 TEAM_COORDINATES_FILE = "lib/team_locations.txt"
@@ -36,10 +30,11 @@ AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
 #class to build a bracket from scraped data about college basketball teams
 class Builder:
 
-    def __init__(self, year, teams, verbose, fws, fwr, rr, et, it, cw, rtd):
+    def __init__(self, year, teams, verbose, of, fws, fwr, rr, et, it, cw, rtd):
         self.year = year
         self.teams = teams
         self.verbose = verbose
+        self.outputfile = of
         self.first_weekend_sites = fws
         self.first_weekend_rankings = fwr
         self.region_rankings = rr
@@ -323,12 +318,10 @@ class Builder:
                     continue
                 weight_name, weight_val = line.split(" = ")
                 WEIGHTS[weight_name] = float(weight_val)
+        return WEIGHTS
 
     #calculate resume score for all teams
-    def build_scores(self, weightfile):
-        if weightfile:
-            self.get_weights(weightfile)
-            self.sum_weights()
+    def build_scores(self, WEIGHTS):
         for team in self.teams:
             if self.verbose:
                 print("Scoring", team)
@@ -1027,162 +1020,25 @@ class Builder:
             for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
                 self.print_line(max_len, region_nums[0], region_nums[1], seed_num, region_num_to_name)
 
-    def load_results(self):
-        actual_results = dict()
-        counter = 0
-        with open("lib/actual_results_" + self.year + ".txt") as f:
-            for line in f.read().split("\n"):
-                if not line:
-                    break
-                actual_results[line] = counter
-                counter += 1
-        self.actual_max = counter
-        return actual_results
-
-    def run_tracker(self, weights_collected):
-        if len(weights_collected) == 1:
-            print("~~~~~~~~~~")
-        elif len(weights_collected) == 2:
-            print("~~~~~~~~")
-        elif len(weights_collected) == 3:
-            print("~~~~~~")
-
-        if len(weights_collected) in [3]:
-            for num in [26, 27]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [25, 26]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [24, 25]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [23, 24]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [22, 23]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [2]:
-            for num in [21, 22]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [20, 21]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [0]:
-            for num in [19, 20]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [18, 19]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [17, 18]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [16, 17]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [15, 16]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [14, 15]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [13, 14]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [12, 13]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [11, 12]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [10, 11]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [9]:
-            for num in [9, 10]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [8, 9]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [7, 8]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [7]:
-            for num in [6, 7]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [11]:
-            for num in [5, 6]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [8]:
-            for num in [4, 5]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [3, 4]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
-            for num in [2, 3]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [4, 5, 10, 12]:
-            for num in [1, 2]:
-                self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [1, 6, 13, 14]:
-            for num in [0, 1]:
-                self.run_tracker(weights_collected + (num,))
-        else:
-            WEIGHTS["LOSS_WEIGHT"] = weights_collected[0]
-            WEIGHTS["NET_WEIGHT"] = weights_collected[1]
-            WEIGHTS["POWER_WEIGHT"] = weights_collected[2]
-            WEIGHTS["Q1_WEIGHT"] = weights_collected[3]
-            WEIGHTS["Q2_WEIGHT"] = weights_collected[4]
-            WEIGHTS["Q3_WEIGHT"] = weights_collected[5]
-            WEIGHTS["Q4_WEIGHT"] = weights_collected[6]
-            WEIGHTS["ROAD_WEIGHT"] = weights_collected[7]
-            WEIGHTS["NEUTRAL_WEIGHT"] = weights_collected[8]
-            WEIGHTS["TOP_10_WEIGHT"] = weights_collected[9]
-            WEIGHTS["TOP_25_WEIGHT"] = weights_collected[10]
-            WEIGHTS["SOS_WEIGHT"] = weights_collected[11]
-            WEIGHTS["NONCON_SOS_WEIGHT"] = weights_collected[12]
-            WEIGHTS["AWFUL_LOSS_WEIGHT"] = weights_collected[13]
-            WEIGHTS["BAD_LOSS_WEIGHT"] = weights_collected[14]
-            self.build_scores("")
-            self.assess_results(weights_collected)
-
-    def assess_results(self, weights_collected):
-        result_score = 0
-        bid_count = 0
-        actual_count = 0
-        for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
-            if team in self.ineligible_teams or self.teams[team].record_pct < 0.5:
-                continue
-            try:
-                result_score += abs(bid_count - self.actual_results[team])
-                actual_count += 1
-            except KeyError:
-                pass
-            bid_count += 1
-            if actual_count >= self.actual_max - 2:
-                break
-        self.weight_results[weights_collected] = result_score
-
     #write all team scores for each category to specified file
     def output_scores(self):
         with open(self.outputfile, "w") as f:
             f.write("Team," + \
-                    "Losses(" + str(round(LOSS_WEIGHT, 5)) + \
-                    "), NET(" + str(round(NET_WEIGHT, 5)) + \
-                    "), Power(" + str(round(POWER_WEIGHT, 5)) + \
-                    "), Q1(" + str(round(Q1_WEIGHT, 5)) + \
-                    "), Q2(" + str(round(Q2_WEIGHT, 5)) + \
-                    "), Q3(" + str(round(Q3_WEIGHT, 5)) + \
-                    "), Q4(" + str(round(Q4_WEIGHT, 5)) + \
-                    "), Road(" + str(round(ROAD_WEIGHT, 5)) + \
-                    "), Neutral(" + str(round(NEUTRAL_WEIGHT, 5)) + \
-                    "), Top 10(" + str(round(TOP_10_WEIGHT, 5)) + \
-                    "), Top 25(" + str(round(TOP_25_WEIGHT, 5)) + \
-                    "), SOS(" + str(round(SOS_WEIGHT, 5)) + \
-                    "), Noncon SOS(" + str(round(NONCON_SOS_WEIGHT, 5)) + \
-                    "), Awful losses(" + str(round(AWFUL_LOSS_WEIGHT, 5)) + \
-                    "), Bad losses(" + str(round(BAD_LOSS_WEIGHT, 5)) + \
+                    "Losses(" + str(round(WEIGHTS["LOSS_WEIGHT"], 5)) + \
+                    "), NET(" + str(round(WEIGHTS["NET_WEIGHT"], 5)) + \
+                    "), Power(" + str(round(WEIGHTS["POWER_WEIGHT"], 5)) + \
+                    "), Q1(" + str(round(WEIGHTS["Q1_WEIGHT"], 5)) + \
+                    "), Q2(" + str(round(WEIGHTS["Q2_WEIGHT"], 5)) + \
+                    "), Q3(" + str(round(WEIGHTS["Q3_WEIGHT"], 5)) + \
+                    "), Q4(" + str(round(WEIGHTS["Q4_WEIGHT"], 5)) + \
+                    "), Road(" + str(round(WEIGHTS["ROAD_WEIGHT"], 5)) + \
+                    "), Neutral(" + str(round(WEIGHTS["NEUTRAL_WEIGHT"], 5)) + \
+                    "), Top 10(" + str(round(WEIGHTS["TOP_10_WEIGHT"], 5)) + \
+                    "), Top 25(" + str(round(WEIGHTS["TOP_25_WEIGHT"], 5)) + \
+                    "), SOS(" + str(round(WEIGHTS["SOS_WEIGHT"], 5)) + \
+                    "), Noncon SOS(" + str(round(WEIGHTS["NONCON_SOS_WEIGHT"], 5)) + \
+                    "), Awful losses(" + str(round(WEIGHTS["AWFUL_LOSS_WEIGHT"], 5)) + \
+                    "), Bad losses(" + str(round(WEIGHTS["BAD_LOSS_WEIGHT"], 5)) + \
                     "), Total Score\n")
             for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
                 line = self.teams[team].team_out + "," + \

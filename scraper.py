@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
 from datetime import date
-from team import Team, SELECTION_SUNDAYS
+from team import Team
 from game import Game
 from builder import Builder
-from itertools import permutations
+from tracker import Tracker
 import os
 import sys
 import json
 import requests
 import math
-import random
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
 TEAM_COORDINATES_FILE = "lib/team_locations.txt"
@@ -35,6 +34,20 @@ class Scraper:
         self.teams = dict()
         return
 
+    #get the order of sites closest to a given set of coordinates (corresponding to a school)
+    #param sites: dict containing names of sites and their coordinates
+    #param latitude: latitude of school
+    #param longitude: longitude of school
+    def get_site_order(self, sites, latitude, longitude):
+        site_distances = dict()
+        for site in sites:
+            distance = math.sqrt((latitude - sites[site][0])**2 + (longitude - sites[site][1])**2)
+            site_distances[site] = distance
+        site_order = list()
+        for site in sorted(site_distances, key=lambda x: site_distances[x]):
+            site_order.append(site)
+        return site_order
+
     #load in team and site coordinates, compute every team's site preferences (closest as the crow flies)
     def load_coordinates(self):
         first_sites = dict()
@@ -42,6 +55,7 @@ class Scraper:
         first_weekend_sites = list()
         first_weekend_rankings = dict()
         region_rankings = dict()
+        
         SITE_COORDINATES_FILE = "lib/site_locations_" + self.year + ".txt"
         f = open(SITE_COORDINATES_FILE, "r")
         for count, line in enumerate(f):
@@ -56,6 +70,7 @@ class Scraper:
             else:
                 regional_sites[site_name] = [latitude, longitude]
         f.close()
+        
         f = open(TEAM_COORDINATES_FILE, "r")
         for line in f:
             team = line[:line.find("[")]
@@ -66,25 +81,13 @@ class Scraper:
             except KeyError:    #this team didn't exist this year
                 continue
             self.teams[team].longitude = longitude
-            first_distances = dict()
-            regional_distances = dict()
-            for site in first_sites:
-                distance = math.sqrt((latitude - first_sites[site][0])**2 + (longitude - first_sites[site][1])**2)
-                first_distances[site] = distance
-            for site in regional_sites:
-                distance = math.sqrt((latitude - regional_sites[site][0])**2 + (longitude - regional_sites[site][1])**2)
-                regional_distances[site] = distance
-            first_order = list()
-            regional_order = list()
-            for site in sorted(first_distances, key=lambda x: first_distances[x]):
-                first_order.append(site)
-            for site in sorted(regional_distances, key=lambda x: regional_distances[x]):
-                regional_order.append(site)
-            first_weekend_rankings[team] = first_order
-            region_rankings[team] = regional_order
+
+            first_weekend_rankings[team] = self.get_site_order(first_sites, latitude, longitude)
+            region_rankings[team] = self.get_site_order(regional_sites, latitude, longitude)
         f.close()
         return first_weekend_sites, first_weekend_rankings, region_rankings
 
+    #load ineligible teams, eliminated teams, and conference winners for a specific year
     def load_special_teams(self):
         SPECIAL_TEAMS_FILE = "lib/special_teams_" + self.year + ".json"
         with open(SPECIAL_TEAMS_FILE, "r") as f:
@@ -95,34 +98,34 @@ class Scraper:
         return eliminated_teams, ineligible_teams, conference_winners
 
     #grab the data from where it's stored on disk or scrape it if necessary
-    #param datadir: directory where the data is stored
     #param should_scrape: If true, scrape the data from the web if we haven't yet today
     #param force_scrape: If true, scrape the data from the web regardless of if we have or haven't
-    def load_data(self, datadir, should_scrape, force_scrape):
-        if not os.path.exists(datadir):
-            print("creating datadir", datadir)
-            os.makedirs(datadir)
-        if not os.path.exists(datadir + SCRAPE_DATE_FILE):
-            f = open(datadir + SCRAPE_DATE_FILE, "x")
+    def load_data(self, should_scrape, force_scrape):
+        if not os.path.exists(self.datadir):
+            print("creating datadir", self.datadir)
+            os.makedirs(self.datadir)
+        if not os.path.exists(self.datadir + SCRAPE_DATE_FILE):
+            f = open(self.datadir + SCRAPE_DATE_FILE, "x")
             f.close()
-        f = open(datadir + SCRAPE_DATE_FILE, "r+")
+        f = open(self.datadir + SCRAPE_DATE_FILE, "r+")
         today = date.today()
         today_date = today.strftime("%m-%d")    #format: mm-dd
         saved_date = f.read().strip()
         f.close()
         if force_scrape or (should_scrape and today_date != saved_date):
-            self.do_scrape(datadir, today_date)
+            self.do_scrape(today_date)
         else:
-            self.do_load(datadir)
+            self.do_load()
         first_weekend_sites, first_weekend_rankings, region_rankings = self.load_coordinates()
         eliminated_teams, ineligible_teams, conference_winners = self.load_special_teams()
-        return first_weekend_sites, first_weekend_rankings, region_rankings, eliminated_teams, ineligible_teams, conference_winners
+        return Builder(self.year, self.teams, self.verbose, self.outputfile, first_weekend_sites, \
+                first_weekend_rankings, region_rankings, eliminated_teams, \
+                ineligible_teams, conference_winners, reverse_team_dict)
 
     #load the data that has previously been scraped
-    #param datadir: directory where the data is stored
-    def do_load(self, datadir):
+    def do_load(self):
         #loop through datadir
-        for root, dirs, files in os.walk(datadir):
+        for root, dirs, files in os.walk(self.datadir):
             for filename in files:
                 if ('.json') not in filename:
                     continue
@@ -143,20 +146,20 @@ class Scraper:
                 reverse_team_dict[curr_team.team_out] = team
     
     #scrape one team's data
-    def scrape_team_data(self, team, datadir):
+    #team: string indicating which team's data should be scraped
+    def scrape_team_data(self, team):
         TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/" + self.year + "/team-net-sheet?team="
         team_url = TEAM_NITTY_URL_START + team
         self.teams[team] = Team()
         self.teams[team].scrape_data(team_url, self.year)
-        f = open(datadir + team + ".json", "w+")
+        f = open(self.datadir + team + ".json", "w+")
         f.write(json.dumps(self.teams[team], cls=ComplexEncoder))
         f.close()
         reverse_team_dict[self.teams[team].team_out] = team
 
     #scrape college basketball data from the web
-    #param datadir: directory where the data should be stored
     #param today_date: MM-DD representation of today's date. written to file to record that scraping took place
-    def do_scrape(self, datadir, today_date):
+    def do_scrape(self, today_date):
         net_url = "https://www.warrennolan.com/basketball/" + self.year + "/net"
         net_page = requests.get(net_url)
         if net_page.status_code != 200:
@@ -172,52 +175,12 @@ class Scraper:
             if "blue-black" in line:
                 team_start_index = line.find("schedule/")+9
                 team = line[team_start_index:line.find('">', team_start_index)]
-                self.scrape_team_data(team, datadir)
+                self.scrape_team_data(team)
                 print("scraped", team + "!")
 
-        f = open(datadir + SCRAPE_DATE_FILE, "w+")
+        f = open(self.datadir + SCRAPE_DATE_FILE, "w+")
         f.write(today_date)
         f.close()
-
-    #write all team scores for each category to specified file
-    def output_scores(self, outputfile):
-        with open(outputfile, "w") as f:
-            f.write("Team," + \
-                    "Losses(" + str(round(LOSS_WEIGHT, 5)) + \
-                    "), NET(" + str(round(NET_WEIGHT, 5)) + \
-                    "), Power(" + str(round(POWER_WEIGHT, 5)) + \
-                    "), Q1(" + str(round(Q1_WEIGHT, 5)) + \
-                    "), Q2(" + str(round(Q2_WEIGHT, 5)) + \
-                    "), Q3(" + str(round(Q3_WEIGHT, 5)) + \
-                    "), Q4(" + str(round(Q4_WEIGHT, 5)) + \
-                    "), Road(" + str(round(ROAD_WEIGHT, 5)) + \
-                    "), Neutral(" + str(round(NEUTRAL_WEIGHT, 5)) + \
-                    "), Top 10(" + str(round(TOP_10_WEIGHT, 5)) + \
-                    "), Top 25(" + str(round(TOP_25_WEIGHT, 5)) + \
-                    "), SOS(" + str(round(SOS_WEIGHT, 5)) + \
-                    "), Noncon SOS(" + str(round(NONCON_SOS_WEIGHT, 5)) + \
-                    "), Awful losses(" + str(round(AWFUL_LOSS_WEIGHT, 5)) + \
-                    "), Bad losses(" + str(round(BAD_LOSS_WEIGHT, 5)) + \
-                    "), Total Score\n")
-            for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
-                line = self.teams[team].team_out + "," + \
-                        str(round(self.teams[team].loss_score, 5)) + "," + \
-                        str(round(self.teams[team].NET_score, 5)) + "," + \
-                        str(round(self.teams[team].power_score, 5)) + "," + \
-                        str(round(self.teams[team].Q1_score, 5)) + "," + \
-                        str(round(self.teams[team].Q2_score, 5)) + "," + \
-                        str(round(self.teams[team].Q3_score, 5)) + "," + \
-                        str(round(self.teams[team].Q4_score, 5)) + "," + \
-                        str(round(self.teams[team].road_score, 5)) + "," + \
-                        str(round(self.teams[team].neutral_score, 5)) + "," + \
-                        str(round(self.teams[team].top10_score, 5)) + "," + \
-                        str(round(self.teams[team].top25_score, 5)) + "," + \
-                        str(round(self.teams[team].SOS_score, 5)) + "," + \
-                        str(round(self.teams[team].NCSOS_score, 5)) + "," + \
-                        str(round(self.teams[team].awful_loss_score, 5)) + "," + \
-                        str(round(self.teams[team].bad_loss_score, 5)) + "," + \
-                        str(round(self.teams[team].score, 5)) + "\n"
-                f.write(line)
 
 #accept command line arguments
 def process_args():
@@ -270,30 +233,26 @@ def process_args():
 
 def main():
     scraper = Scraper()
-    scraper.year, outputfile, datadir, should_scrape, force_scrape, scraper.verbose, \
+    scraper.year, scraper.outputfile, scraper.datadir, should_scrape, force_scrape, scraper.verbose, \
             scraper.tracker, weightfile = process_args()
-    first_weekend_sites, first_weekend_rankings, region_rankings, eliminated_teams, ineligible_teams, conference_winners = \
-            scraper.load_data(datadir, should_scrape, force_scrape)
-    builder = Builder(scraper.year, scraper.teams, scraper.verbose, \
-            first_weekend_sites, first_weekend_rankings, region_rankings, \
-            eliminated_teams, ineligible_teams, conference_winners,
-            reverse_team_dict)
+    builder = scraper.load_data(should_scrape, force_scrape)
     if scraper.tracker:
-        builder.actual_results = builder.load_results()
-        builder.weight_results = dict()
-        builder.run_tracker(tuple())
+        tracker = Tracker(builder, scraper.year, scraper.verbose)
+        tracker.load_results()
+        tracker.run_tracker(tuple())
         counter = 0
-        for weights in sorted(builder.weight_results, key=lambda x: builder.weight_results[x]):
-            print([str(x).rjust(2) for x in weights], builder.weight_results[weights])
+        for weights in sorted(tracker.weight_results, key=lambda x: tracker.weight_results[x]):
+            print([str(x).rjust(2) for x in weights], tracker.weight_results[weights])
             counter += 1
             if counter > 50:
                 break
     else:
-        builder.build_scores(weightfile)
+        weights = builder.get_weights(weightfile)
+        builder.build_scores(weights)
         builder.select_seed_and_print_field(True)
         builder.build_bracket()
-        if outputfile:
-            scraper.output_scores(outputfile)
+        if scraper.outputfile:
+            builder.output_scores()
 
 if __name__ == '__main__':
     main()

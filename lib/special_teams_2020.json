@@ -1,0 +1,25 @@
+{
+    "eliminated_teams": [],
+    "conference_winners": {
+        "America East": "Vermont",
+        "ACC": "Florida-State",
+        "Atlantic Sun": "Liberty",
+        "Big South": "Winthrop",
+        "Colonial Athletic": "Hofstra",
+        "Horizon League": "Northern-Kentucky",
+        "Ivy League": "Yale",
+        "MAAC": "Siena",
+        "Mid-American": "Akron",
+        "Missouri Valley": "Bradley",
+        "Mountain West": "Utah-State",
+        "Northeast": "Robert-Morris",
+        "Ohio Valley": "Belmont",
+        "Patriot League": "Boston-University",
+        "SEC": "Kentucky",
+        "Southern": "East-Tennessee-State",
+        "The Summit League": "North-Dakota-State",
+        "Western Athletic": "New-Mexico-State",
+        "West Coast": "Gonzaga"
+    },
+    "ineligible_teams": ["California-Baptist", "Detroit", "Florida-AM", "Georgia-Tech", "Merrimack", "North-Alabama"]
+}

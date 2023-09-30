@@ -3,7 +3,7 @@
 from itertools import permutations
 import math
 
-AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
+AUTO_MAXES = {"2020": 32, "2021": 31, "2022": 32, "2023": 32}
 
 #class to build a bracket from scraped data about college basketball teams
 class Builder:
@@ -23,7 +23,7 @@ class Builder:
         return
 
     #seed and print the field, including a bubble section
-    def select_seed_and_print_field(self, do_print):
+    def select_seed_and_print_field(self):
         curr_seed = 1
         num_curr_seed = 1
         curr_seed_max = 4
@@ -68,22 +68,19 @@ class Builder:
                     self.teams[team].auto_bid = True
                 else:
                     continue
-            if do_print:
-                print("(" + str(curr_seed) + ") " + self.teams[team].team_out, end="")
+            print("(" + str(curr_seed) + ") " + self.teams[team].team_out, end="")
             if at_large_bid:
                 if at_large_bids >= AT_LARGE_MAX - 3:
                     if (AT_LARGE_MAX - at_large_bids) % 2 == 1:
                         curr_seed_max += 1
-                    if do_print:
-                        bubble_string += (self.teams[team].team_out + " - Last Four In\n")
-                        print(" - Last Four In")
+                    bubble_string += (self.teams[team].team_out + " - Last Four In\n")
+                    print(" - Last Four In")
                 elif at_large_bids >= AT_LARGE_MAX - 7:
-                    if do_print:
-                        bubble_string += (self.teams[team].team_out + " - Last Four Byes\n")
-                        print(" - Last Four Byes")
-                elif do_print:
+                    bubble_string += (self.teams[team].team_out + " - Last Four Byes\n")
+                    print(" - Last Four Byes")
+                else:
                     print()
-            elif do_print:
+            else:
                 print("*")
             if num_curr_seed == curr_seed_max and curr_seed < 16:
                 curr_seed += 1
@@ -91,9 +88,8 @@ class Builder:
                 curr_seed_max = 4
             else:
                 num_curr_seed += 1
-        if do_print:
-            print()
-            print(bubble_string)
+        print()
+        print(bubble_string)
 
     #get the maximum length of a line when printing the bracket (two team names + their seeds + some buffer)
     def get_max_len(self):

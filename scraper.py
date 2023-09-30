@@ -251,7 +251,7 @@ def main():
     else:
         weights = scorer.get_weights(weightfile)
         scorer.build_scores(weights)
-        builder.select_seed_and_print_field(True)
+        builder.select_seed_and_print_field()
         builder.build_bracket()
         if scraper.outputfile:
             builder.output_scores()

@@ -5,6 +5,7 @@ from team import Team
 from game import Game
 from builder import Builder
 from tracker import Tracker
+from scorer import Scorer
 import os
 import sys
 import json
@@ -236,6 +237,7 @@ def main():
     scraper.year, scraper.outputfile, scraper.datadir, should_scrape, force_scrape, scraper.verbose, \
             scraper.tracker, weightfile = process_args()
     builder = scraper.load_data(should_scrape, force_scrape)
+    scorer = Scorer(builder)
     if scraper.tracker:
         tracker = Tracker(builder, scraper.year, scraper.verbose)
         tracker.load_results()
@@ -247,8 +249,8 @@ def main():
             if counter > 50:
                 break
     else:
-        weights = builder.get_weights(weightfile)
-        builder.build_scores(weights)
+        weights = scorer.get_weights(weightfile)
+        scorer.build_scores(weights)
         builder.select_seed_and_print_field(True)
         builder.build_bracket()
         if scraper.outputfile:

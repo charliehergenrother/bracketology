@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from team import SELECTION_SUNDAYS
-from itertools import permutations
 import sys
 import math
 

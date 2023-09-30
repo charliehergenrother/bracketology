@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-from team import SELECTION_SUNDAYS
 from itertools import permutations
-import sys
 import math
 
 AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}

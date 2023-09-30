@@ -1,30 +1,15 @@
 #!/usr/bin/env python3
 
-from datetime import date
-from team import Team, SELECTION_SUNDAYS
-from game import Game
-from itertools import permutations
-import os
-import sys
-import json
-import requests
-import math
-import random
-
-SCRAPE_DATE_FILE = "scrapedate.txt"
-TEAM_COORDINATES_FILE = "lib/team_locations.txt"
-AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
-
 #class to build a bracket from scraped data about college basketball teams
 class Tracker:
 
-    def __init__(self, bdr, yr, vrb):
+    def __init__(self, bdr, scr, yr, vrb):
         self.year = yr
         self.teams = bdr.teams
         self.verbose = vrb
         self.ineligible_teams = bdr.ineligible_teams
         self.weight_results = dict()
-        self.builder = bdr
+        self.scorer = scr
         return
 
     def load_results(self):
@@ -144,7 +129,7 @@ class Tracker:
             WEIGHTS["NONCON_SOS_WEIGHT"] = weights_collected[12]
             WEIGHTS["AWFUL_LOSS_WEIGHT"] = weights_collected[13]
             WEIGHTS["BAD_LOSS_WEIGHT"] = weights_collected[14]
-            self.builder.build_scores(WEIGHTS)
+            self.scorer.build_scores(WEIGHTS)
             self.assess_results(weights_collected)
 
     def assess_results(self, weights_collected):

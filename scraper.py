@@ -239,7 +239,7 @@ def main():
     builder = scraper.load_data(should_scrape, force_scrape)
     scorer = Scorer(builder)
     if scraper.tracker:
-        tracker = Tracker(builder, scraper.year, scraper.verbose)
+        tracker = Tracker(builder, scorer, scraper.year, scraper.verbose)
         tracker.load_results()
         tracker.run_tracker(tuple())
         counter = 0

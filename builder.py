@@ -356,21 +356,28 @@ class Builder:
     #param seeds: the four seeds these teams will receive
     #param region_name_to_num: dictionary to translate region sites to coordinate
     #param conferences: dictionary of conference names and lists of teams already in the tournament
-    def place_play_in(self, teams, seeds, region_name_to_num, conferences):
+    def place_play_in(self, teams, seeds, region_name_to_num, region_num_to_name, conferences):
         matchups = self.get_play_in_matchups(teams)
-        
+        matchup_1 = '/'.join(matchups[0])
+        matchup_2 = '/'.join(matchups[1])
+
         region_order = self.get_region_order(matchups[0][0], seeds[0], region_name_to_num)
-        _, region_num = self.find_team_spot('/'.join(matchups[0]), \
+        _, region_num = self.find_team_spot(matchup_1, \
                 self.get_region_num(seeds[0], region_order[0], region_order), seeds[0],\
                 conferences, region_order, True)
-        self.place_team(region_num, seeds[0], '/'.join(matchups[0]))
+        self.place_team(region_num, seeds[0], matchup_1)
+        print("Placed (" + str(seeds[0]) + ") " + matchup_1 + \
+                ": region (" + str(region_num) + ") " + region_num_to_name[region_num])
 
         region_order = self.get_region_order(matchups[1][0], seeds[2], region_name_to_num)
-        _, region_num = self.find_team_spot('/'.join(matchups[1]), \
+        _, region_num = self.find_team_spot(matchup_2, \
                 self.get_region_num(seeds[2], region_order[0], region_order), seeds[2], \
                 conferences, region_order, True)
-        self.place_team(region_num, seeds[2], '/'.join(matchups[1]))
-     
+        self.place_team(region_num, seeds[2], matchup_2)
+        print("Placed (" + str(seeds[2]) + ") " + matchup_2 + \
+                ": region (" + str(region_num) + ") " + region_num_to_name[region_num])
+        print()
+
     #find a place in the bracket where a team can fit
     #param team: string of team to place
     #param region_num: region number (0-3) to try to place the team in
@@ -627,7 +634,7 @@ class Builder:
                     bracket_pos += 1
                 if at_large_count == AT_LARGE_MAX - 1:
                     self.place_play_in(at_large_play_in_teams, at_large_play_in_seeds, \
-                            region_name_to_num, conferences)
+                            region_name_to_num, region_num_to_name, conferences)
                 at_large_count += 1
                 team_index += 1
                 continue
@@ -638,7 +645,7 @@ class Builder:
                     bracket_pos += 1
                 if auto_count == AUTO_MAX - 1:
                     self.place_play_in(auto_play_in_teams, auto_play_in_seeds, \
-                            region_name_to_num, conferences)
+                            region_name_to_num, region_num_to_name, conferences)
                 auto_count += 1
                 team_index += 1
                 continue

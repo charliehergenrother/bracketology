@@ -185,7 +185,7 @@ class Scraper:
 
 #accept command line arguments
 def process_args():
-    year = "2023"
+    year = "2024"
     argindex = 1
     outputfile = ""
     should_scrape = True

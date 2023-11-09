@@ -16,7 +16,6 @@ SCRAPE_DATE_FILE = "scrapedate.txt"
 TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 
 reverse_team_dict = dict()
-AUTO_MAXES = {"2021": 31, "2022": 32, "2023": 32}
 
 #class to turn the Team and Game objects into jsonifyable strings
 class ComplexEncoder(json.JSONEncoder):
@@ -254,7 +253,8 @@ def main():
         builder.select_seed_and_print_field()
         builder.build_bracket()
         if scraper.outputfile:
-            builder.output_scores()
+            scorer.outputfile = scraper.outputfile
+            scorer.output_scores()
 
 if __name__ == '__main__':
     main()

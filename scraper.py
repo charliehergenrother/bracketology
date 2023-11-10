@@ -187,6 +187,7 @@ def process_args():
     year = "2024"
     argindex = 1
     outputfile = ""
+    webfile = ""
     should_scrape = True
     force_scrape = False
     verbose = False
@@ -197,11 +198,12 @@ def process_args():
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-y year] [-w weightfile] [-o outputfile] [-e|-s] [-v]")
+            print("./scraper.py [-h] [-y year] [-w weightfile] [-o outputfile] [-b webfile] [-e|-s] [-v]")
             print("     -h: print this help message")
             print("     -y: make a bracket for this year. 2021-present only")
             print("     -w: use weights located in this file")
             print("     -o: set a csv filename where the final ranking will live")
+            print("     -b: set an html filename where the displayed bracket will live")
             print("     -e: override the scraping and use data currently stored")
             print("     -s: scrape data anew regardless of whether data has been scraped today")
             print("     -v: verbose. Print team resumes and bracketing procedure")
@@ -209,6 +211,9 @@ def process_args():
             sys.exit()
         elif sys.argv[argindex] == '-o':
             outputfile = sys.argv[argindex + 1]
+            argindex += 1
+        elif sys.argv[argindex] == '-b':
+            webfile = sys.argv[argindex + 1]
             argindex += 1
         elif sys.argv[argindex] == '-e':
             should_scrape = False
@@ -229,12 +234,12 @@ def process_args():
             argindex += 1
         argindex += 1
     datadir = "data/" + year + "/"
-    return year, outputfile, datadir, should_scrape, force_scrape, verbose, tracker, weightfile
+    return year, outputfile, webfile, datadir, should_scrape, force_scrape, verbose, tracker, weightfile
 
 def main():
     scraper = Scraper()
-    scraper.year, scraper.outputfile, scraper.datadir, should_scrape, force_scrape, scraper.verbose, \
-            scraper.tracker, weightfile = process_args()
+    scraper.year, scraper.outputfile, scraper.webfile, scraper.datadir, should_scrape, force_scrape, \
+            scraper.verbose, scraper.tracker, weightfile = process_args()
     builder = scraper.load_data(should_scrape, force_scrape)
     scorer = Scorer(builder)
     if scraper.tracker:
@@ -255,6 +260,9 @@ def main():
         if scraper.outputfile:
             scorer.outputfile = scraper.outputfile
             scorer.output_scores()
+        if scraper.webfile:
+            builder.webfile = scraper.webfile
+            builder.output_bracket()
 
 if __name__ == '__main__':
     main()

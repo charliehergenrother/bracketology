@@ -106,13 +106,13 @@ class Builder:
             return self.teams[team.split("/")[0]].team_out + "/" + self.teams[team.split("/")[1]].team_out
         return self.teams[team].team_out
     
-    #print a line of the bracket
+    #construct a line of the bracket
     #param max_len: maximum length of a line containing two teams
     #param region_1: 0 or 3, corresponding to one of the regions on the left side of the bracket
     #param region_2: 1 or 2, corresponding to one of the regions on the right side of the bracket
     #param seed: seed of the teams to print
-    #param region_num_to_name: dictionary to translate a region's number to its location
-    def print_line(self, max_len, region_1, region_2, seed, region_num_to_name):
+    def construct_line(self, max_len, region_1, region_2, seed):
+        line = ""
         team_1 = self.get_team_out(self.regions[region_1][seed])
         team_2 = self.get_team_out(self.regions[region_2][seed])
         if (seed == 16) or ("/" not in team_1 and self.teams[self.regions[region_1][seed]].auto_bid):
@@ -120,31 +120,30 @@ class Builder:
         if (seed == 16) or ("/" not in team_2 and self.teams[self.regions[region_2][seed]].auto_bid):
             team_2 += "*"
         max_site_len = max([len(x) for x in self.first_weekend_name_to_num])
-        print(" "*max_site_len + "(" + str(seed) + ") " + team_1 + \
+        line += " "*max_site_len + "(" + str(seed) + ") " + team_1 + \
                 " "*(max_len - (len(team_1) + len(team_2)) - (len(str(seed)) + 3)*2) + \
-                " (" + str(seed) + ") " + team_2)
+                " (" + str(seed) + ") " + team_2 + "\n"
         if seed == 13:
-            region_1_name = region_num_to_name[region_1]
-            region_2_name = region_num_to_name[region_2]
-            print(" "*(20 + max_site_len) + region_1_name + " "*max([max_len - (len(region_1_name) + len(region_2_name) + 40), 5]) + region_2_name)
+            region_1_name = self.region_num_to_name[region_1]
+            region_2_name = self.region_num_to_name[region_2]
+            line += " "*(20 + max_site_len) + region_1_name + " "*max([max_len - (len(region_1_name) + len(region_2_name) + 40), 5]) + region_2_name
         elif seed == 16:
             site_1 = self.first_weekend_num_to_name[region_1][1]
             site_2 = self.first_weekend_num_to_name[region_2][1]
-            print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
+            line += site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2
         elif seed == 12: 
             site_1 = self.first_weekend_num_to_name[region_1][4]
             site_2 = self.first_weekend_num_to_name[region_2][4]
-            print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
+            line += site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2
         elif seed == 11: 
             site_1 = self.first_weekend_num_to_name[region_1][3]
             site_2 = self.first_weekend_num_to_name[region_2][3]
-            print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
+            line += site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2
         elif seed == 10:
             site_1 = self.first_weekend_num_to_name[region_1][2]
             site_2 = self.first_weekend_num_to_name[region_2][2]
-            print(site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2)
-        else:
-            print()
+            line += site_1 + " "*(max_site_len - len(site_1) + 1) + " "*max_len + site_2
+        return line
 
     #check if placing a team in a particular bracket location will follow all the rules
     #param conferences: dictionary of conference names and lists of teams already in the tournament
@@ -278,12 +277,11 @@ class Builder:
     #return a list of a team's regional preferences
     #param team: string of team to get preferences for
     #param seed_num: seed of team. if higher (i.e. lower number) than 5, use regional sites; otherwise, use first-weekend sites
-    #param region_name_to_num: dictionary to translate region sites to coordinate
-    def get_region_order(self, team, seed_num, region_name_to_num):
+    def get_region_order(self, team, seed_num):
         order = list()
         if seed_num < 5:
             for site in self.region_rankings[team]:
-                order.append(region_name_to_num[site])
+                order.append(self.region_name_to_num[site])
         else:
             #construct list of possible sites
             possible_sites = list()
@@ -354,28 +352,27 @@ class Builder:
     #find play-in teams a spot in the bracket and place them there
     #param teams: a list of four team names in the play-in
     #param seeds: the four seeds these teams will receive
-    #param region_name_to_num: dictionary to translate region sites to coordinate
     #param conferences: dictionary of conference names and lists of teams already in the tournament
-    def place_play_in(self, teams, seeds, region_name_to_num, region_num_to_name, conferences):
+    def place_play_in(self, teams, seeds, conferences):
         matchups = self.get_play_in_matchups(teams)
         matchup_1 = '/'.join(matchups[0])
         matchup_2 = '/'.join(matchups[1])
 
-        region_order = self.get_region_order(matchups[0][0], seeds[0], region_name_to_num)
+        region_order = self.get_region_order(matchups[0][0], seeds[1])
         _, region_num = self.find_team_spot(matchup_1, \
-                self.get_region_num(seeds[0], region_order[0], region_order), seeds[0],\
+                self.get_region_num(seeds[1], region_order[0], region_order), seeds[1],\
                 conferences, region_order, True)
-        self.place_team(region_num, seeds[0], matchup_1)
-        print("Placed (" + str(seeds[0]) + ") " + matchup_1 + \
-                ": region (" + str(region_num) + ") " + region_num_to_name[region_num])
+        self.place_team(region_num, seeds[1], matchup_1)
+        print("Placed (" + str(seeds[1]) + ") " + matchup_1 + \
+                ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
 
-        region_order = self.get_region_order(matchups[1][0], seeds[2], region_name_to_num)
+        region_order = self.get_region_order(matchups[1][0], seeds[3])
         _, region_num = self.find_team_spot(matchup_2, \
-                self.get_region_num(seeds[2], region_order[0], region_order), seeds[2], \
+                self.get_region_num(seeds[3], region_order[0], region_order), seeds[3], \
                 conferences, region_order, True)
-        self.place_team(region_num, seeds[2], matchup_2)
-        print("Placed (" + str(seeds[2]) + ") " + matchup_2 + \
-                ": region (" + str(region_num) + ") " + region_num_to_name[region_num])
+        self.place_team(region_num, seeds[3], matchup_2)
+        print("Placed (" + str(seeds[3]) + ") " + matchup_2 + \
+                ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
         print()
 
     #find a place in the bracket where a team can fit
@@ -555,11 +552,11 @@ class Builder:
         seed_list.append(seed_num)
 
     #choose a regional site that a #1 seed will play at
-    def choose_regional(self, team, seed_num, region_name_to_num, region_num_to_name, region_num):
+    def choose_regional(self, team, seed_num, region_num):
         for site_name in self.region_rankings[team]:
-            if site_name not in region_name_to_num:
-                region_name_to_num[site_name] = region_num
-                region_num_to_name[region_num] = site_name
+            if site_name not in self.region_name_to_num:
+                self.region_name_to_num[site_name] = region_num
+                self.region_num_to_name[region_num] = site_name
                 if self.verbose:
                     print(site_name, "chosen for", region_num)
                 break
@@ -581,8 +578,8 @@ class Builder:
     #create a bracket based on the ordered team scores
     def build_bracket(self):
         self.regions = [dict(), dict(), dict(), dict()]
-        region_num_to_name = dict()
-        region_name_to_num = dict()
+        self.region_num_to_name = dict()
+        self.region_name_to_num = dict()
         region_order = list()
         self.first_weekend_num_to_name = [dict(), dict(), dict(), dict()]
         self.first_weekend_name_to_num = dict()
@@ -613,7 +610,7 @@ class Builder:
             conferences[team_conference].append(team)
             seed_num = (bracket_pos + 3) // 4
             if seed_num > 1:
-                region_order = self.get_region_order(team, seed_num, region_name_to_num)
+                region_order = self.get_region_order(team, seed_num)
                 region_num = region_order[0]
             else:
                 region_num = bracket_pos - 1
@@ -633,8 +630,7 @@ class Builder:
                 if at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1:
                     bracket_pos += 1
                 if at_large_count == AT_LARGE_MAX - 1:
-                    self.place_play_in(at_large_play_in_teams, at_large_play_in_seeds, \
-                            region_name_to_num, region_num_to_name, conferences)
+                    self.place_play_in(at_large_play_in_teams, at_large_play_in_seeds, conferences)
                 at_large_count += 1
                 team_index += 1
                 continue
@@ -644,8 +640,7 @@ class Builder:
                 if auto_count == AUTO_MAX - 3 or auto_count == AUTO_MAX - 1:
                     bracket_pos += 1
                 if auto_count == AUTO_MAX - 1:
-                    self.place_play_in(auto_play_in_teams, auto_play_in_seeds, \
-                            region_name_to_num, region_num_to_name, conferences)
+                    self.place_play_in(auto_play_in_teams, auto_play_in_seeds, conferences)
                 auto_count += 1
                 team_index += 1
                 continue
@@ -672,7 +667,7 @@ class Builder:
 
             #if we're placing the top seed, pick a regional site for it
             if seed_num == 1:
-                self.choose_regional(team, seed_num, region_name_to_num, region_num_to_name, region_num)
+                self.choose_regional(team, seed_num, region_num)
 
             #if we're placing a top-4 seed, pick a first weekend site for it
             if seed_num < 5:
@@ -680,7 +675,7 @@ class Builder:
             
             if self.verbose:
                 print("Placed (" + str(seed_num) + ") " + team + \
-                        ": region (" + str(region_num) + ") " + region_num_to_name[region_num])
+                        ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
                 print()
 
             bracket_pos += 1
@@ -700,5 +695,19 @@ class Builder:
         print()
         for region_nums in [[0, 1], [3, 2]]:
             for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
-                self.print_line(max_len, region_nums[0], region_nums[1], seed_num, region_num_to_name)
+                print(self.construct_line(max_len, region_nums[0], region_nums[1], seed_num))
+
+    def output_bracket(self):
+        max_len = self.get_max_len()
+        f = open(self.webfile, "w")
+        for region_nums in [[0, 1], [3, 2]]:
+            for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
+                f.write("<p>" + self.construct_line(max_len, region_nums[0], region_nums[1], seed_num) + "</p>\n")
+
+
+
+
+
+
+
 

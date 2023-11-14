@@ -4,8 +4,9 @@ from game import Game
 import requests
 import sys
 
-SELECTION_SUNDAYS = {"2023": 12, "2022": 13, "2021": 14}
+SELECTION_SUNDAY_DATES = {"2024": 17, "2023": 12, "2022": 13, "2021": 14}
 
+#class representing one college basketball team
 class Team:
 
     def reprJSON(self):
@@ -157,8 +158,8 @@ class Team:
             if game_line == 6:
                 date = line[line.find(">")+1:line.find("</div>")]
                 curr_game.date = date
-                # cut out NCAA tournament games.
-                if int(date[1]) != 4 and (int(date[1]) != 3 or int(date[3:]) <= SELECTION_SUNDAYS[year]):
+                # cut out NCAA tournament games
+                if int(date[1]) != 4 and (int(date[1]) != 3 or int(date[3:]) <= SELECTION_SUNDAY_DATES[year]):
                     self.games.add(curr_game)
                 game_line = 0
                 continue

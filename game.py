@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+#class that represents one college basketball game from one team's perspective
 class Game:
 
     def __init__(self, opp, loc, oNET, scr, oscr, dt):

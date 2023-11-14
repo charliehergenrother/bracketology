@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from team import SELECTION_SUNDAYS
+from team import SELECTION_SUNDAY_DATES
 import sys
 import math
 
@@ -22,7 +22,7 @@ WEIGHTS = {
         "BAD_LOSS_WEIGHT": 0
 }
 
-#class to build a bracket from scraped data about college basketball teams
+#class to generate resume ratings from scraped data about college basketball teams
 class Scorer:
 
     def __init__(self, builder):
@@ -168,8 +168,8 @@ class Scorer:
                     conf_tourn_multiplier = 1
                     date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
                     if date_month == 3:
-                        if date_num > SELECTION_SUNDAYS[self.year] - 7:
-                            conf_tourn_multiplier = (SELECTION_SUNDAYS[self.year] - date_num)/7
+                        if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
+                            conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
                     if game.opp_NET <= 50:
                         good_neutral_wins += conf_tourn_multiplier * 1
                     elif game.opp_NET <= 100:
@@ -193,8 +193,8 @@ class Scorer:
                     conf_tourn_multiplier = 1
                     date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
                     if date_month == 3:
-                        if date_num > SELECTION_SUNDAYS[self.year] - 7:
-                            conf_tourn_multiplier = (SELECTION_SUNDAYS[self.year] - date_num)/7
+                        if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
+                            conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
                     if game.opp_NET <= 5:
                         top_10_wins += conf_tourn_multiplier * 1
                     elif game.opp_NET <= 15:
@@ -206,6 +206,7 @@ class Scorer:
 
     #calculate score for a team's top 25 wins (Quad 1A) (scale: 1.000 = 5, 0.000 = 0)
         #sliding scale. Quad 1A is 1-15 (H), 1-25 (N), 1-40 (A). win count decreases by 0.1 for each rank down when within 5 of end.
+        #also, sliding penalty for conference tournament games. this is done for accuracy, not cause I like it.
     #param team: Team object to calculate score for
     def get_top25_score(self, team):
         try:
@@ -217,8 +218,8 @@ class Scorer:
                     conf_tourn_multiplier = 1
                     date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
                     if date_month == 3:
-                        if date_num > SELECTION_SUNDAYS[self.year] - 7:
-                            conf_tourn_multiplier = (SELECTION_SUNDAYS[self.year] - date_num)/7
+                        if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
+                            conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
                     if game.location == "H":
                         if game.opp_NET <= 10:
                             top_25_wins += conf_tourn_multiplier * 1

@@ -5,7 +5,7 @@ import math
 
 AUTO_MAXES = {"2020": 32, "2021": 31, "2022": 32, "2023": 32, "2024": 32}
 
-#class to build a bracket from scraped data about college basketball teams
+#class to build a bracket from resume ratings of college basketball teams
 class Builder:
 
     def __init__(self, year, teams, verbose, of, fws, fwr, rr, et, it, cw, rtd):

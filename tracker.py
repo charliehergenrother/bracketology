@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#class to build a bracket from scraped data about college basketball teams
+#class to run simulations based on combinations of weights to determine predictive power of each resume attribute
 class Tracker:
 
     def __init__(self, bdr, scr, yr, vrb):
@@ -15,7 +15,7 @@ class Tracker:
     def load_results(self):
         self.actual_results = dict()
         counter = 0
-        with open("lib/actual_results_" + self.year + ".txt") as f:
+        with open("lib/" + self.year + "/actual_results.txt") as f:
             for line in f.read().split("\n"):
                 if not line:
                     break

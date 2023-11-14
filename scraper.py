@@ -56,7 +56,7 @@ class Scraper:
         first_weekend_rankings = dict()
         region_rankings = dict()
         
-        SITE_COORDINATES_FILE = "lib/site_locations_" + self.year + ".txt"
+        SITE_COORDINATES_FILE = "lib/" + self.year + "/site_locations.txt"
         f = open(SITE_COORDINATES_FILE, "r")
         for count, line in enumerate(f):
             site_name = line[:line.find("[")]
@@ -89,7 +89,7 @@ class Scraper:
 
     #load ineligible teams, eliminated teams, and conference winners for a specific year
     def load_special_teams(self):
-        SPECIAL_TEAMS_FILE = "lib/special_teams_" + self.year + ".json"
+        SPECIAL_TEAMS_FILE = "lib/" + self.year + "/special_teams.json"
         with open(SPECIAL_TEAMS_FILE, "r") as f:
             special_teams = json.loads(f.read())
         eliminated_teams = special_teams["eliminated_teams"]
@@ -200,8 +200,8 @@ def process_args():
             print("Usage:")
             print("./scraper.py [-h] [-y year] [-w weightfile] [-o outputfile] [-b webfile] [-e|-s] [-v]")
             print("     -h: print this help message")
-            print("     -y: make a bracket for this year. 2021-present only")
-            print("     -w: use weights located in this file")
+            print("     -y: make a bracket for given year. 2021-present only")
+            print("     -w: use weights located in given file")
             print("     -o: set a csv filename where the final ranking will live")
             print("     -b: set an html filename where the displayed bracket will live")
             print("     -e: override the scraping and use data currently stored")

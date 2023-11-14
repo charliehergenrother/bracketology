@@ -3,7 +3,7 @@
 Welcome to auto-bracketology! The goal of this program is to automatically rank and seed college basketball teams based on their resumes, as the committee might. 
 
 This program, by default, will:
-1) If data has not been scraped from warrennolan.com today, scrape all ~360 teams and store them in data/<year>/<team>.json
+1) If data has not been scraped from warrennolan.com today, scrape all ~360 teams and store them in data/\<year\>/\<team\>.json
 2) Generate a score for all teams, using weighted categories in lib/weights.txt
 3) Select the tournament field, and output a list of the selected and seeded teams in order
 4) Output a 68-team bracket including those teams and their assigned tournament sites

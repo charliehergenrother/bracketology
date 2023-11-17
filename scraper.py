@@ -248,7 +248,7 @@ def main():
         tracker.run_tracker(tuple())
         counter = 0
         for weights in sorted(tracker.weight_results, key=lambda x: tracker.weight_results[x]):
-            print([str(x).rjust(2) for x in weights], tracker.weight_results[weights])
+            print([str(x).rjust(3) for x in weights], tracker.weight_results[weights])
             counter += 1
             if counter > 50:
                 break

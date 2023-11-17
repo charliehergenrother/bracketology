@@ -237,7 +237,7 @@ class Builder:
     def check_perm(self, conferences, perm, seed_num, team="", for_play_in=False):
         play_in = dict()
         for counter, perm_team in enumerate(perm):
-            if perm_team and team == perm_team and for_play_in: 
+            if perm_team and (team == perm_team or "/" in perm_team) and for_play_in:
                 if not self.check_rules(conferences, perm_team, counter, seed_num, True):
                     return False
             else:
@@ -363,7 +363,8 @@ class Builder:
                 self.get_region_num(seeds[1], region_order[0], region_order), seeds[1],\
                 conferences, region_order, True)
         self.place_team(region_num, seeds[1], matchup_1)
-        print("Placed (" + str(seeds[1]) + ") " + matchup_1 + \
+        if self.verbose:
+            print("Placed (" + str(seeds[1]) + ") " + matchup_1 + \
                 ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
 
         region_order = self.get_region_order(matchups[1][0], seeds[3])
@@ -371,9 +372,10 @@ class Builder:
                 self.get_region_num(seeds[3], region_order[0], region_order), seeds[3], \
                 conferences, region_order, True)
         self.place_team(region_num, seeds[3], matchup_2)
-        print("Placed (" + str(seeds[3]) + ") " + matchup_2 + \
+        if self.verbose:
+            print("Placed (" + str(seeds[3]) + ") " + matchup_2 + \
                 ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
-        print()
+            print()
 
     #find a place in the bracket where a team can fit
     #param team: string of team to place
@@ -622,7 +624,8 @@ class Builder:
                 team = save_team[0]
                 save_team = list()
                 team_index -= 1
-            print("placing", team, seed_num)
+            if self.verbose:
+                print("placing", team, seed_num)
          
             #save play-in teams to be placed all together
             if self.teams[team].at_large_bid and at_large_count >= AT_LARGE_MAX - 4:

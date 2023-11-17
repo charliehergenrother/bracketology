@@ -74,7 +74,7 @@ class Scorer:
         try:
             return team.NET_score
         except AttributeError:
-            team.NET_score = (-math.log(team.NET + 19, 2)/2 + 3.12)#(60-team.NET)/59
+            team.NET_score = (-math.log(team.NET + 19, 2)/2 + 3.16)#(60-team.NET)/59
             return team.NET_score
 
     #calculate score for a team's predictive rating (scale: 1.000 = 1, 0.000 = 60)
@@ -85,7 +85,7 @@ class Scorer:
         try:
             return team.power_score
         except AttributeError:
-            team.power_score = (-math.log(team.predictive + 19, 2)/2 + 3.12)#(60-team.predictive)/59
+            team.power_score = (-math.log(team.predictive + 19, 2)/2 + 3.16)#(60-team.predictive)/59
             return team.power_score
 
     #calculate score for a team's record in quadrant 1 (scale: 0.800 = 1, 0.000 = .000)

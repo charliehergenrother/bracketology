@@ -1,0 +1,4 @@
+Bridgeport[41.1732° N, 73.1870° W]
+Greensboro[36.0596° N, 79.8257° W]
+Wichita[37.6833° N, 97.3321° W]
+Spokane[47.6664° N, 117.4221° W]

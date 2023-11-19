@@ -3,7 +3,7 @@
 from datetime import date
 from team import Team
 from game import Game
-from builder import Builder
+from builder import Builder, TEAM_COORDINATES_FILE
 from tracker import Tracker
 from scorer import Scorer
 import os
@@ -13,7 +13,6 @@ import requests
 import math
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
-TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 
 reverse_team_dict = dict()
 
@@ -56,18 +55,27 @@ class Scraper:
         first_weekend_rankings = dict()
         region_rankings = dict()
         
-        SITE_COORDINATES_FILE = "lib/" + self.year + "/site_locations.txt"
-        f = open(SITE_COORDINATES_FILE, "r")
-        for count, line in enumerate(f):
-            site_name = line[:line.find("[")]
-            latitude = float(line[line.find("[")+1:line.find(" N, ")-1])
-            longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
-            if count < 8:
-                first_sites[site_name] = [latitude, longitude]
-                #two pods at each site, so append each site twice
-                first_weekend_sites.append(site_name)
-                first_weekend_sites.append(site_name)
-            else:
+        if self.mens:
+            SITE_COORDINATES_FILE = "lib/men/" + self.year + "/site_locations.txt"
+            f = open(SITE_COORDINATES_FILE, "r")
+            for count, line in enumerate(f):
+                site_name = line[:line.find("[")]
+                latitude = float(line[line.find("[")+1:line.find(" N, ")-1])
+                longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
+                if count < 8:
+                    first_sites[site_name] = [latitude, longitude]
+                    #two pods at each site, so append each site twice
+                    first_weekend_sites.append(site_name)
+                    first_weekend_sites.append(site_name)
+                else:
+                    regional_sites[site_name] = [latitude, longitude]
+        else:
+            SITE_COORDINATES_FILE = "lib/women/" + self.year + "/site_locations.txt"
+            f = open(SITE_COORDINATES_FILE, "r")
+            for count, line in enumerate(f):
+                site_name = line[:line.find("[")]
+                latitude = float(line[line.find("[")+1:line.find(" N, ")-1])
+                longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
                 regional_sites[site_name] = [latitude, longitude]
         f.close()
         
@@ -81,15 +89,18 @@ class Scraper:
             except KeyError:    #this team didn't exist this year
                 continue
             self.teams[team].longitude = longitude
-
-            first_weekend_rankings[team] = self.get_site_order(first_sites, latitude, longitude)
+            if self.mens:
+                first_weekend_rankings[team] = self.get_site_order(first_sites, latitude, longitude)
             region_rankings[team] = self.get_site_order(regional_sites, latitude, longitude)
         f.close()
         return first_weekend_sites, first_weekend_rankings, region_rankings
 
     #load ineligible teams, eliminated teams, and conference winners for a specific year
     def load_special_teams(self):
-        SPECIAL_TEAMS_FILE = "lib/" + self.year + "/special_teams.json"
+        if self.mens:
+            SPECIAL_TEAMS_FILE = "lib/men/" + self.year + "/special_teams.json"
+        else:
+            SPECIAL_TEAMS_FILE = "lib/women/" + self.year + "/special_teams.json"
         with open(SPECIAL_TEAMS_FILE, "r") as f:
             special_teams = json.loads(f.read())
         eliminated_teams = special_teams["eliminated_teams"]
@@ -148,7 +159,10 @@ class Scraper:
     #scrape one team's data
     #team: string indicating which team's data should be scraped
     def scrape_team_data(self, team):
-        TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/" + self.year + "/team-net-sheet?team="
+        if self.mens:
+            TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketball/" + self.year + "/team-net-sheet?team="
+        else:
+            TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketballw/" + self.year + "/team-net-sheet?team="
         team_url = TEAM_NITTY_URL_START + team
         self.teams[team] = Team()
         self.teams[team].scrape_data(team_url, self.year)
@@ -160,7 +174,10 @@ class Scraper:
     #scrape college basketball data from the web
     #param today_date: MM-DD representation of today's date. written to file to record that scraping took place
     def do_scrape(self, today_date):
-        net_url = "https://www.warrennolan.com/basketball/" + self.year + "/net"
+        if self.mens:
+            net_url = "https://www.warrennolan.com/basketball/" + self.year + "/net"
+        else:
+            net_url = "https://www.warrennolan.com/basketballw/" + self.year + "/net"
         net_page = requests.get(net_url)
         if net_page.status_code != 200:
             print('scraper problem!')
@@ -191,17 +208,20 @@ def process_args():
     should_scrape = True
     force_scrape = False
     verbose = False
-    weightfile = "lib/weights.txt"
+    weightfile = ""
     tracker = False
+    mens = True
 
     while argindex < len(sys.argv):
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-y year] [-w weightfile] [-o outputfile] [-b webfile] [-e|-s] [-v]")
+            print("./scraper.py [-h] [-m/-w] [-y year] [-i weightfile] [-o outputfile] [-b webfile] [-e|-s] [-v]")
             print("     -h: print this help message")
+            print("     -m: men's tournament projection [default]")
+            print("     -w: women's tournament projection")
             print("     -y: make a bracket for given year. 2021-present only")
-            print("     -w: use weights located in given file")
+            print("     -i: use weights located in given file")
             print("     -o: set a csv filename where the final ranking will live")
             print("     -b: set an html filename where the displayed bracket will live")
             print("     -e: override the scraping and use data currently stored")
@@ -209,6 +229,8 @@ def process_args():
             print("     -v: verbose. Print team resumes and bracketing procedure")
             print("     -t: tracker mode. Generate weights and test their effectiveness")
             sys.exit()
+        elif sys.argv[argindex] == '-w':
+            mens = False
         elif sys.argv[argindex] == '-o':
             outputfile = sys.argv[argindex + 1]
             argindex += 1
@@ -223,7 +245,7 @@ def process_args():
             verbose = True
         elif sys.argv[argindex] == '-s':
             force_scrape = True
-        elif sys.argv[argindex] == '-w':
+        elif sys.argv[argindex] == '-i':
             weightfile = sys.argv[argindex + 1]
             argindex += 1
         elif sys.argv[argindex] == '-y':
@@ -233,17 +255,25 @@ def process_args():
             year = sys.argv[argindex + 1]
             argindex += 1
         argindex += 1
-    datadir = "data/" + year + "/"
-    return year, outputfile, webfile, datadir, should_scrape, force_scrape, verbose, tracker, weightfile
+    if mens:
+        datadir = "data/men/" + year + "/"
+    else:
+        datadir = "data/women/" + year + "/"
+    if not weightfile:
+        if mens:
+            weightfile = "lib/men/weights.txt"
+        else:
+            weightfile = "lib/women/weights.txt"
+    return year, mens, outputfile, webfile, datadir, should_scrape, force_scrape, verbose, tracker, weightfile
 
 def main():
     scraper = Scraper()
-    scraper.year, scraper.outputfile, scraper.webfile, scraper.datadir, should_scrape, force_scrape, \
-            scraper.verbose, scraper.tracker, weightfile = process_args()
+    scraper.year, scraper.mens, scraper.outputfile, scraper.webfile, scraper.datadir, should_scrape, \
+            force_scrape, scraper.verbose, scraper.tracker, weightfile = process_args()
     builder = scraper.load_data(should_scrape, force_scrape)
     scorer = Scorer(builder)
     if scraper.tracker:
-        tracker = Tracker(builder, scorer, scraper.year, scraper.verbose)
+        tracker = Tracker(builder, scorer, scraper.year, scraper.verbose, scraper.mens)
         tracker.load_results()
         tracker.run_tracker(tuple())
         counter = 0

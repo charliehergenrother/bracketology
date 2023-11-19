@@ -4,6 +4,7 @@ from itertools import permutations
 import math
 
 AUTO_MAXES = {"2020": 32, "2021": 31, "2022": 32, "2023": 32, "2024": 32}
+TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 
 #class to build a bracket from resume ratings of college basketball teams
 class Builder:
@@ -20,6 +21,7 @@ class Builder:
         self.ineligible_teams = it
         self.conference_winners = cw
         self.reverse_team_dict = rtd
+        self.first_weekend_coords = dict()
         return
 
     #seed and print the field, including a bubble section
@@ -295,10 +297,24 @@ class Builder:
                 host_seed = 2
             for index, region in enumerate(self.first_weekend_num_to_name):
                 possible_sites.append(region[host_seed])
-            for site in self.first_weekend_rankings[team]:
-                while site in possible_sites:
-                    order.append(possible_sites.index(site))
-                    possible_sites[possible_sites.index(site)] = ""
+            if self.first_weekend_rankings: #mens
+                for site in self.first_weekend_rankings[team]:
+                    while site in possible_sites:
+                        order.append(possible_sites.index(site))
+                        possible_sites[possible_sites.index(site)] = ""
+            else:   #womens
+                site_distances = dict()
+                for site in self.first_weekend_coords:
+                    distance = math.sqrt((self.teams[team].latitude - self.first_weekend_coords[site][0])**2 + \
+                            (self.teams[team].longitude - self.first_weekend_coords[site][1])**2)
+                    site_distances[site] = distance
+                site_order = list()
+                for site in sorted(site_distances, key=lambda x: site_distances[x]):
+                    site_order.append(site)
+                for site in site_order:
+                    while site in possible_sites:
+                        order.append(possible_sites.index(site))
+                        possible_sites[possible_sites.index(site)] = ""
         return order
 
     #when rebalancing regions after placing 4 seeds, calculate scores for each region
@@ -331,12 +347,17 @@ class Builder:
                 break
             teams_to_fix, sites = self.delete_and_save_seed(4)
             bad_perms.append(tuple(teams_to_fix))
+            found_perm = False
             for perm in permutations(teams_to_fix):
                 if perm in bad_perms:
                     continue
                 if self.check_perm(conferences, perm, 4, "", False):
                     self.save_and_print_perm(4, perm, sites)
+                    found_perm = True
                     break
+            if not found_perm:
+                bad_perms = [bad_perms[0]]
+                continue
             scores = self.get_region_scores(sorted_teams)
         for region in self.regions:
             del region["score"]
@@ -565,18 +586,31 @@ class Builder:
     
     #choose a first weekend site that a #1-#4 seed will be the highest-seeded team at
     def choose_first_weekend(self, team, region_num, seed_num):
-        for site_name in self.first_weekend_rankings[team]:
-            if site_name in self.first_weekend_sites:
-                if self.verbose:
-                    print("Choosing", site_name)
-                self.first_weekend_sites.remove(site_name)
-                if site_name in self.first_weekend_name_to_num:
-                    self.first_weekend_name_to_num[site_name].append([region_num, seed_num])
-                else:
-                    self.first_weekend_name_to_num[site_name] = [[region_num, seed_num]]
-                self.first_weekend_num_to_name[region_num][seed_num] = site_name
-                break
- 
+        if self.first_weekend_sites: #mens
+            for site_name in self.first_weekend_rankings[team]:
+                if site_name in self.first_weekend_sites:
+                    if self.verbose:
+                        print("Choosing", site_name)
+                    self.first_weekend_sites.remove(site_name)
+                    if site_name in self.first_weekend_name_to_num:
+                        self.first_weekend_name_to_num[site_name].append([region_num, seed_num])
+                    else:
+                        self.first_weekend_name_to_num[site_name] = [[region_num, seed_num]]
+                    self.first_weekend_num_to_name[region_num][seed_num] = site_name
+                    break
+        else:   #womens
+            site_name = self.get_team_out(team)
+            self.first_weekend_name_to_num[site_name] = [[region_num, seed_num]]
+            self.first_weekend_num_to_name[region_num][seed_num] = site_name
+            f = open(TEAM_COORDINATES_FILE)
+            for line in f:
+                site_team = line[:line.find("[")]
+                if site_team == team:
+                    latitude = float(line[line.find("[")+1:line.find(" N, ")-1])
+                    longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
+                    break
+            self.first_weekend_coords[site_name] = [latitude, longitude]
+
     #create a bracket based on the ordered team scores
     def build_bracket(self):
         self.regions = [dict(), dict(), dict(), dict()]

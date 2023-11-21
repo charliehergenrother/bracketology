@@ -201,7 +201,7 @@ class Scorer:
                         top_10_wins += conf_tourn_multiplier * (15 - game.opp_NET)/10
             if self.verbose:
                 print("top 10 wins", top_10_wins)
-            team.top10_score = top_10_wins/5
+            team.top10_score = top_10_wins/3
             return team.top10_score
 
     #calculate score for a team's top 25 wins (Quad 1A) (scale: 1.000 = 5, 0.000 = 0)

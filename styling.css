@@ -5,6 +5,7 @@
     table {
         width: 100%;
         border-collapse: collapse;
+        margin-right: 5px;
 
         tr {
             border-bottom: 2px solid white;
@@ -44,10 +45,18 @@
 }
 
 .column2 {
+    table td:nth-child(3) {
+        text-align: right;
+    }
 }
 
-.sitecol {
-    width: 120px;
+.siteleftcol {
+    width: 150px;
+}
+
+.siterightcol {
+    width: 150px;
+    text-align: right;
 }
 
 .seedcol {

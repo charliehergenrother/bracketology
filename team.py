@@ -3,6 +3,7 @@
 from game import Game
 import requests
 import sys
+import os
 
 SELECTION_SUNDAY_DATES = {"2024": 17, "2023": 12, "2022": 13, "2021": 14}
 
@@ -40,7 +41,7 @@ class Team:
         self.noncon_SOS = ncsos
         self.games = gms
 
-    def scrape_data(self, url, year):
+    def scrape_data(self, team, url, year):
         team_page = requests.get(url)
         if team_page.status_code != 200:
             print("team problem!", url)
@@ -54,6 +55,12 @@ class Team:
         for line in team_page.text.split("\n"):
             if "Non-Division I Games" in line:
                 break
+            if "team-menu__image\"" in line and not os.path.exists("./lib/assets/" + team + ".png"):
+                image_url = "http://www.warrennolan.com" + line[line.find("src=")+5:line.find(" />")-1]
+                team_image = requests.get(image_url, stream=True)
+                with open("./lib/assets/" + team + ".png", "xb") as f:
+                    for chunk in team_image:
+                        f.write(chunk)
             if "team-menu__name\"" in line:
                 self.team_out = line[line.find(">")+1:line.find(" <span")]
             if "team-menu__conference" in line:

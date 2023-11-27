@@ -165,7 +165,7 @@ class Scraper:
             TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketballw/" + self.year + "/team-net-sheet?team="
         team_url = TEAM_NITTY_URL_START + team
         self.teams[team] = Team()
-        self.teams[team].scrape_data(team_url, self.year)
+        self.teams[team].scrape_data(team, team_url, self.year)
         f = open(self.datadir + team + ".json", "w+")
         f.write(json.dumps(self.teams[team], cls=ComplexEncoder))
         f.close()

@@ -751,32 +751,44 @@ class Builder:
             f.write('  <div class="table_container region' + str(region_num) + '">\n')
             f.write('    <h2 class="region_header">' + self.region_num_to_name[region_num] + '</h2>\n')
             f.write('    <table>\n')
-            f.write('      <colgroup><col class="sitecol"><col class="seedcol"><col></colgroup>\n')
+            if region_num in [0, 3]:
+                f.write('      <colgroup><col class="siteleftcol"><col class="seedcol"><col></colgroup>\n')
+            else:
+                f.write('      <colgroup><col class="seedcol"><col><col class="siterightcol"></colgroup>\n')
             f.write('      <thead>\n')
             f.write('        <tr>\n')
-            f.write('          <th>Site</th>\n')
+            if region_num in [0, 3]:
+                f.write('          <th>Site</th>\n')
             f.write('          <th>Seed</th>\n')
             f.write('          <th>Team</th>\n')
+            if region_num in [1, 2]:
+                f.write('          <th>Site</th>\n')
             f.write('        </tr>\n')
             f.write('      </thead>\n')
             f.write('      <tbody>\n')
             for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
                 if seed_num in [1, 16, 8, 9, 6, 11, 3, 14]:
-                    f.write('        <tr class="grayrow"><td>')
+                    f.write('        <tr class="grayrow">')
                 else:
-                    f.write('        <tr><td>')
-                if seed_num in [16, 12, 11, 10]:
-                    f.write(self.first_weekend_num_to_name[region_num][site_seed_lines[seed_num]])
+                    f.write('        <tr>')
+                if region_num in [0, 3]:
+                    f.write('<td>')
+                    if seed_num in [16, 12, 11, 10]:
+                        f.write(self.first_weekend_num_to_name[region_num][site_seed_lines[seed_num]])
+                    f.write('</td>')
                 team = self.regions[region_num][seed_num]
                 try:
-                    f.write('</td><td>(' + str(seed_num) + ')</td><td>' + \
-                        self.get_team_out(team) + " (" + self.teams[team].record + ")"
-                        '\n')
+                    f.write('<td>(' + str(seed_num) + ')</td><td>' + \
+                        self.get_team_out(team) + " (" + self.teams[team].record + ")</td>\n")
                 except KeyError:
-                    f.write('</td><td>(' + str(seed_num) + ')</td><td>' + \
+                    f.write('<td>(' + str(seed_num) + ')</td><td>' + \
                         self.get_team_out(team.split("/")[0]) + " (" + self.teams[team.split("/")[0]].record + ")/" +
-                        self.get_team_out(team.split("/")[1]) + " (" + self.teams[team.split("/")[1]].record + ")" +
-                        '\n')
+                        self.get_team_out(team.split("/")[1]) + " (" + self.teams[team.split("/")[1]].record + ")</td>\n")
+                if region_num in [1, 2]:
+                    f.write('<td>')
+                    if seed_num in [16, 12, 11, 10]:
+                        f.write(self.first_weekend_num_to_name[region_num][site_seed_lines[seed_num]])
+                    f.write('</td>')
 
             f.write('      </tbody>\n')
             f.write('    </table>\n')

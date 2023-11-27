@@ -735,11 +735,55 @@ class Builder:
                 print(self.construct_line(max_len, region_nums[0], region_nums[1], seed_num))
 
     def output_bracket(self):
-        max_len = self.get_max_len()
+        site_seed_lines = {16: 1, 12: 4, 11: 3, 10: 2}
         f = open(self.webfile, "w")
-        for region_nums in [[0, 1], [3, 2]]:
+        f.write('<!DOCTYPE html>\n\n')
+        f.write('<html>\n')
+        f.write('<head>\n')
+        f.write('<link rel="stylesheet" href="styling.css">\n')
+        f.write('</head>\n\n')
+        f.write('<body>\n\n')
+        f.write('<div class="region_column column1">\n')
+        for region_num in [0, 3, 1, 2]:
+            if region_num == 1:
+                f.write('</div>')
+                f.write('<div class="region_column column2">\n')
+            f.write('  <div class="table_container region' + str(region_num) + '">\n')
+            f.write('    <h2 class="region_header">' + self.region_num_to_name[region_num] + '</h2>\n')
+            f.write('    <table>\n')
+            f.write('      <colgroup><col class="sitecol"><col class="seedcol"><col></colgroup>\n')
+            f.write('      <thead>\n')
+            f.write('        <tr>\n')
+            f.write('          <th>Site</th>\n')
+            f.write('          <th>Seed</th>\n')
+            f.write('          <th>Team</th>\n')
+            f.write('        </tr>\n')
+            f.write('      </thead>\n')
+            f.write('      <tbody>\n')
             for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
-                f.write("<p>" + self.construct_line(max_len, region_nums[0], region_nums[1], seed_num) + "</p>\n")
+                if seed_num in [1, 16, 8, 9, 6, 11, 3, 14]:
+                    f.write('        <tr class="grayrow"><td>')
+                else:
+                    f.write('        <tr><td>')
+                if seed_num in [16, 12, 11, 10]:
+                    f.write(self.first_weekend_num_to_name[region_num][site_seed_lines[seed_num]])
+                team = self.regions[region_num][seed_num]
+                try:
+                    f.write('</td><td>(' + str(seed_num) + ')</td><td>' + \
+                        self.get_team_out(team) + " (" + self.teams[team].record + ")"
+                        '\n')
+                except KeyError:
+                    f.write('</td><td>(' + str(seed_num) + ')</td><td>' + \
+                        self.get_team_out(team.split("/")[0]) + " (" + self.teams[team.split("/")[0]].record + ")/" +
+                        self.get_team_out(team.split("/")[1]) + " (" + self.teams[team.split("/")[1]].record + ")" +
+                        '\n')
+
+            f.write('      </tbody>\n')
+            f.write('    </table>\n')
+            f.write('  </div>\n')
+        f.write('</div>\n')
+        f.write('</body>\n')
+        f.write('</html>\n')
 
 
 

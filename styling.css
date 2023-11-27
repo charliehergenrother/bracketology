@@ -1,0 +1,55 @@
+.table_container {
+    margin-bottom: 10px;
+    font-family: Arial;
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+
+        tr {
+            border-bottom: 2px solid white;
+        }
+    }
+}
+
+.region0 {
+}
+
+.region1 {
+}
+
+.region2 {
+}
+
+.region3 {
+}
+
+.region_header {
+   text-align: center; 
+}
+
+.region_column {
+    height: auto;
+    max-width: fit-content;
+    position: relative;
+    float: left;
+}
+
+.grayrow {
+    background: lightgray;
+}
+
+.column1 {
+    margin-right: 30px;
+}
+
+.column2 {
+}
+
+.sitecol {
+    width: 120px;
+}
+
+.seedcol {
+    width: 25px;
+}

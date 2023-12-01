@@ -494,11 +494,11 @@ class Builder:
                 #if no permutation works, work backward through the seed list trying every permutation of those seeds as well as ours
                 if not found_perm:
                     found_perm, save_team = self.try_reorganize(team, seed_num, reorg_seed, teams_to_fix, \
-                            conferences, sites)
+                            conferences, sites, for_play_in)
         return save_team, region_num
 
     #recurse up the seed list, trying to brute-force a fix to fit all of the teams in the bracket
-    def try_reorganize(self, team, seed_num, reorg_seed, teams_to_fix, conferences, sites):
+    def try_reorganize(self, team, seed_num, reorg_seed, teams_to_fix, conferences, sites, for_play_in):
         tries = 0
         curr_reorg_max = 5  #lowest-numbered seed to try reorganizing
         found_perm = False
@@ -529,11 +529,11 @@ class Builder:
             other_teams_to_fix, other_sites = self.delete_and_save_seed(reorg_seed)
             perm_to_save = list()
             for other_perm in permutations(other_teams_to_fix):
-                if self.check_perm(conferences, other_perm, reorg_seed):
+                if self.check_perm(conferences, other_perm, reorg_seed, "", for_play_in):
                     self.save_and_print_perm(reorg_seed, other_perm, other_sites)
                     perm_to_save = other_perm
                     for perm in permutations(teams_to_fix):
-                        if self.check_perm(conferences, perm, seed_num, team):
+                        if self.check_perm(conferences, perm, seed_num, team, for_play_in):
                             self.save_and_print_perm(seed_num, perm, sites)
                             region_num = perm.index(team)
                             return True, []
@@ -743,57 +743,83 @@ class Builder:
         f.write('<link rel="stylesheet" href="styling.css">\n')
         f.write('</head>\n\n')
         f.write('<body>\n\n')
-        f.write('<div class="region_column column1">\n')
+        f.write('<div class="bracket_container">\n')
+        f.write('  <div class="region_column column1">\n')
         for region_num in [0, 3, 1, 2]:
             if region_num == 1:
-                f.write('</div>')
-                f.write('<div class="region_column column2">\n')
-            f.write('  <div class="table_container region' + str(region_num) + '">\n')
-            f.write('    <h2 class="region_header">' + self.region_num_to_name[region_num] + '</h2>\n')
-            f.write('    <table>\n')
+                f.write('  </div>\n')
+                f.write('  <div class="region_column column2">\n')
+            f.write('    <div class="table_container region' + str(region_num) + '">\n')
+            f.write('      <h2 class="region_header">' + self.region_num_to_name[region_num] + '</h2>\n')
+            f.write('      <table>\n')
             if region_num in [0, 3]:
-                f.write('      <colgroup><col class="siteleftcol"><col class="seedcol"><col></colgroup>\n')
+                f.write('        <colgroup><col class="siteleftcol"><col class="seedcol"><col><col></colgroup>\n')
             else:
-                f.write('      <colgroup><col class="seedcol"><col><col class="siterightcol"></colgroup>\n')
-            f.write('      <thead>\n')
-            f.write('        <tr>\n')
-            if region_num in [0, 3]:
-                f.write('          <th>Site</th>\n')
-            f.write('          <th>Seed</th>\n')
-            f.write('          <th>Team</th>\n')
-            if region_num in [1, 2]:
-                f.write('          <th>Site</th>\n')
-            f.write('        </tr>\n')
-            f.write('      </thead>\n')
-            f.write('      <tbody>\n')
+                f.write('        <colgroup><col class="seedcol"><col><col><col class="siterightcol"></colgroup>\n')
+            f.write('        <tbody>\n')
             for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
                 if seed_num in [1, 16, 8, 9, 6, 11, 3, 14]:
-                    f.write('        <tr class="grayrow">')
+                    f.write('          <tr class="grayrow">')
                 else:
-                    f.write('        <tr>')
+                    f.write('          <tr>')
                 if region_num in [0, 3]:
                     f.write('<td>')
                     if seed_num in [16, 12, 11, 10]:
                         f.write(self.first_weekend_num_to_name[region_num][site_seed_lines[seed_num]])
                     f.write('</td>')
                 team = self.regions[region_num][seed_num]
+                f.write('<td>(' + str(seed_num) + ')</td>')
                 try:
-                    f.write('<td>(' + str(seed_num) + ')</td><td>' + \
-                        self.get_team_out(team) + " (" + self.teams[team].record + ")</td>\n")
+                    f.write('<td><img src=assets/' + team + '.png></img></td>' + \
+                            '<td>' + self.get_team_out(team) + " (" + self.teams[team].record + ")</td>\n")
                 except KeyError:
-                    f.write('<td>(' + str(seed_num) + ')</td><td>' + \
-                        self.get_team_out(team.split("/")[0]) + " (" + self.teams[team.split("/")[0]].record + ")/" +
-                        self.get_team_out(team.split("/")[1]) + " (" + self.teams[team.split("/")[1]].record + ")</td>\n")
+                    team1 = team.split("/")[0]
+                    team2 = team.split("/")[1]
+                    f.write('<td><img class="tinylogo" src=assets/' + team1 + '.png></img>' + \
+                            '<img class="tinylogo" src=assets/' + team2 + '.png></img></td><td>' + \
+                        self.get_team_out(team1) + " (" + self.teams[team1].record + ")/" + \
+                        self.get_team_out(team2) + " (" + self.teams[team2].record + ")</td>\n")
                 if region_num in [1, 2]:
                     f.write('<td>')
                     if seed_num in [16, 12, 11, 10]:
                         f.write(self.first_weekend_num_to_name[region_num][site_seed_lines[seed_num]])
                     f.write('</td>')
 
-            f.write('      </tbody>\n')
-            f.write('    </table>\n')
-            f.write('  </div>\n')
-        f.write('</div>\n')
+            f.write('        </tbody>\n')
+            f.write('      </table>\n')
+            f.write('    </div>\n')
+        f.write('  </div>\n')
+        f.write('</div>\n\n')
+        f.write('<div class="bubble_container table_container">\n')
+        f.write('  <table>\n')
+        f.write('    <tbody>\n')
+        f.write('      <tr class="grayrow"><td><h4>Last Four Byes</h4></td>')
+        at_large_counter = 0
+        bubble_counter = 0
+        AT_LARGE_MAX = 68 - AUTO_MAXES[self.year]
+        for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
+            if self.teams[team].at_large_bid:
+                at_large_counter += 1
+                if at_large_counter > AT_LARGE_MAX - 8:
+                    f.write('<td><img src=assets/' + team + '.png></img></td><td>' + \
+                        self.get_team_out(team) + ' (' + self.teams[team].record + ')</td>')
+                    if at_large_counter == AT_LARGE_MAX - 4:
+                        f.write('</tr>\n')
+                        f.write('      <tr><td><h4>Last Four In</h4></td>')
+                    elif at_large_counter == AT_LARGE_MAX:
+                        f.write('</tr>\n')
+                        f.write('      <tr class="grayrow"><td><h4>First Four Out</h4></td>')
+            elif not self.teams[team].auto_bid and team not in self.ineligible_teams:
+                bubble_counter += 1
+                f.write('<td><img src=assets/' + team + '.png></img></td><td>' + \
+                        self.get_team_out(team) + ' (' + self.teams[team].record + ')</td>')
+                if bubble_counter == 4:
+                    f.write('</tr>\n')
+                    f.write('      <tr><td><h4>Next Four Out</h4></td>')
+                elif bubble_counter == 8:
+                    f.write('</tr>\n')
+                    break
+        f.write('</div>\n\n')
         f.write('</body>\n')
         f.write('</html>\n')
 

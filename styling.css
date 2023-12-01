@@ -9,6 +9,15 @@
 
         tr {
             border-bottom: 2px solid white;
+            height: 35px;
+        }
+
+        img {
+            height: 25px;
+        }
+
+        .tinylogo {
+            height: 15px;
         }
     }
 }
@@ -30,7 +39,6 @@
 }
 
 .region_column {
-    height: auto;
     max-width: fit-content;
     position: relative;
     float: left;
@@ -45,7 +53,7 @@
 }
 
 .column2 {
-    table td:nth-child(3) {
+    table td:nth-child(4) {
         text-align: right;
     }
 }
@@ -61,4 +69,16 @@
 
 .seedcol {
     width: 25px;
+}
+
+.bracket_container {
+
+}
+
+.bubble_container {
+    float: inline-start;
+
+    td {
+        margin-right: 10px;
+    }
 }

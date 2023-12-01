@@ -42,10 +42,10 @@ class Tracker:
         elif len(weights_collected) in []:
             for num in [26, 27]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
+        elif len(weights_collected) in [3]:
             for num in [25, 26]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [3]:
+        elif len(weights_collected) in []:
             for num in [24, 25]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
@@ -66,10 +66,10 @@ class Tracker:
         elif len(weights_collected) in []:
             for num in [18, 19]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [2]:
+        elif len(weights_collected) in []:
             for num in [17.5, 18.5]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [0, 2]:
+        elif len(weights_collected) in []:
             for num in [17, 18]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
@@ -90,62 +90,92 @@ class Tracker:
         elif len(weights_collected) in []:
             for num in [13, 14]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
+        elif len(weights_collected) in [8]:
             for num in [12, 13]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
+        elif len(weights_collected) in [1]:
             for num in [11, 12]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
             for num in [10, 11]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
-            for num in [9, 10]:
+            for num in [9.5, 10]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
+            for num in [9, 9.5]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [4, 14]:
             for num in [8.5, 9]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [8, 11]:
+        elif len(weights_collected) in []:
             for num in [8, 8.5]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
             for num in [7.5, 8]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [4]:
-            for num in [7, 7.5]:
+        elif len(weights_collected) in [9]:
+            for num in [7.2, 7.5]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
-            for num in [6.5, 7]:
+            for num in [7, 7.2]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
-            for num in [6, 6.5]:
+            for num in [6.8, 7]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
-            for num in [5.5, 6]:
+            for num in [6.5, 6.8]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
-            for num in [5, 5.5]:
+            for num in [6.2, 6.5]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [0]:
+            for num in [6, 6.2]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [5.8, 6]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [5.5, 5.8]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [13]:
+            for num in [5.2, 5.5]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [5, 5.2]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in [7]:
             for num in [4.8, 5]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
+        elif len(weights_collected) in [10]:
             for num in [4.5, 4.8]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
-            for num in [4, 4.5]:
+            for num in [4.2, 4.5]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
-            for num in [3.5, 4]:
+            for num in [4, 4.2]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [9]:
-            for num in [3, 3.5]:
+        elif len(weights_collected) in [5]:
+            for num in [3.8, 4]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [10]:
+        elif len(weights_collected) in []:
+            for num in [3.5, 3.8]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [3.2, 3.5]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [3, 3.2]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in [6]:
             for num in [2.8, 3]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
             for num in [2.5, 2.8]:
+                self.run_tracker(weights_collected + (num,))
+        elif len(weights_collected) in []:
+            for num in [2.2, 2.5]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
             for num in [2, 2.5]:
@@ -153,25 +183,25 @@ class Tracker:
         elif len(weights_collected) in []:
             for num in [1.5, 2]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [6, 12]:
+        elif len(weights_collected) in []:
             for num in [1.2, 1.5]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
             for num in [1, 1.2]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [5]:
+        elif len(weights_collected) in []:
             for num in [0.8, 1]:
                 self.run_tracker(weights_collected + (num,))
         elif len(weights_collected) in []:
             for num in [0.5, 0.8]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [1, 14]:
+        elif len(weights_collected) in []:
             for num in [0.2, 0.5]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in [13]:
+        elif len(weights_collected) in []:
             for num in [0, 0.2]:
                 self.run_tracker(weights_collected + (num,))
-        elif len(weights_collected) in []:
+        elif len(weights_collected) in [2, 11, 12]:
             for num in [0]:
                 self.run_tracker(weights_collected + (num,))
         else:

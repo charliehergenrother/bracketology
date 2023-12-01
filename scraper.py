@@ -280,7 +280,7 @@ def main():
         for weights in sorted(tracker.weight_results, key=lambda x: tracker.weight_results[x]):
             print([str(x).rjust(3) for x in weights], tracker.weight_results[weights])
             counter += 1
-            if counter > 50:
+            if (scraper.mens and counter > 50) or (not scraper.mens and counter > 100):
                 break
     else:
         weights = scorer.get_weights(weightfile)

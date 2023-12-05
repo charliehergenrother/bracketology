@@ -12,21 +12,13 @@ To run: python3 scraper.py
 
 Options:
 -h: print a help message listing the options.
-
 -w: run the projection system for the women's tournament instead of the men's. 2022-present only
-
 -y [year]: make a bracket for given year. 2021-present only
-
 -i [file]: use weights located in given file. See lib/weights.txt for example
-
 -o [file]: output team data and ratings to the given csv file
-
 -e: override scraping and use data currently stored
-
 -s: scrape data anew regardless of whether data has been scraped today
-
 -v: verbose. Print team resumes and bracketing procedure
-
 -t: tracker mode. Generate weights and test their effectiveness
 
 To see all options: python3 scraper.py -h

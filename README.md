@@ -29,6 +29,8 @@ Options:
 
 -t: tracker mode. Generate weights and test their effectiveness
 
+-r [file]: output team resumes to the given csv file.
+
 To see all options: python3 scraper.py -h
 
 

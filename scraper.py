@@ -16,6 +16,33 @@ SCRAPE_DATE_FILE = "scrapedate.txt"
 
 reverse_team_dict = dict()
 
+better_team_abbrs = {"San Diego State": "SDSU", 
+        "Kansas State": "KSU",
+        "Ohio State": "OSU",
+        "Oklahoma State": "OKST",
+        "Oregon State": "ORST",
+        "Michigan State": "MSU",
+        "Mississippi State": "MSST",
+        "Washington State": "WSU",
+        "Texas Tech": "TTU",
+        "Indiana State": "INST",
+        "Iowa State": "ISU",
+        "Georgia Tech": "GT",
+        "Virginia Tech": "VT",
+        "Colorado State": "CSU",
+        "Kentucky": "UK",
+        "Saint Mary's": "SMC",
+        "Saint John's": "SJU",
+        "Ole Miss": "MISS",
+        "Utah State": "UTST",
+        "Texas A&M": "TA&M",
+        "San Francisco": "SF",
+        "Santa Clara": "SCL",
+        "North Carolina": "UNC",
+        "North Carolina State": "NCST",
+        "Northwestern": "NWST"
+        }
+
 #class to turn the Team and Game objects into jsonifyable strings
 class ComplexEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -198,11 +225,50 @@ class Scraper:
         f.write(today_date)
         f.close()
 
+    def get_location_prefix(self, game):
+        location_prefix = ""
+        if game.location == "A":
+            location_prefix = "@"
+        elif game.location == "N":
+            location_prefix = "v. "
+        return location_prefix
+
+    def output_resume(self):
+        f = open(self.resumefile, "w+")
+        f.write("Team,Record,NET,PWR,Q1,Q2,Q3/4,Q1 wins,Q2+ losses\n")
+        for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
+            f.write(self.teams[team].team_out + ",")
+            f.write("'" + self.teams[team].record + ",")
+            f.write(str(self.teams[team].NET) + ",")
+            f.write(str(round(self.teams[team].predictive, 3)) + ",")
+            f.write("'" + self.teams[team].get_derived_record(1) + ",")
+            f.write("'" + self.teams[team].get_derived_record(2) + ",")
+            f.write("'" + self.teams[team].get_derived_record(4) + ",")
+            good_wins = list()
+            bad_losses = list()
+            for game in self.teams[team].games:
+                if game.opponent in better_team_abbrs:
+                    team_abbr = better_team_abbrs[game.opponent]
+                else:
+                    team_abbr = game.opponent[:3].upper()
+                if game.win and game.quadrant == 1:
+                    good_wins.append({"team": self.get_location_prefix(game) + team_abbr, "NET": game.opp_NET})
+                elif not game.win and game.quadrant >= 2:
+                    bad_losses.append({"team": self.get_location_prefix(game) + game.opponent, "NET": game.opp_NET})
+            f.write('"')
+            for game in sorted(good_wins, key=lambda x: x["NET"]):
+                f.write(game["team"] + " (" + str(game["NET"]) + "), ")
+            f.write('","')
+            for game in sorted(bad_losses, key=lambda x: x["NET"]):
+                f.write(game["team"] + " (" + str(game["NET"]) + "), ")
+            f.write('",\n')
+
 #accept command line arguments
 def process_args():
     year = "2024"
     argindex = 1
     outputfile = ""
+    resumefile = ""
     webfile = ""
     should_scrape = True
     force_scrape = False
@@ -216,7 +282,7 @@ def process_args():
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-m/-w] [-f] [-y year] [-i weightfile] [-o outputfile] [-b webfile] [-e|-s] [-v]")
+            print("./scraper.py [-h] [-m/-w] [-f] [-y year] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-e|-s] [-v]")
             print("     -h: print this help message")
             print("     -m: men's tournament projection [default]")
             print("     -w: women's tournament projection")
@@ -224,6 +290,7 @@ def process_args():
             print("     -y: make a bracket for given year. 2021-present only")
             print("     -i: use weights located in given file")
             print("     -o: set a csv filename where the final ranking will live")
+            print("     -r: set a csv filename where the final readable resume will live")
             print("     -b: set an html filename where the displayed bracket will live")
             print("     -e: override the scraping and use data currently stored")
             print("     -s: scrape data anew regardless of whether data has been scraped today")
@@ -234,6 +301,9 @@ def process_args():
             mens = False
         elif sys.argv[argindex] == '-o':
             outputfile = sys.argv[argindex + 1]
+            argindex += 1
+        elif sys.argv[argindex] == '-r':
+            resumefile = sys.argv[argindex + 1]
             argindex += 1
         elif sys.argv[argindex] == '-b':
             webfile = sys.argv[argindex + 1]
@@ -267,11 +337,12 @@ def process_args():
             weightfile = "lib/men/weights.txt"
         else:
             weightfile = "lib/women/weights.txt"
-    return year, mens, outputfile, webfile, datadir, should_scrape, force_scrape, verbose, tracker, weightfile, future
+    return year, mens, outputfile, resumefile, webfile, datadir, should_scrape, force_scrape, \
+            verbose, tracker, weightfile, future
 
 def main():
     scraper = Scraper()
-    scraper.year, scraper.mens, scraper.outputfile, scraper.webfile, scraper.datadir, should_scrape, \
+    scraper.year, scraper.mens, scraper.outputfile, scraper.resumefile, scraper.webfile, scraper.datadir, should_scrape, \
             force_scrape, scraper.verbose, scraper.tracker, weightfile, future = process_args()
     builder = scraper.load_data(should_scrape, force_scrape)
     scorer = Scorer(builder, future, scraper.mens)
@@ -293,6 +364,8 @@ def main():
         if scraper.outputfile:
             scorer.outputfile = scraper.outputfile
             scorer.output_scores()
+        if scraper.resumefile:
+            scraper.output_resume()
         if scraper.webfile:
             builder.webfile = scraper.webfile
             builder.output_bracket()

@@ -753,9 +753,9 @@ class Builder:
             f.write('      <h2 class="region_header">' + self.region_num_to_name[region_num] + '</h2>\n')
             f.write('      <table>\n')
             if region_num in [0, 3]:
-                f.write('        <colgroup><col class="siteleftcol"><col class="seedcol"><col><col></colgroup>\n')
+                f.write('        <colgroup><col class="siteleftcol"><col class="seedcol"><col class="logocol"><col></colgroup>\n')
             else:
-                f.write('        <colgroup><col class="seedcol"><col><col><col class="siterightcol"></colgroup>\n')
+                f.write('        <colgroup><col class="seedcol"><col class="logocol"><col><col class="siterightcol"></colgroup>\n')
             f.write('        <tbody>\n')
             for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
                 if seed_num in [1, 16, 8, 9, 6, 11, 3, 14]:

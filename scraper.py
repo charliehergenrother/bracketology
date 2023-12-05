@@ -119,8 +119,7 @@ class Scraper:
             f = open(self.datadir + SCRAPE_DATE_FILE, "x")
             f.close()
         f = open(self.datadir + SCRAPE_DATE_FILE, "r+")
-        today = date.today()
-        today_date = today.strftime("%m-%d")    #format: mm-dd
+        today_date = date.today().strftime("%m-%d")    #format: mm-dd
         saved_date = f.read().strip()
         f.close()
         if force_scrape or (should_scrape and today_date != saved_date):
@@ -211,15 +210,17 @@ def process_args():
     weightfile = ""
     tracker = False
     mens = True
+    future = False
 
     while argindex < len(sys.argv):
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-m/-w] [-y year] [-i weightfile] [-o outputfile] [-b webfile] [-e|-s] [-v]")
+            print("./scraper.py [-h] [-m/-w] [-f] [-y year] [-i weightfile] [-o outputfile] [-b webfile] [-e|-s] [-v]")
             print("     -h: print this help message")
             print("     -m: men's tournament projection [default]")
             print("     -w: women's tournament projection")
+            print("     -f: future (end-of-season) projection. default is to project the field as if the season ended today.")
             print("     -y: make a bracket for given year. 2021-present only")
             print("     -i: use weights located in given file")
             print("     -o: set a csv filename where the final ranking will live")
@@ -241,6 +242,8 @@ def process_args():
             should_scrape = False
         elif sys.argv[argindex] == '-t':
             tracker = True
+        elif sys.argv[argindex] == '-f':
+            future = True
         elif sys.argv[argindex] == '-v':
             verbose = True
         elif sys.argv[argindex] == '-s':
@@ -256,22 +259,22 @@ def process_args():
             argindex += 1
         argindex += 1
     if mens:
-        datadir = "data/men/" + year + "/"
+        datadir = "data/men/" + year + "/resumes/"
     else:
-        datadir = "data/women/" + year + "/"
+        datadir = "data/women/" + year + "/resumes/"
     if not weightfile:
         if mens:
             weightfile = "lib/men/weights.txt"
         else:
             weightfile = "lib/women/weights.txt"
-    return year, mens, outputfile, webfile, datadir, should_scrape, force_scrape, verbose, tracker, weightfile
+    return year, mens, outputfile, webfile, datadir, should_scrape, force_scrape, verbose, tracker, weightfile, future
 
 def main():
     scraper = Scraper()
     scraper.year, scraper.mens, scraper.outputfile, scraper.webfile, scraper.datadir, should_scrape, \
-            force_scrape, scraper.verbose, scraper.tracker, weightfile = process_args()
+            force_scrape, scraper.verbose, scraper.tracker, weightfile, future = process_args()
     builder = scraper.load_data(should_scrape, force_scrape)
-    scorer = Scorer(builder)
+    scorer = Scorer(builder, future, scraper.mens)
     if scraper.tracker:
         tracker = Tracker(builder, scorer, scraper.year, scraper.verbose, scraper.mens)
         tracker.load_results()

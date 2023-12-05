@@ -3,6 +3,10 @@
 from team import SELECTION_SUNDAY_DATES
 import sys
 import math
+import requests
+import os
+from datetime import date
+import json
 
 WEIGHTS = {
         "LOSS_WEIGHT": 0,
@@ -22,13 +26,22 @@ WEIGHTS = {
         "BAD_LOSS_WEIGHT": 0
 }
 
+SCRAPE_DATE_FILE = "scrapedate.txt"
+TEAM_URL_START = "https://www.warrennolan.com/basketball/2024/team-clubhouse?team="
+
 #class to generate resume ratings from scraped data about college basketball teams
 class Scorer:
 
-    def __init__(self, builder):
+    def __init__(self, builder, f, m):
         self.teams = builder.teams
         self.verbose = builder.verbose
         self.year = builder.year
+        self.future = f
+        self.mens = m
+        if self.mens:
+            self.schedule_datadir = "data/men/" + self.year + "/schedules/"
+        else:
+            self.schedule_datadir = "data/women/" + self.year + "/schedules/"
         return
 
     #sanity check to make sure my weights are added correctly
@@ -55,6 +68,9 @@ class Scorer:
             print("ya dun goofed with your weights")
             sys.exit()
 
+    def kenpom_estimate(self, rank):
+        return -0.0000026505*rank*rank*rank + 0.0015329*rank*rank - 0.349987*rank + 27.803
+
     #calculate score for a team's raw number of losses (scale: 1.000 = 0, 0.000 = 10)
     #param team: Team object to calculate score for
     def get_loss_score(self, team):
@@ -64,6 +80,18 @@ class Scorer:
             return team.loss_score
         except AttributeError:
             team.loss_score = (10-int(team.record.split("-")[1]))/10
+            if self.future:
+                team_kenpom = self.kenpom_estimate(team.KenPom)
+                for game in team.future_games:
+                    opp_kenpom = self.kenpom_estimate(self.teams[game['opponent']].KenPom)
+                    team_spread_neutral = opp_kenpom - team_kenpom
+                    if game['location'] == 'H':
+                        team_spread = team_spread_neutral + 3
+                    elif game['location'] == 'N':
+                        team_spread = team_spread_neutral
+                    elif game['location'] == 'A':
+                        team_spread = team_spread_neutral - 3
+                    ##THIS SHOULD GO IN SCRAPE.
             return team.loss_score
 
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
@@ -308,9 +336,78 @@ class Scorer:
                 WEIGHTS[weight_name] = float(weight_val)
         return WEIGHTS
 
+    def load_schedule(self, team):
+        if not os.path.exists(self.schedule_datadir):
+            print("creating schedules dir")
+            os.makedirs(self.schedule_datadir)
+        if not os.path.exists(self.schedule_datadir + SCRAPE_DATE_FILE):
+            f = open(self.schedule_datadir + SCRAPE_DATE_FILE, "x")
+            f.close()
+        f = open(self.schedule_datadir + SCRAPE_DATE_FILE, "r+")
+        today_date = date.today().strftime("%m-%d")    #format: mm-dd
+        saved_date = f.read().strip()
+        f.close()
+        if today_date != saved_date:
+            self.do_schedule_scrape(team)
+            print("scraped", team, "schedule!")
+        else:
+            self.do_schedule_load(team)
+
+    def do_schedule_load(self, team):
+        filename = team + ".json"
+        f = open(self.schedule_datadir + filename, "r")
+        sched_obj = json.loads(f.read())
+        self.teams[team].future_games = sched_obj
+
+    def do_schedule_scrape(self, team):
+        schedule_url = TEAM_URL_START + team
+        schedule_page = requests.get(schedule_url)
+        table_start = False
+        schedule_games = list()
+        found_game = False
+        found_result = False
+        found_location = False
+        for line in schedule_page.text.split("\n"):
+            if not table_start:
+                if 'team-schedule' in line:
+                    table_start = True
+                continue
+            if "team-schedule__location" in line:
+                found_location = True
+                game = dict()
+            elif found_location:
+                if "VS" in line:
+                    game["location"] = "N"
+                elif "AT" in line:
+                    game["location"] = "A"
+                else:
+                    game["location"] = "H"
+                found_location = False
+            elif "images" in line and "conf-logo" not in line and "NA3" not in line:
+                found_game = True
+                opp_name = line[line.find("80x80")+6:line.find(".png")]
+                game["opponent"] = opp_name
+            elif found_game:
+                if found_result:
+                    if "team-schedule__result" not in line:
+                        schedule_games.append(game)
+                    found_result = False
+                    found_game = False
+                elif "opp-record-line" in line:
+                    game["NET"] = int(line[line.find("NET")+5:line.find("</span></span>")])
+                elif "team-schedule__result" in line:
+                    found_result = True
+                    continue
+        f = open(self.schedule_datadir + team + ".json", "w+")
+        f.write(json.dumps(schedule_games))
+        f.close()
+        return schedule_games
+
     #calculate resume score for all teams
     def build_scores(self, WEIGHTS):
         for team in self.teams:
+            if self.future:
+                self.load_schedule(team)
             if self.verbose:
                 print("Scoring", team)
             score = 0
@@ -330,6 +427,11 @@ class Scorer:
             score += WEIGHTS["AWFUL_LOSS_WEIGHT"]*self.get_awful_loss_score(self.teams[team])
             score += WEIGHTS["BAD_LOSS_WEIGHT"]*self.get_bad_loss_score(self.teams[team])
             self.teams[team].score = score
+        if self.future:
+            f = open(self.schedule_datadir + SCRAPE_DATE_FILE, "w+")
+            today_date = date.today().strftime("%m-%d")    #format: mm-dd
+            f.write(today_date)
+            f.close()
 
     #write all team scores for each category to specified file
     def output_scores(self):

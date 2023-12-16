@@ -71,27 +71,49 @@ class Scorer:
     def kenpom_estimate(self, rank):
         return -0.0000026505*rank*rank*rank + 0.0015329*rank*rank - 0.349987*rank + 27.803
 
+    def get_quadrant(self, opp_NET, location):
+        if location == "H":
+            if opp_NET <= 30:
+                return 1
+            elif opp_NET <= 75:
+                return 2
+            elif opp_NET <= 160:
+                return 3
+            return 4
+        elif location == "A":
+            if opp_NET <= 75:
+                return 1
+            elif opp_NET <= 135:
+                return 2
+            elif opp_NET <= 260:
+                return 3
+            return 4
+        elif location == "N":
+            if opp_NET <= 50:
+                return 1
+            elif opp_NET <= 100:
+                return 2
+            elif opp_NET <= 200:
+                return 3
+            return 4
+        else:
+            return "problems have arisen"
+
     #calculate score for a team's raw number of losses (scale: 1.000 = 0, 0.000 = 10)
     #param team: Team object to calculate score for
     def get_loss_score(self, team):
-        if self.verbose:
+        if self.verbose and not self.future:
             print("losses", int(team.record.split("-")[1]))
         try:
             return team.loss_score
         except AttributeError:
-            team.loss_score = (10-int(team.record.split("-")[1]))/10
+            num_losses = int(team.record.split("-")[1])
             if self.future:
-                team_kenpom = self.kenpom_estimate(team.KenPom)
                 for game in team.future_games:
-                    opp_kenpom = self.kenpom_estimate(self.teams[game['opponent']].KenPom)
-                    team_spread_neutral = opp_kenpom - team_kenpom
-                    if game['location'] == 'H':
-                        team_spread = team_spread_neutral + 3
-                    elif game['location'] == 'N':
-                        team_spread = team_spread_neutral
-                    elif game['location'] == 'A':
-                        team_spread = team_spread_neutral - 3
-                    ##THIS SHOULD GO IN SCRAPE.
+                    num_losses += (1 - game['win_prob'])
+                if self.verbose:
+                    print("losses", num_losses)
+            team.loss_score = (10-num_losses)/10
             return team.loss_score
 
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
@@ -119,48 +141,102 @@ class Scorer:
     #calculate score for a team's record in quadrant 1 (scale: 0.800 = 1, 0.000 = .000)
     #param team: Team object to calculate score for
     def get_Q1_score(self, team):
-        if self.verbose:
+        if self.verbose and not self.future:
             print("Quadrant 1", team.get_derived_pct(1))
         try:
             return team.Q1_score
         except AttributeError:
-            team.Q1_score = (team.get_derived_pct(1)/0.8)
+            if self.future:
+                Q1_record = team.get_derived_record(1)
+                wins = int(Q1_record.split("-")[0])
+                losses = int(Q1_record.split("-")[1])
+                for game in team.future_games:
+                    game_quad = self.get_quadrant(game['NET'], game['location'])
+                    if game_quad == 1:
+                        wins += game['win_prob']
+                    losses += (1 - game['win_prob'])
+                team.Q1_score = (wins/(wins + losses))/0.8
+                if self.verbose:
+                    print("Quadrant 1", team.Q1_score, round(wins, 2), round(losses, 2))
+            else:
+                team.Q1_score = (team.get_derived_pct(1)/0.8)
             return team.Q1_score
 
     #calculate score for a team's record in quadrant 2 (scale: 1.000 = 1, 0.000 = .500)
     #param team: Team object to calculate score for
     def get_Q2_score(self, team):
-        if self.verbose:
+        if self.verbose and not self.future:
             print("Quadrant 2", team.get_derived_pct(2))
         try:
             return team.Q2_score
         except AttributeError:
-            team.Q2_score = (team.get_derived_pct(2)-0.5)/0.5
+            if self.future:
+                Q2_record = team.get_derived_record(2)
+                wins = int(Q2_record.split("-")[0])
+                losses = int(Q2_record.split("-")[1])
+                for game in team.future_games:
+                    game_quad = self.get_quadrant(game['NET'], game['location'])
+                    if game_quad <= 2:
+                        wins += game['win_prob']
+                    if game_quad >= 2:
+                        losses += (1 - game['win_prob'])
+                team.Q2_score = ((wins/(wins + losses))-0.5)/0.5
+                if self.verbose:
+                    print("Quadrant 2", team.Q2_score, round(wins, 2), round(losses, 2))
+            else:
+                team.Q2_score = (team.get_derived_pct(2)-0.5)/0.5
             return team.Q2_score
 
     #calculate score for a team's record in quadrant 3 (scale: 1.000 = 1, 0.000 = .800)
     #param team: Team object to calculate score for
     def get_Q3_score(self, team):
-        if self.verbose:
+        if self.verbose and not self.future:
             print("Quadrant 3", team.get_derived_pct(3))
         try:
             return team.Q3_score
         except AttributeError:
-            team.Q3_score = (team.get_derived_pct(3)-0.8)/0.2
+            if self.future:
+                Q3_record = team.get_derived_record(3)
+                wins = int(Q3_record.split("-")[0])
+                losses = int(Q3_record.split("-")[1])
+                for game in team.future_games:
+                    game_quad = self.get_quadrant(game['NET'], game['location'])
+                    if game_quad <= 3:
+                        wins += game['win_prob']
+                    if game_quad >= 3:
+                        losses += (1 - game['win_prob'])
+                team.Q3_score = ((wins/(wins + losses))-0.8)/0.2
+                if self.verbose:
+                    print("Quadrant 3", team.Q3_score, round(wins, 2), round(losses, 2))
+            else:
+                team.Q3_score = (team.get_derived_pct(3)-0.8)/0.2
             return team.Q3_score
 
     #calculate score for a team's record in quadrant 4 (scale: 1.000 = 1, 0.000 = .950)
     #param team: Team object to calculate score for
     def get_Q4_score(self, team):
-        if self.verbose:
+        if self.verbose and not self.future:
             print("Quadrant 4", team.get_derived_pct(4))
         try:
             return team.Q4_score
         except AttributeError:
-            if team.get_derived_pct(4) >= 0.95:
-                team.Q4_score = (team.get_derived_pct(4)-0.95)/0.05
-            else:   #limit how bad multiple Q4 losses can hurt you
-                team.Q4_score = (team.get_derived_pct(4)-0.95)/0.3
+            if self.future:
+                Q4_record = team.get_derived_record(4)
+                wins = int(Q4_record.split("-")[0])
+                losses = int(Q4_record.split("-")[1])
+                for game in team.future_games:
+                    game_quad = self.get_quadrant(game['NET'], game['location'])
+                    wins += game['win_prob']
+                    if game_quad == 4:
+                        losses += (1 - game['win_prob'])
+                team.Q4_score = ((wins/(wins + losses))-0.95)/0.05
+                if self.verbose:
+                    print("Quadrant 4", team.Q4_score, round(wins, 2), round(losses, 2))
+            else:
+                if team.get_derived_pct(4) >= 0.95:
+                    team.Q4_score = (team.get_derived_pct(4)-0.95)/0.05
+                else:   #limit how bad multiple Q4 losses can hurt you
+                    team.Q4_score = (team.get_derived_pct(4)-0.95)/0.3
             return team.Q4_score
 
     #calculate score for a team's road wins (scale: 1.000 = 5, 0.000 = 0)
@@ -177,6 +253,14 @@ class Scorer:
                         good_road_wins += 1
                     elif game.opp_NET <= 100:
                         good_road_wins += (100 - game.opp_NET)/50
+            if self.future:
+                for game in team.future_games:
+                    if game['location'] == "A":
+                        opp_NET = game['NET']
+                        if opp_NET <= 50:
+                            good_road_wins += game['win_prob']
+                        elif opp_NET <= 100:
+                            good_road_wins += (100 - opp_NET)*game['win_prob']/50
             if self.verbose:
                 print("road wins", good_road_wins)
             team.road_score = good_road_wins/5
@@ -202,6 +286,14 @@ class Scorer:
                         good_neutral_wins += conf_tourn_multiplier * 1
                     elif game.opp_NET <= 100:
                         good_neutral_wins += conf_tourn_multiplier * (100 - game.opp_NET)/50
+            if self.future:
+                for game in team.future_games:
+                    if game['location'] == "N":
+                        opp_NET = game['NET']
+                        if opp_NET <= 50:
+                            good_neutral_wins += game['win_prob']
+                        elif opp_NET <= 100:
+                            good_neutral_wins += (100 - opp_NET)*game['win_prob']/50
             if self.verbose:
                 print("neutral wins", good_neutral_wins)
             team.neutral_score = good_neutral_wins/5
@@ -227,6 +319,13 @@ class Scorer:
                         top_10_wins += conf_tourn_multiplier * 1
                     elif game.opp_NET <= 15:
                         top_10_wins += conf_tourn_multiplier * (15 - game.opp_NET)/10
+            if self.future:
+                for game in team.future_games:
+                    opp_NET = game['NET']
+                    if opp_NET <= 5:
+                        top_10_wins += game['win_prob']
+                    elif opp_NET <= 15:
+                        top_10_wins += (15 - opp_NET)*game['win_prob']/10
             if self.verbose:
                 print("top 10 wins", top_10_wins)
             team.top10_score = top_10_wins/3
@@ -263,6 +362,24 @@ class Scorer:
                             top_25_wins += conf_tourn_multiplier * 1
                         elif game.opp_NET <= 45:
                             top_25_wins += conf_tourn_multiplier * (45 - game.opp_NET)/10
+            if self.future:
+                for game in team.future_games:
+                    opp_NET = game['NET']
+                    if game['location'] == "H":
+                        if opp_NET <= 10:
+                            top_25_wins += game['win_prob']
+                        elif opp_NET <= 20:
+                            top_25_wins += game['win_prob'] * (20 - opp_NET)/10
+                    elif game['location'] == "N":
+                        if opp_NET <= 20:
+                            top_25_wins += game['win_prob']
+                        elif opp_NET <= 30:
+                            top_25_wins += game['win_prob'] * (30 - opp_NET)/10
+                    elif game['location'] == "A":
+                        if opp_NET <= 35:
+                            top_25_wins += game['win_prob']
+                        elif opp_NET <= 45:
+                            top_25_wins += game['win_prob'] * (45 - opp_NET)/10
             if self.verbose:
                 print("top 25 wins", top_25_wins)
             team.top25_score = top_25_wins/5
@@ -307,6 +424,13 @@ class Scorer:
                         awful_losses += 1
                     elif game.opp_NET > 175:
                         awful_losses += (game.opp_NET - 175)/50
+            if self.future:
+                for game in team.future_games:
+                    opp_NET = game['NET']
+                    if opp_NET > 225:
+                        awful_losses += (1 - game['win_prob'])
+                    elif opp_NET > 175:
+                        awful_losses += (opp_NET - 175)*(1 - game['win_prob'])/50
             if self.verbose:
                 print("awful losses", awful_losses)
             team.awful_loss_score = (1 - awful_losses)
@@ -314,7 +438,7 @@ class Scorer:
 
     #calculate score for a team's bad (sub-Q1) losses (scale: 1.000 = 0, 0.000 = 5)
     #param team: Team object to calculate score for
-    def get_bad_loss_score(self,team):
+    def get_bad_loss_score(self, team):
         try:
             return team.bad_loss_score
         except AttributeError:
@@ -322,6 +446,11 @@ class Scorer:
             bad_losses += int(team.Q2_record.split("-")[1])
             bad_losses += int(team.Q3_record.split("-")[1])
             bad_losses += int(team.Q4_record.split("-")[1])
+            if self.future:
+                for game in team.future_games:
+                    game_quad = self.get_quadrant(game['NET'], game['location'])
+                    if game_quad >= 2:
+                        bad_losses += (1 - game['win_prob'])
             if self.verbose:
                 print("bad losses", bad_losses)
             team.bad_loss_score = (1 - bad_losses/5)
@@ -336,6 +465,19 @@ class Scorer:
                 WEIGHTS[weight_name] = float(weight_val)
         return WEIGHTS
 
+    def get_win_prob(self, spread):
+        if abs(spread) <= 21:
+            return -0.00002609*spread*spread*spread + 0.00002466*spread*spread + 0.033206*spread + 0.5
+        elif spread > 21:
+            return 0.98
+        elif spread < -21:
+            return 0.02
+
+    def get_NET_estimate(self, curr_NET, curr_KenPom):
+        NET_weight = 0.3
+        NET_estimate = (NET_weight*curr_NET) + (1 - NET_weight)*curr_KenPom
+        return NET_estimate
+
     def load_schedule(self, team):
         if not os.path.exists(self.schedule_datadir):
             print("creating schedules dir")
@@ -348,7 +490,7 @@ class Scorer:
         saved_date = f.read().strip()
         f.close()
         if today_date != saved_date:
-            self.do_schedule_scrape(team)
+            self.teams[team].future_games = self.do_schedule_scrape(team)
             print("scraped", team, "schedule!")
         else:
             self.do_schedule_load(team)
@@ -367,6 +509,7 @@ class Scorer:
         found_game = False
         found_result = False
         found_location = False
+        team_kenpom = self.kenpom_estimate(self.teams[team].KenPom)
         for line in schedule_page.text.split("\n"):
             if not table_start:
                 if 'team-schedule' in line:
@@ -390,11 +533,21 @@ class Scorer:
             elif found_game:
                 if found_result:
                     if "team-schedule__result" not in line:
+                        opp_kenpom = self.kenpom_estimate(self.teams[game['opponent']].KenPom)
+                        team_spread_neutral = team_kenpom - opp_kenpom
+                        if game['location'] == 'H':
+                            team_spread = team_spread_neutral + 3
+                        elif game['location'] == 'N':
+                            team_spread = team_spread_neutral
+                        elif game['location'] == 'A':
+                            team_spread = team_spread_neutral - 3
+                        game['win_prob'] = self.get_win_prob(team_spread)
                         schedule_games.append(game)
                     found_result = False
                     found_game = False
                 elif "opp-record-line" in line:
-                    game["NET"] = int(line[line.find("NET")+5:line.find("</span></span>")])
+                    curr_NET = int(line[line.find("NET")+5:line.find("</span></span>")])
+                    game["NET"] = self.get_NET_estimate(curr_NET, self.teams[game['opponent']].KenPom)
                 elif "team-schedule__result" in line:
                     found_result = True
                     continue

@@ -9,7 +9,7 @@ TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 #class to build a bracket from resume ratings of college basketball teams
 class Builder:
 
-    def __init__(self, year, teams, verbose, of, fws, fwr, rr, et, it, cw, rtd):
+    def __init__(self, year, teams, verbose, of, fws, fwr, rr, et, it, cw, rtd, fu):
         self.year = year
         self.teams = teams
         self.verbose = verbose
@@ -22,6 +22,7 @@ class Builder:
         self.conference_winners = cw
         self.reverse_team_dict = rtd
         self.first_weekend_coords = dict()
+        self.future = fu
         return
 
     #seed and print the field, including a bubble section
@@ -43,7 +44,7 @@ class Builder:
             if team in self.eliminated_teams or (self.teams[team].conference in self.conference_winners and \
                     self.conference_winners[self.teams[team].conference] != team):
                 #teams under .500 are ineligible for at-large bids
-                if self.teams[team].record_pct < 0.5:
+                if self.teams[team].record_pct < 0.5 and not self.future:
                     continue
                 if at_large_bids < AT_LARGE_MAX:
                     at_large_bids += 1
@@ -186,6 +187,10 @@ class Builder:
             for game in self.teams[test_team].games:
                 if self.reverse_team_dict[game.opponent] == team:
                     game_count += 1
+            if self.future:
+                for game in self.teams[test_team].future_games:
+                    if game['opponent'] == team:
+                        game_count += 1
             if self.teams[test_team].seed + seed_num == 17: #first round matchup
                 if self.verbose:
                     print("teams are meeting too early in this region", region_num, conferences[team_conference])
@@ -493,7 +498,7 @@ class Builder:
 
                 #if no permutation works, work backward through the seed list trying every permutation of those seeds as well as ours
                 if not found_perm:
-                    found_perm, save_team = self.try_reorganize(team, seed_num, reorg_seed, teams_to_fix, \
+                    found_perm, save_team, region_num = self.try_reorganize(team, seed_num, reorg_seed, teams_to_fix, \
                             conferences, sites, for_play_in)
         return save_team, region_num
 
@@ -536,12 +541,12 @@ class Builder:
                         if self.check_perm(conferences, perm, seed_num, team, for_play_in):
                             self.save_and_print_perm(seed_num, perm, sites)
                             region_num = perm.index(team)
-                            return True, []
+                            return True, [], region_num
             if not found_perm:
                 #if nothing worked, save the most recent successful try for this seed and recurse up the seed list
                 #this also allows us to loop back through the seeds and have different results
                 self.save_and_print_perm(reorg_seed, perm_to_save, other_sites)
-        return True, []
+        return True, [], region_num
 
     #actually place a team in the bracket after finding a spot for it
     #param region_num: region in which to place the team

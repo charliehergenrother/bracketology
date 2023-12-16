@@ -32,7 +32,8 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "Colorado State": "CSU",
         "Kentucky": "UK",
         "Saint Mary's": "SMC",
-        "Saint John's": "SJU",
+        "Saint John's": "STJN",
+        "Saint Joseph's": "STJS",
         "Ole Miss": "MISS",
         "Utah State": "UTST",
         "Texas A&M": "TA&M",
@@ -40,7 +41,21 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "Santa Clara": "SCL",
         "North Carolina": "UNC",
         "North Carolina State": "NCST",
-        "Northwestern": "NWST"
+        "Northwestern": "NWST",
+        "Notre Dame": "ND",
+        "Seton Hall": "HALL",
+        "Penn State": "PSU",
+        "Eastern Washington": "EWU",
+        "George Washington": "GW",
+        "Florida State": "FSU",
+        "Arizona State": "ASU",
+        "Florida": "FLA",
+        "Pittsburgh": "PITT",
+        "Virginia": "UVA",
+        "Grand Canyon": "GCU",
+        "South Carolina": "SCAR",
+        "Missouri": "MIZZ",
+        "New Mexico": "NMX"
         }
 
 #class to turn the Team and Game objects into jsonifyable strings
@@ -138,7 +153,7 @@ class Scraper:
     #grab the data from where it's stored on disk or scrape it if necessary
     #param should_scrape: If true, scrape the data from the web if we haven't yet today
     #param force_scrape: If true, scrape the data from the web regardless of if we have or haven't
-    def load_data(self, should_scrape, force_scrape):
+    def load_data(self, should_scrape, force_scrape, future):
         if not os.path.exists(self.datadir):
             print("creating datadir", self.datadir)
             os.makedirs(self.datadir)
@@ -157,7 +172,7 @@ class Scraper:
         eliminated_teams, ineligible_teams, conference_winners = self.load_special_teams()
         return Builder(self.year, self.teams, self.verbose, self.outputfile, first_weekend_sites, \
                 first_weekend_rankings, region_rankings, eliminated_teams, \
-                ineligible_teams, conference_winners, reverse_team_dict)
+                ineligible_teams, conference_winners, reverse_team_dict, future)
 
     #load the data that has previously been scraped
     def do_load(self):
@@ -243,7 +258,12 @@ class Scraper:
             f.write(str(round(self.teams[team].predictive, 3)) + ",")
             f.write("'" + self.teams[team].get_derived_record(1) + ",")
             f.write("'" + self.teams[team].get_derived_record(2) + ",")
-            f.write("'" + self.teams[team].get_derived_record(4) + ",")
+            
+            #quad 4+ wins, quad 3- losses
+            q3_record = self.teams[team].get_derived_record(3)
+            q4_record = self.teams[team].get_derived_record(4)
+            f.write("'" + q4_record[:q4_record.find('-')] + q3_record[q3_record.find('-'):] + ',')
+            
             good_wins = list()
             bad_losses = list()
             for game in self.teams[team].games:
@@ -255,12 +275,19 @@ class Scraper:
                     good_wins.append({"team": self.get_location_prefix(game) + team_abbr, "NET": game.opp_NET})
                 elif not game.win and game.quadrant >= 2:
                     bad_losses.append({"team": self.get_location_prefix(game) + game.opponent, "NET": game.opp_NET})
-            f.write('"')
+            win_string = '"'
             for game in sorted(good_wins, key=lambda x: x["NET"]):
-                f.write(game["team"] + " (" + str(game["NET"]) + "), ")
+                win_string += game["team"] + "(" + str(game["NET"]) + "), "
+            if len(win_string) > 1:
+                win_string = win_string[:-2]
+            f.write(win_string)
             f.write('","')
+            loss_string = ""
             for game in sorted(bad_losses, key=lambda x: x["NET"]):
-                f.write(game["team"] + " (" + str(game["NET"]) + "), ")
+                loss_string += game["team"] + " (" + str(game["NET"]) + "), "
+            if len(loss_string) > 1:
+                loss_string = loss_string[:-2]
+            f.write(loss_string)
             f.write('",\n')
 
 #accept command line arguments
@@ -344,7 +371,7 @@ def main():
     scraper = Scraper()
     scraper.year, scraper.mens, scraper.outputfile, scraper.resumefile, scraper.webfile, scraper.datadir, should_scrape, \
             force_scrape, scraper.verbose, scraper.tracker, weightfile, future = process_args()
-    builder = scraper.load_data(should_scrape, force_scrape)
+    builder = scraper.load_data(should_scrape, force_scrape, future)
     scorer = Scorer(builder, future, scraper.mens)
     if scraper.tracker:
         tracker = Tracker(builder, scorer, scraper.year, scraper.verbose, scraper.mens)

@@ -11,6 +11,7 @@ import sys
 import json
 import requests
 import math
+import random
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
 
@@ -148,12 +149,15 @@ class Scraper:
         eliminated_teams = special_teams["eliminated_teams"]
         ineligible_teams = special_teams["ineligible_teams"]
         conference_winners = special_teams["conference_winners"]
-        return eliminated_teams, ineligible_teams, conference_winners
+        if self.mens:
+            ineligible_sites = special_teams["ineligible_sites"]
+            return eliminated_teams, ineligible_teams, conference_winners, ineligible_sites
+        return eliminated_teams, ineligible_teams, conference_winners, {}
 
     #grab the data from where it's stored on disk or scrape it if necessary
     #param should_scrape: If true, scrape the data from the web if we haven't yet today
     #param force_scrape: If true, scrape the data from the web regardless of if we have or haven't
-    def load_data(self, should_scrape, force_scrape, future):
+    def load_data(self, should_scrape, force_scrape, future, monte_carlo):
         if not os.path.exists(self.datadir):
             print("creating datadir", self.datadir)
             os.makedirs(self.datadir)
@@ -169,10 +173,10 @@ class Scraper:
         else:
             self.do_load()
         first_weekend_sites, first_weekend_rankings, region_rankings = self.load_coordinates()
-        eliminated_teams, ineligible_teams, conference_winners = self.load_special_teams()
+        eliminated_teams, ineligible_teams, conference_winners, ineligible_sites = self.load_special_teams()
         return Builder(self.year, self.teams, self.verbose, self.outputfile, first_weekend_sites, \
-                first_weekend_rankings, region_rankings, eliminated_teams, \
-                ineligible_teams, conference_winners, reverse_team_dict, future)
+                first_weekend_rankings, region_rankings, eliminated_teams, ineligible_sites, \
+                ineligible_teams, conference_winners, reverse_team_dict, future, monte_carlo)
 
     #load the data that has previously been scraped
     def do_load(self):
@@ -250,12 +254,13 @@ class Scraper:
 
     def output_resume(self):
         f = open(self.resumefile, "w+")
-        f.write("Team,Record,NET,PWR,Q1,Q2,Q3/4,Q1 wins,Q2+ losses\n")
+        f.write("Team,Record,NET,PWR,SOS,Q1,Q2,Q3/4,Q1 wins,Q2+ losses\n")
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             f.write(self.teams[team].team_out + ",")
             f.write("'" + self.teams[team].record + ",")
             f.write(str(self.teams[team].NET) + ",")
             f.write(str(round(self.teams[team].predictive, 3)) + ",")
+            f.write(str(self.teams[team].NET_SOS) + ",")
             f.write("'" + self.teams[team].get_derived_record(1) + ",")
             f.write("'" + self.teams[team].get_derived_record(2) + ",")
             
@@ -304,16 +309,19 @@ def process_args():
     tracker = False
     mens = True
     future = False
+    monte_carlo = False
+    simulations = 0
 
     while argindex < len(sys.argv):
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-m/-w] [-f] [-y year] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-e|-s] [-v]")
+            print("./scraper.py [-h] [-m/-w] [-f] [-c <sims>] [-y year] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-e|-s] [-v]")
             print("     -h: print this help message")
             print("     -m: men's tournament projection [default]")
             print("     -w: women's tournament projection")
             print("     -f: future (end-of-season) projection. default is to project the field as if the season ended today.")
+            print("     -c: Monte Carlo simulation. run <sims> number of simulation and report on how often a team made the tournament/got to final four/won championship")
             print("     -y: make a bracket for given year. 2021-present only")
             print("     -i: use weights located in given file")
             print("     -o: set a csv filename where the final ranking will live")
@@ -341,6 +349,10 @@ def process_args():
             tracker = True
         elif sys.argv[argindex] == '-f':
             future = True
+        elif sys.argv[argindex] == '-c':
+            monte_carlo = True
+            simulations = int(sys.argv[argindex + 1])
+            argindex += 1
         elif sys.argv[argindex] == '-v':
             verbose = True
         elif sys.argv[argindex] == '-s':
@@ -365,14 +377,170 @@ def process_args():
         else:
             weightfile = "lib/women/weights.txt"
     return year, mens, outputfile, resumefile, webfile, datadir, should_scrape, force_scrape, \
-            verbose, tracker, weightfile, future
+            verbose, tracker, weightfile, future, monte_carlo, simulations
+
+def add_or_increment_key(key, dictionary):
+    try:
+        dictionary[key] += 1
+    except KeyError:
+        dictionary[key] = 1
+
+def reverse_location(location):
+    if location == "A":
+        return "H"
+    if location == "H":
+        return "A"
+    return "N"
+
+def simulate_games(scorer, builder, weightfile):
+    results = {'tournament': list(), 'final_four': list(), 'champion': list()}
+    teams = list(scorer.teams.keys())
+    team_kenpoms = dict()
+    random.shuffle(teams)
+    for team in teams:
+        team_kenpom = scorer.kenpom_estimate(scorer.teams[team].KenPom)
+        #print(team)
+        #print(scorer.teams[team].future_games)
+        #print(scorer.teams[team].games)
+        for game in scorer.teams[team].future_games:
+            game_exists = False
+            for existing_game in scorer.teams[team].games:
+                if existing_game.date != "10-10":
+                    break
+                if existing_game.opponent == game['opponent'] and \
+                        existing_game.location == game['location']:
+                    game_exists = True
+                    break
+            if game_exists: 
+                continue
+            opponent = game['opponent']
+            if opponent in team_kenpoms:
+                opp_kenpom = team_kenpoms[opponent]
+            else:
+                opp_kenpom = scorer.kenpom_estimate(scorer.teams[opponent].KenPom)
+                team_kenpoms[opponent] = opp_kenpom
+            team_spread = scorer.get_spread(team_kenpom, opp_kenpom, game['location'])
+            win_prob = scorer.get_win_prob(team_spread)
+            new_game = Game(scorer.teams[opponent].team_out, game['location'], game['NET'], 75, 0, '10-10')
+            opp_game = Game(scorer.teams[team].team_out, reverse_location(game['location']), scorer.teams[team].NET, 0, 75, '10-10')
+            win_result = random.random()
+            kenpom_change = random.random()
+            if win_result < win_prob:
+                new_game.opp_score = 70
+                opp_game.team_score = 70
+                if kenpom_change > 0.85:
+                    team_kenpom += 1
+                    team_kenpoms[opponent] -= 1
+                elif kenpom_change > 0.5:
+                    team_kenpom += 0.5
+                    team_kenpoms[opponent] -= 0.5
+                elif kenpom_change < 0.15:
+                    team_kenpom += 0.5
+                    team_kenpoms[opponent] -= 0.5
+            else:
+                new_game.opp_score = 80
+                opp_game.team_score = 80
+                if kenpom_change < 0.15:
+                    team_kenpom -= 1
+                    team_kenpoms[opponent] += 1
+                elif kenpom_change < 0.5:
+                    team_kenpom -= 0.5
+                    team_kenpoms[opponent] -= 0.5
+                elif kenpom_change > 0.85:
+                    team_kenpom += 0.5
+                    team_kenpoms[opponent] -= 0.5
+            scorer.teams[team].games.add(new_game)
+            scorer.teams[opponent].games.add(opp_game)
+            for index, future_game in enumerate(scorer.teams[opponent].future_games):
+                if future_game['opponent'] == team and future_game['location'] == opp_game.location:
+                    break
+            try:
+                scorer.teams[opponent].future_games = scorer.teams[opponent].future_games[:index] + \
+                    scorer.teams[opponent].future_games[index+1:]
+            except IndexError:
+                scorer.teams[opponent].future_games = scorer.teams[opponent].future_games[:index]
+        team_kenpoms[team] = team_kenpom
+   
+    #print_Illinois(scorer, team_kenpoms)
+    weights = scorer.get_weights(weightfile)
+    scorer.build_scores(weights, team_kenpoms)
+    builder.select_seed_and_print_field()
+    builder.build_bracket()
+    for team in scorer.teams:
+        if scorer.teams[team].auto_bid or scorer.teams[team].at_large_bid:
+            results['tournament'].append([team, scorer.teams[team].seed])
+    return results
+
+def print_Illinois(scorer, team_kenpoms):
+    wins = 0
+    losses = 0
+    conf_wins = 0
+    conf_losses = 0
+    for game in scorer.teams["Illinois"].games:
+        print(game.opponent.ljust(25), game.location, game.team_score, game.opp_score, game.opp_NET)
+        if game.win:
+            wins += 1
+            try:
+                if scorer.teams[game.opponent].conference == "Big Ten":
+                    conf_wins += 1
+            except KeyError:
+                if scorer.teams[reverse_team_dict[game.opponent]].conference == "Big Ten":
+                    conf_wins += 1
+        else:
+            losses += 1
+            try:
+                if scorer.teams[game.opponent].conference == "Big Ten":
+                    conf_losses += 1
+            except KeyError:
+                if scorer.teams[reverse_team_dict[game.opponent]].conference == "Big Ten":
+                    conf_losses += 1
+    print(str(wins) + "-" + str(losses) + " (" + str(conf_wins) + "-" + str(conf_losses) + ")")
+    print(team_kenpoms["Illinois"])
+
+def run_monte_carlo(simulations, scorer, builder, weightfile):
+    made_tournament = dict()
+    final_fours = dict()
+    national_champion = dict()
+    team_seeds = dict()
+    first_weekend_sites = list(builder.first_weekend_sites)
+    conference_winners = dict(builder.conference_winners)
+    for team in scorer.teams:
+        scorer.load_schedule(team)
+        scorer.teams[team].saved_games = set(scorer.teams[team].games)
+        scorer.teams[team].saved_future_games = list([dict(x) for x in scorer.teams[team].future_games])
+    for i in range(simulations):
+        print("Running sim", i)
+        for team in scorer.teams:
+            scorer.teams[team].games = set(scorer.teams[team].saved_games)
+            scorer.teams[team].future_games = list(scorer.teams[team].saved_future_games)
+            scorer.teams[team].at_large_bid = False
+            scorer.teams[team].auto_bid = False
+        builder.first_weekend_sites = list(first_weekend_sites)
+        builder.conference_winners = dict(conference_winners)
+        results = simulate_games(scorer, builder, weightfile)
+        for team in results['tournament']:
+            add_or_increment_key(team[0], made_tournament)
+            if team[0] in team_seeds:
+                team_seeds[team[0]].append(team[1])
+            else:
+                team_seeds[team[0]] = [team[1]]
+        for team in results['final_four']:
+            add_or_increment_key(team, final_fours)
+        for team in results['champion']:
+            add_or_increment_key(team, national_champion)
+    for team in sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x]):
+        print(team.ljust(20), made_tournament[team], round(sum(team_seeds[team])/made_tournament[team], 2), \
+                min(team_seeds[team]), max(team_seeds[team]))
+    print(final_fours)
+    print(national_champion)
 
 def main():
     scraper = Scraper()
     scraper.year, scraper.mens, scraper.outputfile, scraper.resumefile, scraper.webfile, scraper.datadir, should_scrape, \
-            force_scrape, scraper.verbose, scraper.tracker, weightfile, future = process_args()
-    builder = scraper.load_data(should_scrape, force_scrape, future)
-    scorer = Scorer(builder, future, scraper.mens)
+            force_scrape, scraper.verbose, scraper.tracker, weightfile, future, \
+            monte_carlo, simulations = process_args()
+    builder = scraper.load_data(should_scrape, force_scrape, future, monte_carlo)
+    scorer = Scorer(builder, future, scraper.mens, scraper.tracker, monte_carlo)
     if scraper.tracker:
         tracker = Tracker(builder, scorer, scraper.year, scraper.verbose, scraper.mens)
         tracker.load_results()
@@ -383,6 +551,8 @@ def main():
             counter += 1
             if (scraper.mens and counter > 50) or (not scraper.mens and counter > 100):
                 break
+    elif monte_carlo:
+        run_monte_carlo(simulations, scorer, builder, weightfile)
     else:
         weights = scorer.get_weights(weightfile)
         scorer.build_scores(weights)

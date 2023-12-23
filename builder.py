@@ -9,7 +9,7 @@ TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 #class to build a bracket from resume ratings of college basketball teams
 class Builder:
 
-    def __init__(self, year, teams, verbose, of, fws, fwr, rr, et, it, cw, rtd, fu):
+    def __init__(self, year, teams, verbose, of, fws, fwr, rr, et, iss, it, cw, rtd, fu, mc):
         self.year = year
         self.teams = teams
         self.verbose = verbose
@@ -18,11 +18,13 @@ class Builder:
         self.first_weekend_rankings = fwr
         self.region_rankings = rr
         self.eliminated_teams = et
+        self.ineligible_sites = iss
         self.ineligible_teams = it
         self.conference_winners = cw
         self.reverse_team_dict = rtd
         self.first_weekend_coords = dict()
         self.future = fu
+        self.monte_carlo = mc
         return
 
     #seed and print the field, including a bubble section
@@ -71,19 +73,23 @@ class Builder:
                     self.teams[team].auto_bid = True
                 else:
                     continue
-            print("(" + str(curr_seed) + ") " + self.teams[team].team_out, end="")
+            if not self.monte_carlo:
+                print("(" + str(curr_seed) + ") " + self.teams[team].team_out, end="")
             if at_large_bid:
                 if at_large_bids >= AT_LARGE_MAX - 3:
                     if (AT_LARGE_MAX - at_large_bids) % 2 == 1:
                         curr_seed_max += 1
                     bubble_string += (self.teams[team].team_out + " - Last Four In\n")
-                    print(" - Last Four In")
+                    if not self.monte_carlo:
+                        print(" - Last Four In")
                 elif at_large_bids >= AT_LARGE_MAX - 7:
                     bubble_string += (self.teams[team].team_out + " - Last Four Byes\n")
-                    print(" - Last Four Byes")
+                    if not self.monte_carlo:
+                        print(" - Last Four Byes")
                 else:
-                    print()
-            else:
+                    if not self.monte_carlo:
+                        print()
+            elif not self.monte_carlo:
                 print("*")
             if num_curr_seed == curr_seed_max and curr_seed < 16:
                 curr_seed += 1
@@ -91,8 +97,9 @@ class Builder:
                 curr_seed_max = 4
             else:
                 num_curr_seed += 1
-        print()
-        print(bubble_string)
+        if not self.monte_carlo:
+            print()
+            print(bubble_string)
 
     #get the maximum length of a line when printing the bracket (two team names + their seeds + some buffer)
     def get_max_len(self):
@@ -156,17 +163,26 @@ class Builder:
     def check_rules(self, conferences, team, region_num, seed_num, for_play_in=False):
         if team == "":
             return True
-        if for_play_in:
-            return (self.check_rules(conferences, team.split("/")[0], region_num, seed_num, False) and \
-                    self.check_rules(conferences, team.split("/")[1], region_num, seed_num, False))
+        if "/" in team:
+            return (self.check_rules(conferences, team.split("/")[0], region_num, seed_num, for_play_in) and \
+                    self.check_rules(conferences, team.split("/")[1], region_num, seed_num, for_play_in))
+        
         team_conference = self.teams[team].conference
+        if self.first_weekend_sites and seed_num > 4:   #men's teams can't play at their home court
+            first_weekend_site = self.first_weekend_num_to_name[region_num][self.get_host_seed(seed_num)]
+            region_site = self.region_num_to_name[region_num]
+            for site in [first_weekend_site, region_site]:
+                if team in self.ineligible_sites[site]:
+                    if self.verbose:
+                        print(team, "can't play in", site, "you silly goose")
+                    return False
 
         #the top four teams from a conference must be in different regions if they are on the top four seed lines
         if conferences[team_conference].index(team) < 4 and seed_num <= 4:
             for test_team in conferences[team_conference][:3]:
                 if test_team == team:
                     continue
-                if self.teams[test_team].region == region_num:
+                if self.teams[test_team].region == region_num and self.teams[test_team].seed <= 4:
                     if self.verbose:
                         print("multiple top four teams can't all go here", region_num, conferences[team_conference])
                     return False
@@ -197,16 +213,27 @@ class Builder:
                 return False
             if game_count >= 2:     #sweet 16 matchup
                 for seed_set in [[1, 16, 8, 9], [5, 12, 4, 13], [6, 11, 3, 14], [7, 10, 2, 15]]:
-                    if self.teams[test_team].seed in seed_set and seed_num in seed_set:
+                    if self.teams[test_team].seed in seed_set and seed_num in seed_set and not for_play_in:
                         if self.verbose:
                             print("teams are meeting too early in this region", region_num, conferences[team_conference])
                         return False
             if game_count >= 3:     #elite 8 matchup
                 for seed_set in [[1, 16, 8, 9, 5, 12, 4, 13], [6, 11, 3, 14, 7, 10, 2, 15]]:
-                    if self.teams[test_team].seed in seed_set and seed_num in seed_set:
+                    if self.teams[test_team].seed in seed_set and seed_num in seed_set and not for_play_in:
                         if self.verbose:
                             print("teams are meeting too early in this region", region_num, conferences[team_conference])
                         return False
+
+        #Want to avoid regular season rematches in the first round
+        if 17 - seed_num in self.regions[region_num]:
+            for game in self.teams[team].games:
+                if self.reverse_team_dict[game.opponent] == self.regions[region_num][17 - seed_num]:
+                    return False
+        if self.future and 17 - seed_num in self.regions[region_num]:
+            for game in self.teams[team].future_games:
+                if game['opponent'] == self.regions[region_num][17 - seed_num]:
+                    return False
+
         return True
 
     #remove all teams from their seed lines in order to attempt to reorganize them
@@ -235,6 +262,9 @@ class Builder:
         #if the seed wasn't fully filled out, put placeholders in
         while len(teams_to_fix) < 4:
             teams_to_fix.append("")
+        if seed_num < 5:
+            if self.verbose:
+                print(seed_num, "Deleted", teams_to_fix, sites)
         return teams_to_fix, sites
 
     #check a permutation of four teams to see if the bracket can accept it
@@ -251,7 +281,7 @@ class Builder:
                 if not self.check_rules(conferences, perm_team, counter, seed_num, False):
                     return False
         return True
-    
+
     #insert a permutation of four teams into the bracket
     #param seed_num: seed of teams
     #param perm: permutation of four teams on the same seed line
@@ -281,6 +311,17 @@ class Builder:
             if self.verbose:
                 print("Placed (" + str(seed_num) + ") " + team + ": region (" + str(region_num) + ")")
 
+    def get_host_seed(self, seed_num):
+        if seed_num in [1, 16, 8, 9]:
+            host_seed = 1
+        elif seed_num in [4, 5, 12, 13]:
+            host_seed = 4
+        elif seed_num in [3, 6, 11, 14]:
+            host_seed = 3
+        elif seed_num in [2, 7, 10, 15]:
+            host_seed = 2
+        return host_seed
+
     #return a list of a team's regional preferences
     #param team: string of team to get preferences for
     #param seed_num: seed of team. if higher (i.e. lower number) than 5, use regional sites; otherwise, use first-weekend sites
@@ -291,17 +332,16 @@ class Builder:
                 order.append(self.region_name_to_num[site])
         else:
             #construct list of possible sites
+            host_seed = self.get_host_seed(seed_num)
             possible_sites = list()
-            if seed_num in [16, 8, 9]:
-                host_seed = 1
-            elif seed_num in [5, 12, 13]:
-                host_seed = 4
-            elif seed_num in [6, 11, 14]:
-                host_seed = 3
-            elif seed_num in [7, 10, 15]:
-                host_seed = 2
             for index, region in enumerate(self.first_weekend_num_to_name):
-                possible_sites.append(region[host_seed])
+                try:
+                    possible_sites.append(region[host_seed])
+                except KeyError:
+                    print(team, seed_num)
+                    print(self.regions)
+                    print(self.first_weekend_num_to_name)
+                    raise KeyError
             if self.first_weekend_rankings: #mens
                 for site in self.first_weekend_rankings[team]:
                     while site in possible_sites:
@@ -384,24 +424,38 @@ class Builder:
         matchup_1 = '/'.join(matchups[0])
         matchup_2 = '/'.join(matchups[1])
 
-        region_order = self.get_region_order(matchups[0][0], seeds[1])
-        _, region_num = self.find_team_spot(matchup_1, \
-                self.get_region_num(seeds[1], region_order[0], region_order), seeds[1],\
+        region_order = self.get_region_order(matchups[0][0], seeds[0])
+        save_team_1, region_num = self.find_team_spot(matchup_1, \
+                self.get_region_num(seeds[0], region_order[0], region_order), seeds[0],\
                 conferences, region_order, True)
-        self.place_team(region_num, seeds[1], matchup_1)
-        if self.verbose:
-            print("Placed (" + str(seeds[1]) + ") " + matchup_1 + \
-                ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
+        if region_num != -1:
+            self.place_team(region_num, seeds[0], matchup_1)
+            if self.verbose:
+                print("Placed (" + str(seeds[0]) + ") " + matchup_1 + \
+                    ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
 
-        region_order = self.get_region_order(matchups[1][0], seeds[3])
-        _, region_num = self.find_team_spot(matchup_2, \
-                self.get_region_num(seeds[3], region_order[0], region_order), seeds[3], \
+        region_order = self.get_region_order(matchups[1][0], seeds[2])
+        save_team_2, region_num = self.find_team_spot(matchup_2, \
+                self.get_region_num(seeds[2], region_order[0], region_order), seeds[2], \
                 conferences, region_order, True)
-        self.place_team(region_num, seeds[3], matchup_2)
-        if self.verbose:
-            print("Placed (" + str(seeds[3]) + ") " + matchup_2 + \
-                ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
-            print()
+        if region_num != -1:
+            self.place_team(region_num, seeds[2], matchup_2)
+            if self.verbose:
+                print("Placed (" + str(seeds[2]) + ") " + matchup_2 + \
+                    ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
+                print()
+        if len(save_team_1):
+            return save_team_1
+        return save_team_2
+
+    def replace_from_sites(self, seed_num, sites):
+        for team in sites:
+            team_name = team[0]
+            region_num = team[1]
+            site_name = team[2]
+            self.regions[region_num][seed_num] = team_name
+            self.first_weekend_name_to_num[site_name].append([region_num, seed_num])
+            self.first_weekend_num_to_name[region_num][seed_num] = site_name
 
     #find a place in the bracket where a team can fit
     #param team: string of team to place
@@ -450,7 +504,7 @@ class Builder:
                         del self.first_weekend_num_to_name[region_num][seed_num]
                         self.first_weekend_name_to_num[site][self.first_weekend_name_to_num[site].index([region_num, seed_num])] = [orig_region_num, seed_num]
                     if self.verbose:
-                        print("Switched (" + str(seed_num) + ") " + new_team + " to: region (" + str(orig_region_num) + ")")
+                        print("Switched (" + str(seed_num) + ") " + new_team + " to: region (" + str(orig_region_num) + ") " + self.region_num_to_name[orig_region_num])
                     bad_regions = set()
                     break
                 bad_regions.add(region_num)
@@ -500,14 +554,15 @@ class Builder:
                 if not found_perm:
                     found_perm, save_team, region_num = self.try_reorganize(team, seed_num, reorg_seed, teams_to_fix, \
                             conferences, sites, for_play_in)
+                    if save_team:
+                        break
         return save_team, region_num
 
     #recurse up the seed list, trying to brute-force a fix to fit all of the teams in the bracket
     def try_reorganize(self, team, seed_num, reorg_seed, teams_to_fix, conferences, sites, for_play_in):
         tries = 0
-        curr_reorg_max = 5  #lowest-numbered seed to try reorganizing
-        found_perm = False
-        while not found_perm:
+        curr_reorg_max = 3  #lowest-numbered seed to try reorganizing
+        while True:
             reorg_seed -= 1
             if reorg_seed < curr_reorg_max:
                 #run through it 100 times
@@ -516,19 +571,35 @@ class Builder:
                     #don't want to mess up region positioning if possible
                     if self.verbose:
                         print("Retrying from beginning")
-                    reorg_seed = seed_num - 1
+                    reorg_seed = seed_num
                 else:
                     tries = 0
                     curr_reorg_max -= 1     #can start trying to reorganize with lower seeds as we go
                     if curr_reorg_max < 3:
                         #if self.verbose:
                         save_team = [team, seed_num]
-                        if self.verbose:
-                            print("moving", team, "down from", seed_num)
+                        #if self.verbose:
+                        #print("moving", team, "down from", seed_num)
                         for fixing_count, fixing_team in enumerate(teams_to_fix):
                             if fixing_team and fixing_team != team:
                                 self.regions[fixing_count][seed_num] = fixing_team
-                        return False, save_team
+                        return False, save_team, -1
+            if reorg_seed == curr_reorg_max:    #we've gone as far as we can go
+                if self.verbose:
+                    print("gotta move somebody down. please do that.")
+                if seed_num < 5:
+                    self.replace_from_sites(seed_num, sites)
+                else:
+                    index = 3
+                    while index > 0:
+                        if teams_to_fix[index]:
+                            teams_to_fix[index] = ""
+                            break
+                    for perm in permutations(teams_to_fix):
+                        if self.check_perm(conferences, perm, seed_num, team, for_play_in):
+                            self.save_and_print_perm(seed_num, perm, [])
+                            break
+                return False, [team, seed_num], -1
             if self.verbose:
                 print('trying the next seed up', reorg_seed)
             other_teams_to_fix, other_sites = self.delete_and_save_seed(reorg_seed)
@@ -542,9 +613,9 @@ class Builder:
                             self.save_and_print_perm(seed_num, perm, sites)
                             region_num = perm.index(team)
                             return True, [], region_num
-            if not found_perm:
-                #if nothing worked, save the most recent successful try for this seed and recurse up the seed list
-                #this also allows us to loop back through the seeds and have different results
+            #if nothing worked, save the most recent successful try for this seed and recurse up the seed list
+            #this also allows us to loop back through the seeds and have different results
+            if perm_to_save:
                 self.save_and_print_perm(reorg_seed, perm_to_save, other_sites)
         return True, [], region_num
 
@@ -570,7 +641,12 @@ class Builder:
     def get_region_num(self, seed_num, region_num, region_order):
         while seed_num in self.regions[region_num]:
             if seed_num > 1:
-                region_num = region_order[region_order.index(region_num)+1]
+                try:
+                    region_num = region_order[region_order.index(region_num)+1]
+                except IndexError:
+                    print(seed_num, region_order, region_num)
+                    print(self.regions)
+                    raise IndexError
             else:
                 region_num = (region_num + 1) % 4
         return region_num
@@ -582,7 +658,8 @@ class Builder:
     #choose a regional site that a #1 seed will play at
     def choose_regional(self, team, seed_num, region_num):
         for site_name in self.region_rankings[team]:
-            if site_name not in self.region_name_to_num:
+            if site_name not in self.region_name_to_num and \
+                    (not self.first_weekend_sites or team not in self.ineligible_sites[site_name]):
                 self.region_name_to_num[site_name] = region_num
                 self.region_num_to_name[region_num] = site_name
                 if self.verbose:
@@ -593,7 +670,7 @@ class Builder:
     def choose_first_weekend(self, team, region_num, seed_num):
         if self.first_weekend_sites: #mens
             for site_name in self.first_weekend_rankings[team]:
-                if site_name in self.first_weekend_sites:
+                if site_name in self.first_weekend_sites and team not in self.ineligible_sites[site_name]:
                     if self.verbose:
                         print("Choosing", site_name)
                     self.first_weekend_sites.remove(site_name)
@@ -626,13 +703,13 @@ class Builder:
         self.first_weekend_name_to_num = dict()
         auto_count = 0
         at_large_count = 0
-        bracket_pos = 1
         conferences = dict()
         at_large_play_in_teams = list()
         at_large_play_in_seeds = list()
         auto_play_in_teams = list()
         auto_play_in_seeds = list()
         save_team = list()
+        saved_teams = list()
         AUTO_MAX = AUTO_MAXES[self.year]
         AT_LARGE_MAX = 68 - AUTO_MAX
 
@@ -649,38 +726,77 @@ class Builder:
             if team_conference not in conferences:
                 conferences[team_conference] = list()
             conferences[team_conference].append(team)
-            seed_num = (bracket_pos + 3) // 4
+            
+            seed_count = 4
+            seed_num = 0
+            play_in_count = 0
+            while seed_count == 4:
+                seed_count = 0
+                seed_num += 1
+                for region_num in [0, 1, 2, 3]:
+                    if seed_num in self.regions[region_num]:
+                        seed_count += 1
+                for seed in at_large_play_in_seeds:
+                    if seed == seed_num:
+                        play_in_count += 1
+                seed_count += (play_in_count + 1) // 2
+            #print(team, seed_num, at_large_count, auto_count)
+            #print(self.regions)
+
             if seed_num > 1:
                 region_order = self.get_region_order(team, seed_num)
-                region_num = region_order[0]
+                try:
+                    region_num = region_order[0]
+                except IndexError:
+                    print(team, seed_num)
+                    print(self.regions)
+                    print(self.first_weekend_num_to_name)
+                    raise IndexError
             else:
-                region_num = bracket_pos - 1
+                region_num = team_index
 
             #if we moved a team down a seed line, try to place it
-            if save_team and save_team[1] != seed_num:
-                if self.verbose:
-                    print("now that we're at", seed_num, "trying", save_team)
-                team = save_team[0]
-                save_team = list()
-                team_index -= 1
+            if saved_teams and saved_teams[0][1] != seed_num:
+                #if self.verbose:
+                #print("now that we're at", seed_num, "trying", saved_teams[0])
+                team = saved_teams[0][0]
+                saved_teams.pop(0)
+                if "/" not in team:
+                    team_index -= 1
             if self.verbose:
                 print("placing", team, seed_num)
-         
+            
+            #we had to move a play-in matchup down a seed
+            if "/" in team:
+                #if self.verbose:
+                #print('gonna try it again with', team)
+                region_order = self.get_region_order(team.split("/")[0], seed_num)
+                save_team, region_num = self.find_team_spot(team, \
+                    self.get_region_num(seed_num, region_order[0], region_order), seed_num,\
+                    conferences, region_order, True)
+                if len(save_team):
+                    saved_teams.append(save_team)
+                else:
+                    self.place_team(region_num, seed_num, team)
+                    #print("yay, no more problems")
+                continue
             #save play-in teams to be placed all together
-            if self.teams[team].at_large_bid and at_large_count >= AT_LARGE_MAX - 4:
+            elif self.teams[team].at_large_bid and at_large_count >= AT_LARGE_MAX - 4:
                 self.save_play_in_team(at_large_play_in_teams, at_large_play_in_seeds, team, seed_num)
-                if at_large_count == AT_LARGE_MAX - 3 or at_large_count == AT_LARGE_MAX - 1:
-                    bracket_pos += 1
                 if at_large_count == AT_LARGE_MAX - 1:
-                    self.place_play_in(at_large_play_in_teams, at_large_play_in_seeds, conferences)
+                    #print("placing", at_large_play_in_teams, at_large_play_in_seeds)
+                    save_team = self.place_play_in(at_large_play_in_teams, at_large_play_in_seeds, conferences)
+                    if len(save_team):
+                        #print("problems with", save_team, self.regions)
+                        saved_teams.append(save_team)
+                    at_large_play_in_teams = list()
+                    at_large_play_in_seeds = list()
                 at_large_count += 1
                 team_index += 1
                 continue
             
             elif self.teams[team].auto_bid and auto_count >= AUTO_MAX - 4:
                 self.save_play_in_team(auto_play_in_teams, auto_play_in_seeds, team, seed_num)
-                if auto_count == AUTO_MAX - 3 or auto_count == AUTO_MAX - 1:
-                    bracket_pos += 1
                 if auto_count == AUTO_MAX - 1:
                     self.place_play_in(auto_play_in_teams, auto_play_in_seeds, conferences)
                 auto_count += 1
@@ -699,6 +815,8 @@ class Builder:
                     if seed_num in region and region[seed_num] == team:
                         del region[seed_num]
                 team_index += 1
+                saved_teams.append(save_team)
+                save_team = list()
                 continue
             else:
                 self.place_team(region_num, seed_num, team)
@@ -720,8 +838,6 @@ class Builder:
                         ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
                 print()
 
-            bracket_pos += 1
-
             if not len(save_team) or team != save_team[0]:
                 team_index += 1
             else:
@@ -730,14 +846,15 @@ class Builder:
                 save_team = list()
 
             #once all the top-four seeds are placed, make sure the regions are reasonably equal
-            if team_index == 16:
-                self.ensure_region_balance(sorted_teams, conferences)
+            #if team_index == 16:
+                #self.ensure_region_balance(sorted_teams, conferences)
 
         max_len = self.get_max_len()
-        print()
-        for region_nums in [[0, 1], [3, 2]]:
-            for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
-                print(self.construct_line(max_len, region_nums[0], region_nums[1], seed_num))
+        if not self.monte_carlo:
+            print()
+            for region_nums in [[0, 1], [3, 2]]:
+                for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
+                    print(self.construct_line(max_len, region_nums[0], region_nums[1], seed_num))
 
     def output_bracket(self):
         site_seed_lines = {16: 1, 12: 4, 11: 3, 10: 2}
@@ -774,6 +891,7 @@ class Builder:
                     f.write('</td>')
                 team = self.regions[region_num][seed_num]
                 f.write('<td>(' + str(seed_num) + ')</td>')
+                #If you want to put in the * for auto bids, here's where
                 try:
                     f.write('<td><img src=assets/' + team + '.png></img></td>' + \
                             '<td>' + self.get_team_out(team) + " (" + self.teams[team].record + ")</td>\n")
@@ -824,6 +942,8 @@ class Builder:
                 elif bubble_counter == 8:
                     f.write('</tr>\n')
                     break
+        f.write('    </tbody>\n')
+        f.write('  </table>\n')
         f.write('</div>\n\n')
         f.write('</body>\n')
         f.write('</html>\n')

@@ -34,5 +34,19 @@
         "Western Athletic": "New-Mexico-State",
         "West Coast": "Gonzaga"
     },
-    "ineligible_teams": ["Bellarmine", "California-Baptist", "Dixie-State", "Merrimack", "North-Alabama", "Oklahoma-State", "Saint-Thomas", "Tarleton-State", "UC-San-Diego"]
+    "ineligible_teams": ["Bellarmine", "California-Baptist", "Dixie-State", "Merrimack", "North-Alabama", "Oklahoma-State", "Saint-Thomas", "Tarleton-State", "UC-San-Diego"],
+    "ineligible_sites": {
+        "Fort Worth": ["TCU"],
+        "Indianapolis": ["IUPUI"],
+        "Buffalo": ["Niagara", "Canisius"],
+        "Portland": ["Oregon-State"],
+        "Greenville": ["Furman"],
+        "Milwaukee": ["Marquette"],
+        "Pittsburgh": ["Duquesne"],
+        "San Diego": ["San-Diego-State"],
+        "San Francisco": [],
+        "San Antonio": ["UTSA"],
+        "Philadelphia": ["Penn"],
+        "Chicago": ["Northwestern"]
+    }
 }

@@ -2,5 +2,19 @@
     "eliminated_teams": [],
     "conference_winners": {
     },
-    "ineligible_teams": ["Bellarmine", "Le-Moyne", "Lindenwood", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Texas-AM-Commerce", "Tarleton-State", "Utah-Tech"]
+    "ineligible_teams": ["Bellarmine", "Le-Moyne", "Lindenwood", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Texas-AM-Commerce", "Tarleton-State", "Utah-Tech"],
+    "ineligible_sites": {
+        "Charlotte": ["Charlotte"],
+        "Omaha": ["Creighton"],
+        "Pittsburgh": ["Duquesne"],
+        "Salt Lake City": ["Utah"],
+        "Brooklyn": [],
+        "Indianapolis": ["IUPUI"],
+        "Memphis": ["Memphis"],
+        "Spokane": ["Idaho"],
+        "Boston": ["Boston-College"],
+        "Los Angeles": ["Pepperdine"],
+        "Dallas": [],
+        "Detroit": ["Detroit", "Oakland"]
+    }
 }

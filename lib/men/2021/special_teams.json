@@ -33,5 +33,14 @@
         "Western Athletic": "Grand-Canyon",
         "West Coast": "Gonzaga"
     },
-    "ineligible_teams": ["Arizona", "Auburn", "Stephen-F-Austin", "California-Baptist", "North-Alabama", "Merrimack", "Bellarmine", "Dixie-State", "Tarleton-State", "UC-San-Diego", "Brown", "Columbia", "Cornell", "Dartmouth", "Harvard", "Penn", "Princeton", "Yale", "Bethune-Cookman", "Maryland-Eastern-Shore"]
+    "ineligible_teams": ["Arizona", "Auburn", "Stephen-F-Austin", "California-Baptist", "North-Alabama", "Merrimack", "Bellarmine", "Dixie-State", "Tarleton-State", "UC-San-Diego", "Brown", "Columbia", "Cornell", "Dartmouth", "Harvard", "Penn", "Princeton", "Yale", "Bethune-Cookman", "Maryland-Eastern-Shore"],
+    "ineligible_sites": {
+        "Mackey Arena": ["Purdue"],
+        "Assembly Hall": ["Indiana"],
+        "Bankers Life": ["Ball State"],
+        "Hinkle": ["Butler"],
+        "IN Farmers": ["IUPUI"],
+        "Lucas Oil - U": ["IUPUI"],
+        "Lucas Oil - E": ["IUPUI"]
+    }
 }

@@ -34,5 +34,19 @@
         "Western Athletic": "Grand-Canyon",
         "West Coast": "Gonzaga"
     },
-    "ineligible_teams": ["Bellarmine", "Lindenwood", "Merrimack", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Tarleton-State", "Texas-AM-Commerce", "UC-San-Diego", "Utah-Tech"]
+    "ineligible_teams": ["Bellarmine", "Lindenwood", "Merrimack", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Tarleton-State", "Texas-AM-Commerce", "UC-San-Diego", "Utah-Tech"],
+    "ineligible_sites": {
+        "Orlando": ["UCF"],
+        "Birmingham": [],
+        "Des Moines": ["Drake"],
+        "Sacramento": ["Sacramento-State"],
+        "Albany": ["Siena"],
+        "Greensboro": [],
+        "Columbus": ["Ohio-State"],
+        "Denver": [],
+        "New York": ["Saint-Johns"],
+        "Las Vegas": ["UNLV"],
+        "Louisville": ["Louisville"],
+        "Kansas City": []
+    }
 }

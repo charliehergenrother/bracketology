@@ -81,6 +81,8 @@
 
 .link_list {
     display: flex;
+    justify-content: space-between;
+    list-style-type: none;
 }
 
 .link_element {

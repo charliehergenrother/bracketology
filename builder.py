@@ -953,6 +953,9 @@ class Builder:
         f.write('      <li class="link_element">\n')
         f.write('        <a href="womenfuture.html">Women\'s Future Bracket</a>\n')
         f.write('      </li>\n')
+        f.write('      <li class="link_element">\n')
+        f.write('        <a href="about.html">About</a>\n')
+        f.write('      </li>\n')
         f.write('    </ul>\n')
         f.write('  </nav>\n')
         f.write('</div>\n')
@@ -977,7 +980,7 @@ class Builder:
                     f.write('          <tr>')
                 if region_num in [0, 3]:
                     f.write('<td>')
-                    if seed_num in [16, 12, 11, 10]:
+                    if seed_num in [8, 4, 3, 2]:
                         f.write(self.first_weekend_num_to_name[region_num][site_seed_lines[seed_num]])
                     f.write('</td>')
                 team = self.regions[region_num][seed_num]
@@ -995,7 +998,7 @@ class Builder:
                         self.get_team_out(team2) + " (" + self.teams[team2].record + ")</td>\n")
                 if region_num in [1, 2]:
                     f.write('<td>')
-                    if seed_num in [16, 12, 11, 10]:
+                    if seed_num in [8, 4, 3, 2]:
                         f.write(self.first_weekend_num_to_name[region_num][site_seed_lines[seed_num]])
                     f.write('</td>')
 

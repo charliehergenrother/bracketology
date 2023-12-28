@@ -17,6 +17,7 @@ SCRAPE_DATE_FILE = "scrapedate.txt"
 
 reverse_team_dict = dict()
 
+#for use when outputting resumes in "Q1 Wins" column
 better_team_abbrs = {"San Diego State": "SDSU", 
         "Kansas State": "KSU",
         "Ohio State": "OSU",
@@ -57,7 +58,10 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "South Carolina": "SCAR",
         "Missouri": "MIZZ",
         "New Mexico": "NMX",
-        "Boston College": "BC"
+        "Boston College": "BC",
+        "Tennessee": "TENN",
+        "Connecticut": "CONN",
+        "Marquette": "MARQ"
         }
 
 #class to turn the Team and Game objects into jsonifyable strings
@@ -101,11 +105,14 @@ class Scraper:
         
         if self.mens:
             SITE_COORDINATES_FILE = "lib/men/" + self.year + "/site_locations.txt"
-            f = open(SITE_COORDINATES_FILE, "r")
-            for count, line in enumerate(f):
-                site_name = line[:line.find("[")]
-                latitude = float(line[line.find("[")+1:line.find(" N, ")-1])
-                longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
+        else:
+            SITE_COORDINATES_FILE = "lib/women/" + self.year + "/site_locations.txt"
+        f = open(SITE_COORDINATES_FILE, "r")
+        for count, line in enumerate(f):
+            site_name = line[:line.find("[")]
+            latitude = float(line[line.find("[")+1:line.find(" N, ")-1])
+            longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
+            if self.mens:
                 if count < 8:
                     first_sites[site_name] = [latitude, longitude]
                     #two pods at each site, so append each site twice
@@ -113,13 +120,7 @@ class Scraper:
                     first_weekend_sites.append(site_name)
                 else:
                     regional_sites[site_name] = [latitude, longitude]
-        else:
-            SITE_COORDINATES_FILE = "lib/women/" + self.year + "/site_locations.txt"
-            f = open(SITE_COORDINATES_FILE, "r")
-            for count, line in enumerate(f):
-                site_name = line[:line.find("[")]
-                latitude = float(line[line.find("[")+1:line.find(" N, ")-1])
-                longitude = float(line[line.find(" N, ")+4:line.find(" W]")-1])
+            else:
                 regional_sites[site_name] = [latitude, longitude]
         f.close()
         
@@ -202,7 +203,7 @@ class Scraper:
                 team = filename[:filename.find(".json")]
                 reverse_team_dict[curr_team.team_out] = team
     
-    #scrape one team's data
+    #fetch one team's data from warrennolan.com
     #team: string indicating which team's data should be scraped
     def scrape_team_data(self, team):
         if self.mens:
@@ -245,6 +246,7 @@ class Scraper:
         f.write(today_date)
         f.close()
 
+    #translate warrennolan.com's representation of a game's location to mine for outputting to resume
     def get_location_prefix(self, game):
         location_prefix = ""
         if game.location == "A":
@@ -253,6 +255,7 @@ class Scraper:
             location_prefix = "v. "
         return location_prefix
 
+    #output a csv resume file containing information about a college basketball team
     def output_resume(self):
         f = open(self.resumefile, "w+")
         f.write("Team,Record,NET,PWR,SOS,Q1,Q2,Q3/4,Q1 wins,Q2+ losses\n")
@@ -400,9 +403,6 @@ def simulate_games(scorer, builder, weightfile):
     random.shuffle(teams)
     for team in teams:
         team_kenpom = scorer.kenpom_estimate(scorer.teams[team].KenPom)
-        #print(team)
-        #print(scorer.teams[team].future_games)
-        #print(scorer.teams[team].games)
         for game in scorer.teams[team].future_games:
             game_exists = False
             for existing_game in scorer.teams[team].games:
@@ -498,6 +498,7 @@ def print_Illinois(scorer, team_kenpoms):
     print(str(wins) + "-" + str(losses) + " (" + str(conf_wins) + "-" + str(conf_losses) + ")")
     print(team_kenpoms["Illinois"])
 
+#run a monte carlo simulation of the remaining college basketball season
 def run_monte_carlo(simulations, scorer, builder, weightfile):
     made_tournament = dict()
     final_fours = dict()

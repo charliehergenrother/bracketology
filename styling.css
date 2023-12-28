@@ -109,4 +109,10 @@
     margin-left: 5%;
     padding-left: 5%;
     padding-right: 5%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.section_header {
+    text-align: center;
 }

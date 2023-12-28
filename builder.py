@@ -939,7 +939,7 @@ class Builder:
         f.write('  <nav>\n')
         f.write('    <ul class="link_list">\n')
         f.write('      <li>\n')
-        f.write('        <h4>Charlie Hergenrother\'s Bracketology</h4>')
+        f.write('        <b>Charlie Hergenrother\'s Bracketology</b>\n')
         f.write('      </li>\n')
         f.write('      <li class="link_element">\n')
         f.write('        <a href="men.html">Men\'s Bracket</a>\n')

@@ -101,3 +101,12 @@
         margin-right: 10px;
     }
 }
+
+.words_container {
+    width: 80%;
+    font-family: Arial;
+    background-color: lightgray;
+    margin-left: 5%;
+    padding-left: 5%;
+    padding-right: 5%;
+}

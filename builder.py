@@ -927,7 +927,7 @@ class Builder:
                     print(self.construct_line(max_len, region_nums[0], region_nums[1], seed_num))
 
     def output_bracket(self):
-        site_seed_lines = {16: 1, 12: 4, 11: 3, 10: 2}
+        site_seed_lines = {8: 1, 4: 4, 3: 3, 2: 2}
         f = open(self.webfile, "w")
         f.write('<!DOCTYPE html>\n\n')
         f.write('<html>\n')

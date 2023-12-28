@@ -55,7 +55,7 @@ class Team:
         for line in team_page.text.split("\n"):
             if "Non-Division I Games" in line:
                 break
-            if "team-menu__image\"" in line and not os.path.exists("./lib/assets/" + team + ".png"):
+            if "team-menu__image\"" in line and not os.path.exists("./assets/" + team + ".png"):
                 image_url = "http://www.warrennolan.com" + line[line.find("src=")+5:line.find(" />")-1]
                 team_image = requests.get(image_url, stream=True)
                 with open("./lib/assets/" + team + ".png", "xb") as f:

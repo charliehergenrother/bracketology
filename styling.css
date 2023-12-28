@@ -79,6 +79,14 @@
 
 }
 
+.link_list {
+    display: flex;
+}
+
+.link_element {
+    
+}
+
 .bracket_container {
     overflow: hidden;
 }

@@ -32,7 +32,7 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "Virginia Tech": "VT",
         "Colorado State": "CSU",
         "Kentucky": "UK",
-        "Saint Mary's": "SMC",
+        "Saint Mary's College": "SMC",
         "Saint John's": "STJN",
         "Saint Joseph's": "STJS",
         "Ole Miss": "MISS",
@@ -56,7 +56,8 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "Grand Canyon": "GCU",
         "South Carolina": "SCAR",
         "Missouri": "MIZZ",
-        "New Mexico": "NMX"
+        "New Mexico": "NMX",
+        "Boston College": "BC"
         }
 
 #class to turn the Team and Game objects into jsonifyable strings
@@ -174,7 +175,7 @@ class Scraper:
             self.do_load()
         first_weekend_sites, first_weekend_rankings, region_rankings = self.load_coordinates()
         eliminated_teams, ineligible_teams, conference_winners, ineligible_sites = self.load_special_teams()
-        return Builder(self.year, self.teams, self.verbose, self.outputfile, first_weekend_sites, \
+        return Builder(self.mens, self.year, self.teams, self.verbose, self.outputfile, first_weekend_sites, \
                 first_weekend_rankings, region_rankings, eliminated_teams, ineligible_sites, \
                 ineligible_teams, conference_winners, reverse_team_dict, future, monte_carlo)
 
@@ -515,6 +516,8 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
             scorer.teams[team].future_games = list(scorer.teams[team].saved_future_games)
             scorer.teams[team].at_large_bid = False
             scorer.teams[team].auto_bid = False
+            scorer.teams[team].region = -1
+            scorer.teams[team].seed = -1
         builder.first_weekend_sites = list(first_weekend_sites)
         builder.conference_winners = dict(conference_winners)
         results = simulate_games(scorer, builder, weightfile)

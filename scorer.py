@@ -506,7 +506,7 @@ class Scorer:
             return 0.02
 
     def get_NET_estimate(self, curr_NET, curr_KenPom):
-        NET_weight = 0.3
+        NET_weight = 0.4
         NET_estimate = (NET_weight*curr_NET) + (1 - NET_weight)*curr_KenPom
         return NET_estimate
 
@@ -606,7 +606,7 @@ class Scorer:
         for team in self.teams:
             if self.future:
                 self.load_schedule(team)
-            if self.verbose:
+            if self.verbose and not self.monte_carlo:
                 print("Scoring", team)
             score = 0
             score += WEIGHTS["LOSS_WEIGHT"]*self.get_loss_score(self.teams[team])
@@ -628,7 +628,7 @@ class Scorer:
             score += WEIGHTS["AWFUL_LOSS_WEIGHT"]*self.get_awful_loss_score(self.teams[team])
             score += WEIGHTS["BAD_LOSS_WEIGHT"]*self.get_bad_loss_score(self.teams[team])
             self.teams[team].score = score
-        if self.future:
+        if self.future or self.monte_carlo:
             f = open(self.schedule_datadir + SCRAPE_DATE_FILE, "w+")
             today_date = date.today().strftime("%m-%d")    #format: mm-dd
             f.write(today_date)

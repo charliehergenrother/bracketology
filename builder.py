@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from itertools import permutations
+from datetime import date
 import math
 
 AUTO_MAXES = {"2020": 32, "2021": 31, "2022": 32, "2023": 32, "2024": 32}
@@ -959,13 +960,16 @@ class Builder:
         f.write('    </ul>\n')
         f.write('  </nav>\n')
         f.write('</div>\n')
+        f.write('<div class="date_row">\n')
+        f.write('  <h4>Updated: ' + date.today().strftime("%m/%d/%y") + '</h4>')
+        f.write('</div>\n')
         f.write('<div class="bracket_container">\n')
         f.write('  <div class="region_column column1">\n')
         for region_num in [0, 3, 1, 2]:
             if region_num == 1:
                 f.write('  </div>\n')
                 f.write('  <div class="region_column column2">\n')
-            f.write('    <div class="table_container region' + str(region_num) + '">\n')
+            f.write('    <div class="table_container" id="region' + str(region_num) + '">\n')
             f.write('      <h2 class="region_header">' + self.region_num_to_name[region_num] + '</h2>\n')
             f.write('      <table>\n')
             if region_num in [0, 3]:
@@ -986,16 +990,23 @@ class Builder:
                 team = self.regions[region_num][seed_num]
                 f.write('<td>(' + str(seed_num) + ')</td>')
                 #If you want to put in the * for auto bids, here's where
-                try:
-                    f.write('<td><img src=assets/' + team + '.png></img></td>' + \
-                            '<td>' + self.get_team_out(team) + " (" + self.teams[team].record + ")</td>\n")
-                except KeyError:
+                if "/" not in team:
+                    f.write('<td><img src=assets/' + team + '.png></img></td><td>' + self.get_team_out(team))
+                    if self.teams[team].auto_bid:
+                        f.write("*")
+                    f.write(" (" + self.teams[team].record + ")</td>\n")
+                else:
                     team1 = team.split("/")[0]
                     team2 = team.split("/")[1]
                     f.write('<td><img class="tinylogo" src=assets/' + team1 + '.png></img>' + \
                             '<img class="tinylogo" src=assets/' + team2 + '.png></img></td><td>' + \
-                        self.get_team_out(team1) + " (" + self.teams[team1].record + ")/" + \
-                        self.get_team_out(team2) + " (" + self.teams[team2].record + ")</td>\n")
+                        self.get_team_out(team1))
+                    if self.teams[team1].auto_bid:
+                        f.write("*")
+                    f.write(" (" + self.teams[team1].record + ")/" + self.get_team_out(team2))
+                    if self.teams[team2].auto_bid:
+                        f.write("*")
+                    f.write(" (" + self.teams[team2].record + ")</td>\n")
                 if region_num in [1, 2]:
                     f.write('<td>')
                     if seed_num in [8, 4, 3, 2]:

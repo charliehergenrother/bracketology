@@ -1,3 +1,9 @@
+body {
+    margin: 20px auto;
+    padding: 10px;
+    max-width: 1200px;
+}
+
 .table_container {
     margin-bottom: 10px;
     font-family: Arial;
@@ -22,18 +28,6 @@
     }
 }
 
-.region0 {
-}
-
-.region1 {
-}
-
-.region2 {
-}
-
-.region3 {
-}
-
 .region_header {
    text-align: center; 
 }
@@ -49,7 +43,7 @@
 }
 
 .column1 {
-    margin-right: 30px;
+    margin-right: 10px;
 }
 
 .column2 {
@@ -84,6 +78,12 @@
     justify-content: space-between;
     list-style-type: none;
     font-family: Arial;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-right: 10px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    background-color: lightblue;
 }
 
 .link_element {
@@ -92,6 +92,9 @@
 
 .bracket_container {
     overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .bubble_container {
@@ -115,4 +118,10 @@
 
 .section_header {
     text-align: center;
+}
+
+.date_row {
+    margin-top: 10px;
+    text-align: center;
+    font-family: Arial;
 }

@@ -319,7 +319,7 @@ class Team:
             return 0
 
     def get_predictive(self):
-        if self.Sagarin == 1:
+        if self.Sagarin == 0:
             return sum([self.KenPom, self.BPI])/2
         else:
             return sum([self.KenPom, self.BPI, self.Sagarin])/3

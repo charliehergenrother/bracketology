@@ -69,6 +69,30 @@ body {
     width: 32px;
 }
 
+.teamcol {
+    min-width: 105px;
+}
+
+.recordcol {
+    min-width: 40px;
+}
+
+.rankcol {
+    min-width: 35px;
+}
+
+.wincol {
+    min-width: 500px;
+}
+
+.losscol {
+    max-width: 250px;
+}
+
+.header_row {
+    font-weight: bold;
+}
+
 .link_row {
 
 }

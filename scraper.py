@@ -61,7 +61,12 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "Boston College": "BC",
         "Tennessee": "TENN",
         "Connecticut": "CONN",
-        "Marquette": "MARQ"
+        "Marquette": "MARQ",
+        "Clemson": "CLEM",
+        "West Virginia": "WVU",
+        "UCLA": "UCLA",
+        "North Texas": "NTX",
+        "Maryland": "MARY"
         }
 
 #class to turn the Team and Game objects into jsonifyable strings
@@ -255,6 +260,32 @@ class Scraper:
             location_prefix = "v. "
         return location_prefix
 
+    #construct the strings for a team's Q1 wins and Q2 and below losses for use in the resume
+    def get_wins_losses_strings(self, team):
+        good_wins = list()
+        bad_losses = list()
+        for game in self.teams[team].games:
+            if game.opponent in better_team_abbrs:
+                team_abbr = better_team_abbrs[game.opponent]
+            else:
+                team_abbr = game.opponent[:3].upper()
+            if game.win and game.quadrant == 1:
+                good_wins.append({"team": self.get_location_prefix(game) + team_abbr, "NET": game.opp_NET})
+            elif not game.win and game.quadrant >= 2:
+                bad_losses.append({"team": self.get_location_prefix(game) + game.opponent, "NET": game.opp_NET})
+        win_string = ''
+        loss_string = ''
+        for game in sorted(good_wins, key=lambda x: x["NET"]):
+            win_string += game["team"] + "(" + str(game["NET"]) + "), "
+        if len(win_string) > 1:
+            win_string = win_string[:-2]
+        for game in sorted(bad_losses, key=lambda x: x["NET"]):
+            loss_string += game["team"] + " (" + str(game["NET"]) + "), "
+        if len(loss_string) > 1:
+            loss_string = loss_string[:-2]
+ 
+        return win_string, loss_string
+
     #output a csv resume file containing information about a college basketball team
     def output_resume(self):
         f = open(self.resumefile, "w+")
@@ -272,32 +303,52 @@ class Scraper:
             q3_record = self.teams[team].get_derived_record(3)
             q4_record = self.teams[team].get_derived_record(4)
             f.write("'" + q4_record[:q4_record.find('-')] + q3_record[q3_record.find('-'):] + ',')
-            
-            good_wins = list()
-            bad_losses = list()
-            for game in self.teams[team].games:
-                if game.opponent in better_team_abbrs:
-                    team_abbr = better_team_abbrs[game.opponent]
-                else:
-                    team_abbr = game.opponent[:3].upper()
-                if game.win and game.quadrant == 1:
-                    good_wins.append({"team": self.get_location_prefix(game) + team_abbr, "NET": game.opp_NET})
-                elif not game.win and game.quadrant >= 2:
-                    bad_losses.append({"team": self.get_location_prefix(game) + game.opponent, "NET": game.opp_NET})
-            win_string = '"'
-            for game in sorted(good_wins, key=lambda x: x["NET"]):
-                win_string += game["team"] + "(" + str(game["NET"]) + "), "
-            if len(win_string) > 1:
-                win_string = win_string[:-2]
-            f.write(win_string)
-            f.write('","')
-            loss_string = ""
-            for game in sorted(bad_losses, key=lambda x: x["NET"]):
-                loss_string += game["team"] + " (" + str(game["NET"]) + "), "
-            if len(loss_string) > 1:
-                loss_string = loss_string[:-2]
-            f.write(loss_string)
-            f.write('",\n')
+           
+            win_string, loss_string = self.get_wins_losses_strings(team)
+            f.write('"' + win_string + '","' + loss_string + '"\n')
+    
+    #output an HTML resume page for all college basketball teams
+    def output_resume_html(self, filename, scorer, builder):
+        f = open(filename, "w")
+        builder.output_meta(f)
+        builder.output_link_row(f)
+        f.write('<div class="table_container">\n')
+        f.write('  <table>\n')
+        f.write('    <colgroup><col class="teamcol"><col class="recordcol"><col class="rankcol">')
+        if self.mens:   #power & strength of schedule columns, no data for women
+            f.write('<col class="rankcol"><col class="rankcol">')
+        f.write('<col class="recordcol"><col class="recordcol"><col class="recordcol"><col class="wincol"><col class="losscol"></colgroup>\n')
+        f.write('    <tbody>\n')
+        f.write('      <tr class="header_row"><td>Team</td><td>Record</td><td>NET</td>')
+        if self.mens:
+            f.write('<td>Power</td><td>SOS</td>')
+        f.write('<td>Q1</td><td>Q2</td><td>Q3/4</td><td>Q1 Wins</td><td>Q2+ losses</td></tr>\n')
+        for index, team in enumerate(sorted(scorer.teams, key=lambda x: scorer.teams[x].score, reverse=True)):
+            if not index % 2:
+                f.write('      <tr class="grayrow">')
+            else:
+                f.write('      <tr>')
+            f.write('<td>' + scorer.teams[team].team_out + '</td>')
+            f.write('<td>' + scorer.teams[team].record + '</td>')
+            f.write('<td>' + str(scorer.teams[team].NET) + '</td>')
+            if self.mens:
+                f.write('<td>' + str(round(scorer.teams[team].predictive, 2)) + '</td>')
+                f.write('<td>' + str(scorer.teams[team].NET_SOS) + '</td>')
+            f.write('<td>' + scorer.teams[team].get_derived_record(1) + '</td>')
+            f.write('<td>' + scorer.teams[team].get_derived_record(2) + '</td>')
+            #quad 4+ wins, quad 3- losses
+            q3_record = self.teams[team].get_derived_record(3)
+            q4_record = self.teams[team].get_derived_record(4)
+            f.write('<td>' + q4_record[:q4_record.find('-')] + q3_record[q3_record.find('-'):] + '</td>')
+            win_string, loss_string = self.get_wins_losses_strings(team)
+            f.write('<td>' + win_string + '</td>')
+            f.write('<td>' + loss_string + '</td>')
+            f.write('</tr>\n')
+
+
+        f.write('    </tbody>\n')
+        f.write('  </table>\n')
+        f.write('</div>\n')
 
 #accept command line arguments
 def process_args():
@@ -306,6 +357,7 @@ def process_args():
     outputfile = ""
     resumefile = ""
     webfile = ""
+    resumewebfile = ""
     should_scrape = True
     force_scrape = False
     verbose = False
@@ -320,7 +372,7 @@ def process_args():
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-m/-w] [-f] [-c <sims>] [-y year] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-e|-s] [-v]")
+            print("./scraper.py [-h] [-m/-w] [-f] [-c <sims>] [-y year] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-u resumewebfile] [-e|-s] [-v]")
             print("     -h: print this help message")
             print("     -m: men's tournament projection [default]")
             print("     -w: women's tournament projection")
@@ -331,6 +383,7 @@ def process_args():
             print("     -o: set a csv filename where the final ranking will live")
             print("     -r: set a csv filename where the final readable resume will live")
             print("     -b: set an html filename where the displayed bracket will live")
+            print("     -u: set an html filename where the resume page will live")
             print("     -e: override the scraping and use data currently stored")
             print("     -s: scrape data anew regardless of whether data has been scraped today")
             print("     -v: verbose. Print team resumes and bracketing procedure")
@@ -346,6 +399,9 @@ def process_args():
             argindex += 1
         elif sys.argv[argindex] == '-b':
             webfile = sys.argv[argindex + 1]
+            argindex += 1
+        elif sys.argv[argindex] == '-u':
+            resumewebfile = sys.argv[argindex + 1]
             argindex += 1
         elif sys.argv[argindex] == '-e':
             should_scrape = False
@@ -380,8 +436,8 @@ def process_args():
             weightfile = "lib/men/weights.txt"
         else:
             weightfile = "lib/women/weights.txt"
-    return year, mens, outputfile, resumefile, webfile, datadir, should_scrape, force_scrape, \
-            verbose, tracker, weightfile, future, monte_carlo, simulations
+    return year, mens, outputfile, resumefile, webfile, resumewebfile, datadir, should_scrape, \
+            force_scrape, verbose, tracker, weightfile, future, monte_carlo, simulations
 
 def add_or_increment_key(key, dictionary):
     try:
@@ -396,6 +452,40 @@ def reverse_location(location):
         return "A"
     return "N"
 
+def simulate_one_game(team1, team2, team_kenpoms, scorer):
+    if "/" in team2:
+        team2 = simulate_one_game(team2.split("/")[0], team2.split("/")[1], team_kenpoms, scorer)
+    team_spread = scorer.get_spread(team_kenpoms[team1], team_kenpoms[team2], 'N')
+    win_prob = scorer.get_win_prob(team_spread)
+    win_result = random.random()
+    kenpom_change = random.random()
+    if win_result < win_prob:
+        winner = team1
+        #print(team1, "over", team2)
+    else:
+        winner = team2
+        #print(team2, "over", team1)
+    if kenpom_change > 0.85:
+        team_kenpoms[winner] += 1
+    elif kenpom_change > 0.5:
+        team_kenpoms[winner] += 0.5
+    elif kenpom_change < 0.15:
+        team_kenpoms[winner] -= 0.5
+    return winner
+
+def simulate_tournament(builder, team_kenpoms, scorer):
+    winners = list()
+    for region_num in [0, 3, 1, 2]:
+        for seed in [1, 8, 5, 4, 6, 3, 7, 2]:
+            winners.append(simulate_one_game(builder.regions[region_num][seed], \
+                    builder.regions[region_num][17-seed], team_kenpoms, scorer))
+    index = 0
+    while index + 1 < len(winners):
+        winners.append(simulate_one_game(winners[index], winners[index + 1], team_kenpoms, scorer))
+        index += 2
+    return winners
+
+#run one simulation of the rest of the college basketball season
 def simulate_games(scorer, builder, weightfile):
     results = {'tournament': list(), 'final_four': list(), 'champion': list()}
     teams = list(scorer.teams.keys())
@@ -406,7 +496,7 @@ def simulate_games(scorer, builder, weightfile):
         for game in scorer.teams[team].future_games:
             game_exists = False
             for existing_game in scorer.teams[team].games:
-                if existing_game.date != "10-10":
+                if existing_game.date != "10-10":   #previously simulated game
                     break
                 if existing_game.opponent == game['opponent'] and \
                         existing_game.location == game['location']:
@@ -436,8 +526,8 @@ def simulate_games(scorer, builder, weightfile):
                     team_kenpom += 0.5
                     team_kenpoms[opponent] -= 0.5
                 elif kenpom_change < 0.15:
-                    team_kenpom += 0.5
-                    team_kenpoms[opponent] -= 0.5
+                    team_kenpom -= 0.5
+                    team_kenpoms[opponent] += 0.5
             else:
                 new_game.opp_score = 80
                 opp_game.team_score = 80
@@ -446,7 +536,7 @@ def simulate_games(scorer, builder, weightfile):
                     team_kenpoms[opponent] += 1
                 elif kenpom_change < 0.5:
                     team_kenpom -= 0.5
-                    team_kenpoms[opponent] -= 0.5
+                    team_kenpoms[opponent] += 0.5
                 elif kenpom_change > 0.85:
                     team_kenpom += 0.5
                     team_kenpoms[opponent] -= 0.5
@@ -470,6 +560,9 @@ def simulate_games(scorer, builder, weightfile):
     for team in scorer.teams:
         if scorer.teams[team].auto_bid or scorer.teams[team].at_large_bid:
             results['tournament'].append([team, scorer.teams[team].seed])
+    winners = simulate_tournament(builder, team_kenpoms, scorer)
+    results['final_four'] += winners[-7:-3]
+    results['champion'].append(winners[-1])
     return results
 
 def print_Illinois(scorer, team_kenpoms):
@@ -535,13 +628,19 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
     for team in sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x]):
         print(team.ljust(20), made_tournament[team], round(sum(team_seeds[team])/made_tournament[team], 2), \
                 min(team_seeds[team]), max(team_seeds[team]))
-    print(final_fours)
-    print(national_champion)
+    print()
+    print("FINAL FOURS")
+    for team in sorted(final_fours, key=lambda x: final_fours[x], reverse=True):
+        print(team.ljust(20), final_fours[team])
+    print()
+    print("NATIONAL CHAMPIONS")
+    for team in sorted(national_champion, key=lambda x: national_champion[x], reverse=True):
+        print(team.ljust(20), national_champion[team])
 
 def main():
     scraper = Scraper()
-    scraper.year, scraper.mens, scraper.outputfile, scraper.resumefile, scraper.webfile, scraper.datadir, should_scrape, \
-            force_scrape, scraper.verbose, scraper.tracker, weightfile, future, \
+    scraper.year, scraper.mens, scraper.outputfile, scraper.resumefile, scraper.webfile, resumewebfile, \
+            scraper.datadir, should_scrape, force_scrape, scraper.verbose, scraper.tracker, weightfile, future, \
             monte_carlo, simulations = process_args()
     builder = scraper.load_data(should_scrape, force_scrape, future, monte_carlo)
     scorer = Scorer(builder, future, scraper.mens, scraper.tracker, monte_carlo)
@@ -570,6 +669,8 @@ def main():
         if scraper.webfile:
             builder.webfile = scraper.webfile
             builder.output_bracket()
+        if resumewebfile:
+            scraper.output_resume_html(resumewebfile, scorer, builder)
 
 if __name__ == '__main__':
     main()

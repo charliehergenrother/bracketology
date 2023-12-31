@@ -216,6 +216,10 @@ class Builder:
                 if self.verbose:
                     print("teams are meeting too early in this region", region_num, team, test_team)
                 return False
+            #BUG: when we check if a play in team can go in a spot, this works correctly.
+            #The rules about meeting too early are waived.
+            #However, when we check if the better team can play a play in team, this works incorrectly.
+            #The team object doesn't have that information.
             if game_count >= 2:     #sweet 16 matchup
                 for seed_set in [[1, 16, 8, 9], [5, 12, 4, 13], [6, 11, 3, 14], [7, 10, 2, 15]]:
                     if self.teams[test_team].seed in seed_set and seed_num in seed_set and not for_play_in:
@@ -927,15 +931,14 @@ class Builder:
                 for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
                     print(self.construct_line(max_len, region_nums[0], region_nums[1], seed_num))
 
-    def output_bracket(self):
-        site_seed_lines = {8: 1, 4: 4, 3: 3, 2: 2}
-        f = open(self.webfile, "w")
+    def output_meta(self, f):
         f.write('<!DOCTYPE html>\n\n')
         f.write('<html>\n')
         f.write('<head>\n')
         f.write('<link rel="stylesheet" href="styling.css">\n')
         f.write('</head>\n\n')
-        f.write('<body>\n\n')
+ 
+    def output_link_row(self, f):
         f.write('<div class="link_row">\n')
         f.write('  <nav>\n')
         f.write('    <ul class="link_list">\n')
@@ -960,6 +963,13 @@ class Builder:
         f.write('    </ul>\n')
         f.write('  </nav>\n')
         f.write('</div>\n')
+ 
+    def output_bracket(self):
+        site_seed_lines = {8: 1, 4: 4, 3: 3, 2: 2}
+        f = open(self.webfile, "w")
+        self.output_meta(f)
+        self.output_link_row(f)
+        f.write('<body>\n\n')
         f.write('<div class="date_row">\n')
         f.write('  <h4>Updated: ' + date.today().strftime("%m/%d/%y") + '</h4>')
         f.write('</div>\n')
@@ -989,7 +999,7 @@ class Builder:
                     f.write('</td>')
                 team = self.regions[region_num][seed_num]
                 f.write('<td>(' + str(seed_num) + ')</td>')
-                #If you want to put in the * for auto bids, here's where
+                
                 if "/" not in team:
                     f.write('<td><img src=assets/' + team + '.png></img></td><td>' + self.get_team_out(team))
                     if self.teams[team].auto_bid:

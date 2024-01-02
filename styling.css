@@ -34,6 +34,11 @@ body {
     height: 35px;
 }
 
+.bubble_row {
+    border-bottom: 2px solid white;
+    height: 35px;
+}
+
 .region_header {
    text-align: center; 
 }

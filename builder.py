@@ -1037,7 +1037,7 @@ class Builder:
         f.write('<div class="bubble_container table_container">\n')
         f.write('  <table>\n')
         f.write('    <tbody>\n')
-        f.write('      <tr class="grayrow"><td><h4>Last Four Byes</h4></td>')
+        f.write('      <tr class="gray_row"><td><h4>Last Four Byes</h4></td>')
         at_large_counter = 0
         bubble_counter = 0
         AT_LARGE_MAX = 68 - AUTO_MAXES[self.year]
@@ -1045,17 +1045,17 @@ class Builder:
             if self.teams[team].at_large_bid:
                 at_large_counter += 1
                 if at_large_counter > AT_LARGE_MAX - 8:
-                    f.write('<td><img src=assets/' + team + '.png></img></td><td>' + \
+                    f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td>' + \
                         self.get_team_out(team) + ' (' + self.teams[team].record + ')</td>')
                     if at_large_counter == AT_LARGE_MAX - 4:
                         f.write('</tr>\n')
                         f.write('      <tr><td><h4>Last Four In</h4></td>')
                     elif at_large_counter == AT_LARGE_MAX:
                         f.write('</tr>\n')
-                        f.write('      <tr class="grayrow"><td><h4>First Four Out</h4></td>')
+                        f.write('      <tr class="gray_row"><td><h4>First Four Out</h4></td>')
             elif not self.teams[team].auto_bid and team not in self.ineligible_teams:
                 bubble_counter += 1
-                f.write('<td><img src=assets/' + team + '.png></img></td><td>' + \
+                f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td>' + \
                         self.get_team_out(team) + ' (' + self.teams[team].record + ')</td>')
                 if bubble_counter == 4:
                     f.write('</tr>\n')

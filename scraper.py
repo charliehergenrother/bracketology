@@ -325,7 +325,7 @@ class Scraper:
         f.write('<td>Q1</td><td>Q2</td><td>Q3/4</td><td>Q1 Wins</td><td>Q2+ losses</td></tr>\n')
         for index, team in enumerate(sorted(scorer.teams, key=lambda x: scorer.teams[x].score, reverse=True)):
             if not index % 2:
-                f.write('      <tr class="grayrow">')
+                f.write('      <tr class="gray_row">')
             else:
                 f.write('      <tr>')
             f.write('<td>' + scorer.teams[team].team_out + '</td>')

@@ -27,6 +27,7 @@ class Team:
         self.games = set()
         self.auto_bid = False
         self.at_large_bid = False
+        self.play_in = False
     
     def fill_data(self, conf, net, kp, bpi, sag, kpi, sor, netsos, ncsos, gms, to):
         self.conference = conf

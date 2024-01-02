@@ -686,6 +686,7 @@ class Builder:
     def save_play_in_team(self, team_list, seed_list, team, seed_num):
         team_list.append(team)
         seed_list.append(seed_num)
+        self.teams[team].play_in = True
 
     #choose a regional site that a #1 seed will play at
     def choose_regional(self, team, seed_num, region_num):
@@ -843,7 +844,6 @@ class Builder:
                     saved_teams.append(save_team)
                 else:
                     self.place_team(region_num, seed_num, team)
-                    #print("yay, no more problems")
                 continue
             #save play-in teams to be placed all together
             elif self.teams[team].at_large_bid and at_large_count >= AT_LARGE_MAX - 4 and (not placing_saved_team):
@@ -854,7 +854,7 @@ class Builder:
                     if len(save_team):
                         if self.verbose:
                             print("problems with", save_team, self.regions)
-                        if type(save_team) == tuple:
+                        if type(save_team) == tuple:    #couldn't place either play-in matchup in the bracket
                             saved_teams.append(save_team[0])
                             saved_teams.append(save_team[1])
                         else:
@@ -949,7 +949,13 @@ class Builder:
         f.write('        <a href="men.html">Men\'s Bracket</a>\n')
         f.write('      </li>\n')
         f.write('      <li class="link_element">\n')
+        f.write('        <a href="menresumes.html">Men\'s Resumes</a>\n')
+        f.write('      </li>\n')
+        f.write('      <li class="link_element">\n')
         f.write('        <a href="women.html">Women\'s Bracket</a>\n')
+        f.write('      </li>\n')
+        f.write('      <li class="link_element">\n')
+        f.write('        <a href="womenresumes.html">Women\'s Resumes</a>\n')
         f.write('      </li>\n')
         f.write('      <li class="link_element">\n')
         f.write('        <a href="menfuture.html">Men\'s Future Bracket</a>\n')
@@ -981,7 +987,7 @@ class Builder:
                 f.write('  <div class="region_column column2">\n')
             f.write('    <div class="table_container" id="region' + str(region_num) + '">\n')
             f.write('      <h2 class="region_header">' + self.region_num_to_name[region_num] + '</h2>\n')
-            f.write('      <table>\n')
+            f.write('      <table class="region_table">\n')
             if region_num in [0, 3]:
                 f.write('        <colgroup><col class="siteleftcol"><col class="seedcol"><col class="logocol"><col></colgroup>\n')
             else:
@@ -989,9 +995,9 @@ class Builder:
             f.write('        <tbody>\n')
             for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
                 if seed_num in [1, 16, 8, 9, 6, 11, 3, 14]:
-                    f.write('          <tr class="grayrow">')
+                    f.write('          <tr class="bracket_row gray_row">')
                 else:
-                    f.write('          <tr>')
+                    f.write('          <tr class="bracket_row">')
                 if region_num in [0, 3]:
                     f.write('<td>')
                     if seed_num in [8, 4, 3, 2]:
@@ -1001,15 +1007,15 @@ class Builder:
                 f.write('<td>(' + str(seed_num) + ')</td>')
                 
                 if "/" not in team:
-                    f.write('<td><img src=assets/' + team + '.png></img></td><td>' + self.get_team_out(team))
+                    f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td>' + self.get_team_out(team))
                     if self.teams[team].auto_bid:
                         f.write("*")
                     f.write(" (" + self.teams[team].record + ")</td>\n")
                 else:
                     team1 = team.split("/")[0]
                     team2 = team.split("/")[1]
-                    f.write('<td><img class="tinylogo" src=assets/' + team1 + '.png></img>' + \
-                            '<img class="tinylogo" src=assets/' + team2 + '.png></img></td><td>' + \
+                    f.write('<td><img class="tiny_logo" src=assets/' + team1 + '.png></img>' + \
+                            '<img class="tiny_logo" src=assets/' + team2 + '.png></img></td><td>' + \
                         self.get_team_out(team1))
                     if self.teams[team1].auto_bid:
                         f.write("*")

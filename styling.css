@@ -7,25 +7,25 @@ body {
 .table_container {
     margin-bottom: 10px;
     font-family: Arial;
+}
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-right: 5px;
+.region_table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-right: 5px;
+}
 
-        tr {
-            border-bottom: 2px solid white;
-            height: 35px;
-        }
+.tinylogo {
+    height: 15px;
+}
 
-        img {
-            height: 25px;
-        }
+.team_logo {
+    height: 25px;
+}
 
-        .tinylogo {
-            height: 15px;
-        }
-    }
+.bracket_row {
+    border-bottom: 2px solid white;
+    height: 35px;
 }
 
 .region_header {

@@ -9,6 +9,12 @@ body {
     font-family: Arial;
 }
 
+.bubble_table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-right: 5px;
+}
+
 .region_table {
     width: 100%;
     border-collapse: collapse;

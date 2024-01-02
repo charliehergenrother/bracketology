@@ -313,7 +313,7 @@ class Scraper:
         builder.output_meta(f)
         builder.output_link_row(f)
         f.write('<div class="table_container">\n')
-        f.write('  <table>\n')
+        f.write('  <table class="resume_table">\n')
         f.write('    <colgroup><col class="teamcol"><col class="recordcol"><col class="rankcol">')
         if self.mens:   #power & strength of schedule columns, no data for women
             f.write('<col class="rankcol"><col class="rankcol">')
@@ -325,9 +325,9 @@ class Scraper:
         f.write('<td>Q1</td><td>Q2</td><td>Q3/4</td><td>Q1 Wins</td><td>Q2+ losses</td></tr>\n')
         for index, team in enumerate(sorted(scorer.teams, key=lambda x: scorer.teams[x].score, reverse=True)):
             if not index % 2:
-                f.write('      <tr class="gray_row">')
+                f.write('      <tr class="gray_row resume_row">')
             else:
-                f.write('      <tr>')
+                f.write('      <tr class="resume_row">')
             f.write('<td>' + scorer.teams[team].team_out + '</td>')
             f.write('<td>' + scorer.teams[team].record + '</td>')
             f.write('<td>' + str(scorer.teams[team].NET) + '</td>')

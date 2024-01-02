@@ -21,6 +21,10 @@ body {
     margin-right: 5px;
 }
 
+.resume_table {
+    border-collapse: collapse;
+}
+
 .tiny_logo {
     height: 15px;
 }
@@ -37,6 +41,10 @@ body {
 .bubble_row {
     border-bottom: 2px solid white;
     height: 35px;
+}
+
+.resume_row {
+    border-bottom: 2px solid white;
 }
 
 .region_header {

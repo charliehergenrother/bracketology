@@ -133,6 +133,34 @@ body {
     
 }
 
+.dropdown_element {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown_button {
+    background-color: gray;
+    color: white;
+    font-size: 16px;
+}
+
+.dropdown_content {
+    display: none;
+    position: absolute;
+    background-color: lightgray;
+    min-width: 200px;
+    z-index: 1;
+}
+
+.dropdown_content a {
+    padding-bottom: 10px;
+    display: block;
+}
+
+.dropdown_element:hover .dropdown_content {
+    display: block;
+}
+
 .bracket_container {
     overflow: hidden;
     display: flex;

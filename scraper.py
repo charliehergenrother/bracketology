@@ -36,6 +36,7 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "Saint Mary's College": "SMC",
         "Saint John's": "STJN",
         "Saint Joseph's": "STJS",
+        "Saint Bonaventure": "STBN",
         "Ole Miss": "MISS",
         "Utah State": "UTST",
         "Texas A&M": "TA&M",
@@ -358,26 +359,91 @@ class Scraper:
         builder.output_meta(f)
         builder.output_link_row(f)
         f.write('<body>\n')
+        f.write('<div class="schedule_block">\n')
         future_games = dict()
 
-        for team in sorted(scorer.teams, key=lambda x: scorer.teams[x].score):
-            if not hasattr(scorer.teams[team], "seed"):
+        for team in sorted(scorer.teams, key=lambda x: scorer.teams[x].score, reverse=True):
+            try:
+                team_seed = int(scorer.teams[team].seed)
+            except AttributeError:  #team not tourney-relevant
+                continue
+            except ValueError:      #team is First Four Out or Next Four Out
+                if scorer.teams[team].seed == "FFO":
+                    team_seed = 13
+                if scorer.teams[team].seed == "NFO":
+                    team_seed = 14
+            if not hasattr(scorer.teams[team], "seed") or \
+                    (type(scorer.teams[team].seed) == int and scorer.teams[team].seed > 13):
                 continue
             for game in scorer.teams[team].future_games:
+                try:
+                    game_score = team_seed + int(scorer.teams[game["opponent"]].seed)
+                except AttributeError:
+                    game_score = team_seed + 20
+                except ValueError:
+                    if scorer.teams[game["opponent"]].seed == "FFO":
+                        game_score = team_seed + 13
+                    if scorer.teams[game["opponent"]].seed == "NFO":
+                        game_score = team_seed + 14
                 if game["date"] in future_games and \
-                        (game["opponent"], team, game["location"]) not in future_games[game["date"]]:
-                    future_games[game["date"]].append((team, game["opponent"], game["location"]))
-                elif (game["opponent"], team, game["location"]) not in future_games[game["date"]]:
-                    future_games[game["date"]] = [(team, game["opponent"], game["location"])]
+                        (game["opponent"], team, reverse_location(game["location"]), game_score) not in future_games[game["date"]]:
+                    future_games[game["date"]].append((team, game["opponent"], game["location"], game_score))
+                elif game["date"] not in future_games:
+                    future_games[game["date"]] = [(team, game["opponent"], game["location"], game_score)]
 
-        for month in ["10", "11", "12", "01", "02", "03"]:
+        month_translations = {"10": "October", "11": "November", "12": "December", "01": "January", \
+                "02": "February", "03": "March"}
+        for month in month_translations:
             for day in range(1, 32):
                 strday = str(day)
-                datestring = month + "-" + day
+                datestring = month + "-" + strday
                 if datestring in future_games:
-                    print(datestring)
-                    print(future_games[datestring])
-
+                    f.write('  <h2>' + month_translations[month] + ' ' + strday + '</h2>\n')
+                    gray = True
+                    for game in sorted(future_games[datestring], key=lambda x: x[3]):
+                        if game[2] == "H":
+                            try:
+                                away_seed = "(" + str(scorer.teams[game[1]].seed) + ") "
+                            except AttributeError:
+                                away_seed = ""
+                            away_team = scorer.teams[game[1]].team_out
+                            location = '@'
+                            try:
+                                home_seed = "(" + str(scorer.teams[game[0]].seed) + ") "
+                            except AttributeError:
+                                home_seed = ""
+                            home_team = scorer.teams[game[0]].team_out
+                        elif game[2] == "A":
+                            try:
+                                away_seed = "(" + str(scorer.teams[game[0]].seed) + ") "
+                            except AttributeError:
+                                away_seed = ""
+                            away_team = scorer.teams[game[0]].team_out
+                            location = '@'
+                            try:
+                                home_seed = "(" + str(scorer.teams[game[1]].seed) + ") "
+                            except AttributeError:
+                                home_seed = ""
+                            home_team = scorer.teams[game[1]].team_out
+                        elif game[2] == "N":
+                            try:
+                                away_seed = "(" + str(scorer.teams[game[0]].seed) + ") "
+                            except AttributeError:
+                                away_seed = ""
+                            away_team = scorer.teams[game[0]].team_out
+                            location = 'v.'
+                            try:
+                                home_seed = "(" + str(scorer.teams[game[1]].seed) + ") "
+                            except AttributeError:
+                                home_seed = ""
+                            home_team = scorer.teams[game[1]].team_out
+                        f.write('  <div class="game_line')
+                        if gray:
+                            f.write(' gray_row')
+                        f.write('"><span>' + away_seed + away_team + ' ' + location + ' ' + \
+                                home_seed + home_team + '</span></div>\n')
+                        gray = not gray
+        f.write('</div>\n')
         f.write('</body>\n')
         f.write('</html>\n')
 

@@ -544,6 +544,8 @@ class Scorer:
         return team_spread
 
     def do_schedule_scrape(self, team):
+        month_translations = {"JAN": "01", "FEB": "02", "MAR": "03", "APR": "04", "MAY": "05", "JUN": "06", \
+                "JUL": "07", "AUG": "08", "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12"}
         if self.mens:
             schedule_url = TEAM_MEN_URL_START + team
         else:
@@ -563,9 +565,14 @@ class Scorer:
                 if 'team-schedule' in line:
                     table_start = True
                 continue
-            if "team-schedule__location" in line:
-                found_location = True
+            if "team-schedule__game-date--month" in line:
                 game = dict()
+                month = line[line.find("month")+7:line.find("</span>")]
+                game["date"] = month_translations[month]
+            elif "team-schedule__game-date--day" in line:
+                game["date"] += "-" + line[line.find("day")+5:line.find("</span>")]
+            elif "team-schedule__location" in line:
+                found_location = True
             elif found_location:
                 if "VS" in line:
                     game["location"] = "N"

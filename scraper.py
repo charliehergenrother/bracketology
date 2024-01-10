@@ -312,6 +312,7 @@ class Scraper:
         f = open(filename, "w")
         builder.output_meta(f)
         builder.output_link_row(f)
+        f.write('<body>\n')
         f.write('<div class="table_container">\n')
         f.write('  <table class="resume_table">\n')
         f.write('    <colgroup><col class="teamcol"><col class="recordcol"><col class="rankcol">')
@@ -349,6 +350,36 @@ class Scraper:
         f.write('    </tbody>\n')
         f.write('  </table>\n')
         f.write('</div>\n')
+        f.write('</body>\n')
+        f.write('</html>\n')
+
+    def output_schedule_html(self, filename, scorer, builder):
+        f = open(filename, "w")
+        builder.output_meta(f)
+        builder.output_link_row(f)
+        f.write('<body>\n')
+        future_games = dict()
+
+        for team in sorted(scorer.teams, key=lambda x: scorer.teams[x].score):
+            if not hasattr(scorer.teams[team], "seed"):
+                continue
+            for game in scorer.teams[team].future_games:
+                if game["date"] in future_games and \
+                        (game["opponent"], team, game["location"]) not in future_games[game["date"]]:
+                    future_games[game["date"]].append((team, game["opponent"], game["location"]))
+                elif (game["opponent"], team, game["location"]) not in future_games[game["date"]]:
+                    future_games[game["date"]] = [(team, game["opponent"], game["location"])]
+
+        for month in ["10", "11", "12", "01", "02", "03"]:
+            for day in range(1, 32):
+                strday = str(day)
+                datestring = month + "-" + day
+                if datestring in future_games:
+                    print(datestring)
+                    print(future_games[datestring])
+
+        f.write('</body>\n')
+        f.write('</html>\n')
 
 #accept command line arguments
 def process_args():
@@ -358,6 +389,7 @@ def process_args():
     resumefile = ""
     webfile = ""
     resumewebfile = ""
+    upcomingschedulefile = ""
     should_scrape = True
     force_scrape = False
     verbose = False
@@ -372,7 +404,7 @@ def process_args():
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-m/-w] [-f] [-c <sims>] [-y year] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-u resumewebfile] [-e|-s] [-v]")
+            print("./scraper.py [-h] [-m/-w] [-f] [-c <sims>] [-y year] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-u resumewebfile] [-g] [-e|-s] [-v]")
             print("     -h: print this help message")
             print("     -m: men's tournament projection [default]")
             print("     -w: women's tournament projection")
@@ -384,6 +416,7 @@ def process_args():
             print("     -r: set a csv filename where the final readable resume will live")
             print("     -b: set an html filename where the displayed bracket will live")
             print("     -u: set an html filename where the resume page will live")
+            print("     -g: set an html filename where the upcoming schedule will live")
             print("     -e: override the scraping and use data currently stored")
             print("     -s: scrape data anew regardless of whether data has been scraped today")
             print("     -v: verbose. Print team resumes and bracketing procedure")
@@ -402,6 +435,9 @@ def process_args():
             argindex += 1
         elif sys.argv[argindex] == '-u':
             resumewebfile = sys.argv[argindex + 1]
+            argindex += 1
+        elif sys.argv[argindex] == '-g':
+            upcomingschedulefile = sys.argv[argindex + 1]
             argindex += 1
         elif sys.argv[argindex] == '-e':
             should_scrape = False
@@ -436,8 +472,9 @@ def process_args():
             weightfile = "lib/men/weights.txt"
         else:
             weightfile = "lib/women/weights.txt"
-    return year, mens, outputfile, resumefile, webfile, resumewebfile, datadir, should_scrape, \
-            force_scrape, verbose, tracker, weightfile, future, monte_carlo, simulations
+    return year, mens, outputfile, resumefile, webfile, resumewebfile, upcomingschedulefile, \
+            datadir, should_scrape, force_scrape, verbose, tracker, weightfile, future, \
+            monte_carlo, simulations
 
 def add_or_increment_key(key, dictionary):
     try:
@@ -640,8 +677,8 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
 def main():
     scraper = Scraper()
     scraper.year, scraper.mens, scraper.outputfile, scraper.resumefile, scraper.webfile, resumewebfile, \
-            scraper.datadir, should_scrape, force_scrape, scraper.verbose, scraper.tracker, weightfile, future, \
-            monte_carlo, simulations = process_args()
+            upcomingschedulefile, scraper.datadir, should_scrape, force_scrape, scraper.verbose, \
+            scraper.tracker, weightfile, future, monte_carlo, simulations = process_args()
     builder = scraper.load_data(should_scrape, force_scrape, future, monte_carlo)
     scorer = Scorer(builder, future, scraper.mens, scraper.tracker, monte_carlo)
     if scraper.tracker:
@@ -671,6 +708,8 @@ def main():
             builder.output_bracket()
         if resumewebfile:
             scraper.output_resume_html(resumewebfile, scorer, builder)
+        if upcomingschedulefile:
+            scraper.output_schedule_html(upcomingschedulefile, scorer, builder)
 
 if __name__ == '__main__':
     main()

@@ -57,10 +57,12 @@ class Builder:
                 elif bubble_count < 4:
                     bubble_string += (self.teams[team].team_out + " - First Four Out\n")
                     bubble_count += 1
+                    self.teams[team].seed = "FFO"
                     continue
                 elif bubble_count < 8:
                     bubble_string += (self.teams[team].team_out + " - Next Four Out\n")
                     bubble_count += 1
+                    self.teams[team].seed = "NFO"
                     continue
                 else:
                     continue
@@ -1065,7 +1067,7 @@ class Builder:
         f.write('  </table>\n')
         f.write('</div>\n')
         f.write('<div class="conference_container">\n')
-        f.write('</div>')
+        f.write('</div>\n')
         f.write('</body>\n')
         f.write('</html>\n')
 

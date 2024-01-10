@@ -585,9 +585,12 @@ class Scorer:
                 found_game = True
                 opp_name = line[line.find("80x80")+6:line.find(".png")]
                 game["opponent"] = opp_name
+            elif "team-schedule__info-tv" in line:
+                game["channel"] = line[line.find("TV: ")+4:line.find("</span>")]
             elif found_game:
                 if found_result:
-                    if "team-schedule__result" not in line:
+                    if "team-schedule__result" not in line:     # game is in the future
+                        game["time"] = line[line.find('>')+1:line.find("</span>")]
                         if self.mens:
                             opp_kenpom = self.kenpom_estimate(self.teams[game['opponent']].KenPom)
                         else:
@@ -600,7 +603,7 @@ class Scorer:
                 elif "opp-record-line" in line:
                     curr_NET = int(line[line.find("NET")+5:line.find("</span></span>")])
                     game["NET"] = self.get_NET_estimate(curr_NET, self.teams[game['opponent']].KenPom)
-                elif "team-schedule__result" in line:
+                elif "team-schedule__result" in line:           # game is in the past
                     found_result = True
                     continue
         f = open(self.schedule_datadir + team + ".json", "w+")

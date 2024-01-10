@@ -385,11 +385,13 @@ class Scraper:
                         game_score = team_seed + 13
                     if scorer.teams[game["opponent"]].seed == "NFO":
                         game_score = team_seed + 14
-                if game["date"] in future_games and \
-                        (game["opponent"], team, reverse_location(game["location"]), game_score) not in future_games[game["date"]]:
-                    future_games[game["date"]].append((team, game["opponent"], game["location"], game_score))
+                if game["date"] in future_games and (game["opponent"], team, reverse_location(game["location"]), \
+                        game["time"], game["channel"], game_score) not in future_games[game["date"]]:
+                    future_games[game["date"]].append((team, game["opponent"], game["location"], \
+                            game["time"], game["channel"], game_score))
                 elif game["date"] not in future_games:
-                    future_games[game["date"]] = [(team, game["opponent"], game["location"], game_score)]
+                    future_games[game["date"]] = [(team, game["opponent"], game["location"], \
+                            game["time"], game["channel"], game_score)]
 
         month_translations = {"10": "October", "11": "November", "12": "December", "01": "January", \
                 "02": "February", "03": "March"}
@@ -399,6 +401,7 @@ class Scraper:
                 datestring = month + "-" + strday
                 if datestring in future_games:
                     f.write('  <h2>' + month_translations[month] + ' ' + strday + '</h2>\n')
+                    f.write('  <table class="schedule_table">\n')
                     gray = True
                     for game in sorted(future_games[datestring], key=lambda x: x[3]):
                         if game[2] == "H":
@@ -437,15 +440,18 @@ class Scraper:
                             except AttributeError:
                                 home_seed = ""
                             home_team = game[1]
-                        f.write('  <div class="game_line')
+                        f.write('    <tr class="game_line')
                         if gray:
                             f.write(' gray_row')
-                        f.write('"><span>' + away_seed)
+                        f.write('"><td>' + away_seed)
                         f.write('<img class="team_logo" src=assets/' + away_team + '.png></img>')
                         f.write(scorer.teams[away_team].team_out + ' ' + location + ' ' + home_seed)
                         f.write('<img class="team_logo" src=assets/' + home_team + '.png></img>')
-                        f.write(scorer.teams[home_team].team_out + '</span></div>\n')
+                        f.write(scorer.teams[home_team].team_out + '</td>')
+                        f.write('<td>' + game[3] + '</td><td>' + game[4] + '</td>')
+                        f.write('</tr>\n')
                         gray = not gray
+                    f.write('</table>\n')    
         f.write('</div>\n')
         f.write('</body>\n')
         f.write('</html>\n')

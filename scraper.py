@@ -406,42 +406,45 @@ class Scraper:
                                 away_seed = "(" + str(scorer.teams[game[1]].seed) + ") "
                             except AttributeError:
                                 away_seed = ""
-                            away_team = scorer.teams[game[1]].team_out
+                            away_team = game[1]
                             location = '@'
                             try:
                                 home_seed = "(" + str(scorer.teams[game[0]].seed) + ") "
                             except AttributeError:
                                 home_seed = ""
-                            home_team = scorer.teams[game[0]].team_out
+                            home_team = game[0]
                         elif game[2] == "A":
                             try:
                                 away_seed = "(" + str(scorer.teams[game[0]].seed) + ") "
                             except AttributeError:
                                 away_seed = ""
-                            away_team = scorer.teams[game[0]].team_out
+                            away_team = game[0]
                             location = '@'
                             try:
                                 home_seed = "(" + str(scorer.teams[game[1]].seed) + ") "
                             except AttributeError:
                                 home_seed = ""
-                            home_team = scorer.teams[game[1]].team_out
+                            home_team = game[1]
                         elif game[2] == "N":
                             try:
                                 away_seed = "(" + str(scorer.teams[game[0]].seed) + ") "
                             except AttributeError:
                                 away_seed = ""
-                            away_team = scorer.teams[game[0]].team_out
+                            away_team = game[0]
                             location = 'v.'
                             try:
                                 home_seed = "(" + str(scorer.teams[game[1]].seed) + ") "
                             except AttributeError:
                                 home_seed = ""
-                            home_team = scorer.teams[game[1]].team_out
+                            home_team = game[1]
                         f.write('  <div class="game_line')
                         if gray:
                             f.write(' gray_row')
-                        f.write('"><span>' + away_seed + away_team + ' ' + location + ' ' + \
-                                home_seed + home_team + '</span></div>\n')
+                        f.write('"><span>' + away_seed)
+                        f.write('<img class="team_logo" src=assets/' + away_team + '.png></img>')
+                        f.write(scorer.teams[away_team].team_out + ' ' + location + ' ' + home_seed)
+                        f.write('<img class="team_logo" src=assets/' + home_team + '.png></img>')
+                        f.write(scorer.teams[home_team].team_out + '</span></div>\n')
                         gray = not gray
         f.write('</div>\n')
         f.write('</body>\n')

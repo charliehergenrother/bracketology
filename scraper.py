@@ -403,7 +403,8 @@ class Scraper:
                     f.write('  <h2>' + month_translations[month] + ' ' + strday + '</h2>\n')
                     f.write('  <table class="schedule_table">\n')
                     gray = True
-                    for game in sorted(future_games[datestring], key=lambda x: x[3]):
+                    #move this to own function, run on AM games and then PM games
+                    for game in sorted(future_games[datestring], key=lambda x: int(x[3].split(":")[0])):
                         if game[2] == "H":
                             try:
                                 away_seed = "(" + str(scorer.teams[game[1]].seed) + ") "

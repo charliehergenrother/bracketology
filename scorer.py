@@ -506,7 +506,7 @@ class Scorer:
             return 0.02
 
     def get_NET_estimate(self, curr_NET, curr_KenPom):
-        NET_weight = 0.45
+        NET_weight = 0.5
         NET_estimate = (NET_weight*curr_NET) + (1 - NET_weight)*curr_KenPom
         return NET_estimate
 
@@ -591,6 +591,14 @@ class Scorer:
                 if found_result:
                     if "team-schedule__result" not in line:     # game is in the future
                         game["time"] = line[line.find('>')+1:line.find("</span>")]
+                        if ":" in game["time"]:
+                            game["time"] = str(int(game["time"].split(":")[0])-1) + ":" + game["time"].split(":")[1]
+                            if game["time"][0] == "0":
+                                game["time"] = "12" + game["time"][1:]
+                            if game["time"][:2] == "11" and "PM" in game["time"]:
+                                game["time"].replace("PM", "AM")
+                        else:
+                            game["time"] = "0:00"
                         if self.mens:
                             opp_kenpom = self.kenpom_estimate(self.teams[game['opponent']].KenPom)
                         else:

@@ -222,7 +222,7 @@ class Builder:
             #The rules about meeting too early are waived.
             #However, when we check if the better team can play a play in team, this works incorrectly.
             #The team object doesn't have that information.
-            if game_count >= 2:     #sweet 16 matchup
+            if game_count >= 1:     #sweet 16 matchup
                 for seed_set in [[1, 16, 8, 9], [5, 12, 4, 13], [6, 11, 3, 14], [7, 10, 2, 15]]:
                     if self.teams[test_team].seed in seed_set and seed_num in seed_set and not for_play_in:
                         if self.verbose:

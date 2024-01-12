@@ -596,8 +596,8 @@ class Scorer:
                             if game["time"][0] == "0":
                                 game["time"] = "12" + game["time"][1:]
                             if game["time"][:2] == "11" and "PM" in game["time"]:
-                                game["time"].replace("PM", "AM")
-                        else:
+                                game["time"] = game["time"].replace("PM", "AM")
+                        else:   #game time TBA
                             game["time"] = "0:00"
                         if self.mens:
                             opp_kenpom = self.kenpom_estimate(self.teams[game['opponent']].KenPom)

@@ -404,7 +404,7 @@ class Scraper:
                     f.write('  <table class="schedule_table">\n')
                     gray = True
                     #move this to own function, run on AM games and then PM games
-                    for game in sorted(future_games[datestring], key=lambda x: int(x[3].split(":")[0])):
+                    for game in sorted(future_games[datestring], key=lambda x: sorted_time(x[3])):
                         if game[2] == "H":
                             try:
                                 away_seed = "(" + str(scorer.teams[game[1]].seed) + ") "
@@ -786,6 +786,12 @@ def main():
             scraper.output_resume_html(resumewebfile, scorer, builder)
         if upcomingschedulefile:
             scraper.output_schedule_html(upcomingschedulefile, scorer, builder)
+
+def sorted_time(time):
+    num_time = float(time.replace(":", ".").split(" ")[0])
+    if "PM" in time and time[:2] != "12":
+        num_time += 12
+    return num_time
 
 if __name__ == '__main__':
     main()

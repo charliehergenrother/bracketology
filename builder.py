@@ -160,16 +160,15 @@ class Builder:
         return line
 
     #check if placing a team in a particular bracket location will follow all the rules
-    #param conferences: dictionary of conference names and lists of teams already in the tournament
     #param team: name of team to attempt to place
     #param region_num: region number (0-3) to try to place the team in
     #param seed_num: seed number (1-16) to try to place the team in
-    def check_rules(self, conferences, team, region_num, seed_num, for_play_in=False):
+    def check_rules(self, team, region_num, seed_num, for_play_in=False):
         if team == "":
             return True
         if "/" in team:
-            return (self.check_rules(conferences, team.split("/")[0], region_num, seed_num, for_play_in) and \
-                    self.check_rules(conferences, team.split("/")[1], region_num, seed_num, for_play_in))
+            return (self.check_rules(team.split("/")[0], region_num, seed_num, for_play_in) and \
+                    self.check_rules(team.split("/")[1], region_num, seed_num, for_play_in))
         
         team_conference = self.teams[team].conference
         if self.mens and seed_num > 4:   #men's teams can't play at their home court
@@ -182,14 +181,14 @@ class Builder:
                     return False
 
         #the top four teams from a conference must be in different regions if they are on the top four seed lines
-        if conferences[team_conference].index(team) < 4 and seed_num <= 4:
-            for test_team in conferences[team_conference][:3]:
+        if self.conferences[team_conference].index(team) < 4 and seed_num <= 4:
+            for test_team in self.conferences[team_conference][:3]:
                 if test_team == team:
                     continue
                 try:
                     if self.teams[test_team].region == region_num and self.teams[test_team].seed <= 4:
                         if self.verbose:
-                            print("multiple top four teams can't all go here", region_num, conferences[team_conference])
+                            print("multiple top four teams can't all go here", region_num, self.conferences[team_conference])
                         return False
                 except AttributeError:      #there are two teams from this conference in the play-ins
                     continue
@@ -198,7 +197,7 @@ class Builder:
             #...regional final (Elite 8) if they've played 3 times
             #...regional semifinal (Sweet 16) if they've played 2 times
             #...second round if they've played 1 time
-        for test_team in conferences[team_conference]:
+        for test_team in self.conferences[team_conference]:
             if test_team == team:
                 continue
             try:
@@ -283,17 +282,16 @@ class Builder:
         return teams_to_fix, sites
 
     #check a permutation of four teams to see if the bracket can accept it
-    #param conferences: dictionary of conference names and lists of teams already in the tournament
     #param perm: permutation of four teams on the same seed line
     #param seed_num: seed of teams
-    def check_perm(self, conferences, perm, seed_num, team="", for_play_in=False):
+    def check_perm(self, perm, seed_num, team="", for_play_in=False):
         play_in = dict()
         for counter, perm_team in enumerate(perm):
             if perm_team and (team == perm_team or "/" in perm_team) and for_play_in:
-                if not self.check_rules(conferences, perm_team, counter, seed_num, True):
+                if not self.check_rules(perm_team, counter, seed_num, True):
                     return False
             else:
-                if not self.check_rules(conferences, perm_team, counter, seed_num, False):
+                if not self.check_rules(perm_team, counter, seed_num, False):
                     return False
         return True
 
@@ -394,8 +392,7 @@ class Builder:
 
     #check if teams need to be rearranged to ensure equal-ish quality, do it if so
     #param sorted_teams: teams sorted by score, for determining a team's rank in the seed list
-    #param conferences: dictionary of conference names and lists of teams already in the tournament
-    def ensure_region_balance(self, sorted_teams, conferences):
+    def ensure_region_balance(self, sorted_teams):
         scores = self.get_region_scores(sorted_teams)
         bad_perms = list()
         while max(scores) > min(scores) + 5:
@@ -411,7 +408,7 @@ class Builder:
             for perm in permutations(teams_to_fix):
                 if perm in bad_perms:
                     continue
-                if self.check_perm(conferences, perm, 4, "", False):
+                if self.check_perm(perm, 4, "", False):
                     self.save_and_print_perm(4, perm, sites)
                     found_perm = True
                     break
@@ -433,8 +430,7 @@ class Builder:
     #find play-in teams a spot in the bracket and place them there
     #param teams: a list of four team names in the play-in
     #param seeds: the four seeds these teams will receive
-    #param conferences: dictionary of conference names and lists of teams already in the tournament
-    def place_play_in(self, teams, seeds, conferences):
+    def place_play_in(self, teams, seeds):
         matchups = self.get_play_in_matchups(teams)
         matchup_1 = '/'.join(matchups[0])
         matchup_2 = '/'.join(matchups[1])
@@ -442,7 +438,7 @@ class Builder:
         region_order = self.get_region_order(matchups[0][0], seeds[0])
         save_team_1, region_num = self.find_team_spot(matchup_1, \
                 self.get_region_num(seeds[0], region_order[0], region_order), seeds[0],\
-                conferences, region_order, True)
+                region_order, True)
         if region_num != -1:
             self.place_team(region_num, seeds[0], matchup_1)
             if self.verbose:
@@ -452,7 +448,7 @@ class Builder:
         region_order = self.get_region_order(matchups[1][0], seeds[2])
         save_team_2, region_num = self.find_team_spot(matchup_2, \
                 self.get_region_num(seeds[2], region_order[0], region_order), seeds[2], \
-                conferences, region_order, True)
+                region_order, True)
         if region_num != -1:
             self.place_team(region_num, seeds[2], matchup_2)
             if self.verbose:
@@ -480,17 +476,16 @@ class Builder:
     #param team: string of team to place
     #param region_num: region number (0-3) to try to place the team in
     #param seed_num: seed number (1-16) to try to place the team in
-    #param conferences: dictionary of conference names and lists of teams already in the tournament
     #param region_order: ordered list of a team's region preferences
     #param for_play_in: whether this team is actually two teams that are matched up in a play-in game
     #returns: the team if we weren't able to place it, the region_num if we were
-    def find_team_spot(self, team, region_num, seed_num, conferences, region_order, for_play_in):
+    def find_team_spot(self, team, region_num, seed_num, region_order, for_play_in):
         save_team = ()
         bad_regions = set()
         check_switch = False
         orig_region_num = region_num
         
-        while not self.check_rules(conferences, team, region_num, seed_num, for_play_in):
+        while not self.check_rules(team, region_num, seed_num, for_play_in):
             if len(save_team):
                 return save_team, -1
             if self.verbose:
@@ -509,8 +504,8 @@ class Builder:
                     new_for_play_in = True
                 else:
                     new_for_play_in = False
-                if check_switch and self.check_rules(conferences, team, region_num, seed_num, for_play_in) and \
-                        self.check_rules(conferences, new_team, orig_region_num, seed_num, new_for_play_in):
+                if check_switch and self.check_rules(team, region_num, seed_num, for_play_in) and \
+                        self.check_rules(new_team, orig_region_num, seed_num, new_for_play_in):
                     self.regions[orig_region_num][seed_num] = new_team
                     if new_for_play_in:
                         self.teams[new_team.split('/')[0]].region = orig_region_num
@@ -563,7 +558,7 @@ class Builder:
                     self.teams[team].seed = -1
                 found_perm = False
                 for perm in permutations(teams_to_fix):
-                    if self.check_perm(conferences, perm, seed_num, team, for_play_in):
+                    if self.check_perm(perm, seed_num, team, for_play_in):
                         self.save_and_print_perm(seed_num, perm, sites)
                         region_num = perm.index(team)
                         found_perm = True
@@ -572,13 +567,13 @@ class Builder:
                 #if no permutation works, work backward through the seed list trying every permutation of those seeds as well as ours
                 if not found_perm:
                     found_perm, save_team, region_num = self.try_reorganize(team, seed_num, reorg_seed, teams_to_fix, \
-                            conferences, sites, for_play_in)
+                            sites, for_play_in)
                     if save_team:
                         break
         return save_team, region_num
 
     #recurse up the seed list, trying to brute-force a fix to fit all of the teams in the bracket
-    def try_reorganize(self, team, seed_num, reorg_seed, teams_to_fix, conferences, sites, for_play_in):
+    def try_reorganize(self, team, seed_num, reorg_seed, teams_to_fix, sites, for_play_in):
         tries = 0
         curr_reorg_max = 3  #lowest-numbered seed to try reorganizing
         while True:
@@ -617,13 +612,13 @@ class Builder:
                     for perm in permutations(teams_to_fix):
                         if self.verbose:
                             print(perm)
-                        if self.check_perm(conferences, perm, seed_num, team, for_play_in):
+                        if self.check_perm(perm, seed_num, team, for_play_in):
                             self.save_and_print_perm(seed_num, perm, [])
                             return False, [team, seed_num], -1
                     
                     #oops, we messed up the bracket such that we can't fit the original teams back in. hopefully we can fix it.
                     found_perm, second_save_team, region_num = self.try_reorganize(teams_to_fix[0], seed_num, reorg_seed, teams_to_fix, \
-                            conferences, sites, for_play_in)
+                            sites, for_play_in)
                     if found_perm:
                         return False, [team, seed_num], -1
                     raise IndexError
@@ -634,11 +629,11 @@ class Builder:
             other_teams_to_fix, other_sites = self.delete_and_save_seed(reorg_seed)
             perm_to_save = list()
             for other_perm in permutations(other_teams_to_fix):
-                if self.check_perm(conferences, other_perm, reorg_seed, "", for_play_in):
+                if self.check_perm(other_perm, reorg_seed, "", for_play_in):
                     self.save_and_print_perm(reorg_seed, other_perm, other_sites)
                     perm_to_save = other_perm
                     for perm in permutations(teams_to_fix):
-                        if self.check_perm(conferences, perm, seed_num, team, for_play_in):
+                        if self.check_perm(perm, seed_num, team, for_play_in):
                             self.save_and_print_perm(seed_num, perm, sites)
                             region_num = perm.index(team)
                             return True, [], region_num
@@ -768,7 +763,7 @@ class Builder:
         self.first_weekend_name_to_num = dict()
         auto_count = 0
         at_large_count = 0
-        conferences = dict()
+        self.conferences = dict()
         at_large_play_in_teams = list()
         at_large_play_in_seeds = list()
         auto_play_in_teams = list()
@@ -789,9 +784,9 @@ class Builder:
             if not (self.teams[team].auto_bid or self.teams[team].at_large_bid):
                 team_index += 1
                 continue
-            if team_conference not in conferences:
-                conferences[team_conference] = list()
-            conferences[team_conference].append(team)
+            if team_conference not in self.conferences:
+                self.conferences[team_conference] = list()
+            self.conferences[team_conference].append(team)
             
             seed_count = 4
             seed_num = 0
@@ -841,7 +836,7 @@ class Builder:
                 region_order = self.get_region_order(team.split("/")[0], seed_num)
                 save_team, region_num = self.find_team_spot(team, \
                     self.get_region_num(seed_num, region_order[0], region_order), seed_num,\
-                    conferences, region_order, True)
+                    region_order, True)
                 if len(save_team):
                     saved_teams.append(save_team)
                 else:
@@ -852,7 +847,7 @@ class Builder:
                 self.save_play_in_team(at_large_play_in_teams, at_large_play_in_seeds, team, seed_num)
                 if at_large_count == AT_LARGE_MAX - 1:
                     #print("placing", at_large_play_in_teams, at_large_play_in_seeds)
-                    save_team = self.place_play_in(at_large_play_in_teams, at_large_play_in_seeds, conferences)
+                    save_team = self.place_play_in(at_large_play_in_teams, at_large_play_in_seeds)
                     if len(save_team):
                         if self.verbose:
                             print("problems with", save_team, self.regions)
@@ -870,7 +865,7 @@ class Builder:
             elif self.teams[team].auto_bid and auto_count >= AUTO_MAX - 4:
                 self.save_play_in_team(auto_play_in_teams, auto_play_in_seeds, team, seed_num)
                 if auto_count == AUTO_MAX - 1:
-                    self.place_play_in(auto_play_in_teams, auto_play_in_seeds, conferences)
+                    self.place_play_in(auto_play_in_teams, auto_play_in_seeds)
                 auto_count += 1
                 team_index += 1
                 continue
@@ -879,7 +874,7 @@ class Builder:
             region_num = self.get_region_num(seed_num, region_num, region_order)
 
             #follow the rules to place the team in the bracket
-            save_team, region_num = self.find_team_spot(team, region_num, seed_num, conferences, region_order, for_play_in)
+            save_team, region_num = self.find_team_spot(team, region_num, seed_num, region_order, for_play_in)
 
             if not placing_saved_team:
                 if self.teams[team].auto_bid:
@@ -920,7 +915,7 @@ class Builder:
 
             #once all the top-four seeds are placed, make sure the regions are reasonably equal
             #if team_index == 16:
-                #self.ensure_region_balance(sorted_teams, conferences)
+                #self.ensure_region_balance(sorted_teams)
 
         try:
             max_len = self.get_max_len()
@@ -1068,7 +1063,29 @@ class Builder:
         f.write('    </tbody>\n')
         f.write('  </table>\n')
         f.write('</div>\n')
-        f.write('<div class="conference_container">\n')
+        f.write('<div class="conference_container table_container">\n')
+        f.write('  <table>\n')
+        f.write('    <tr class="header_row gray_row">')
+        rows = list()
+        columns = len([x for x in self.conferences if len(self.conferences[x]) > 1])
+        for confindex, conference in enumerate(sorted(self.conferences, key=lambda x: len(self.conferences[x]), reverse=True)):
+            if len(self.conferences[conference]) > 1:
+                f.write('<td>' + conference + ' - ' + str(len(self.conferences[conference])) + '</td>')
+                for teamindex, team in enumerate(self.conferences[conference]):
+                    if len(rows) == teamindex:
+                        rows.append(['']*columns)
+                    rows[teamindex][confindex] = (team, self.teams[team].seed)
+        f.write('</tr>\n')
+        for index, row in enumerate(rows):
+            if index % 2:
+                f.write('    <tr class="gray_row">')
+            else:
+                f.write('    <tr>')
+            for team in row:
+                if type(team) == tuple:
+                    f.write('<td>' + self.teams[team[0]].team_out + ' (' + str(team[1]) + ')</td>')
+            f.write('</tr>\n')
+        f.write('  </table>\n')
         f.write('</div>\n')
         f.write('</body>\n')
         f.write('</html>\n')

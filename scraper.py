@@ -180,6 +180,8 @@ class Scraper:
             self.do_scrape(today_date)
         else:
             self.do_load()
+        #if self.mens:  if those kansas and houston games ever get deleted, put this back
+            #self.write_missing_games()
         first_weekend_sites, first_weekend_rankings, region_rankings = self.load_coordinates()
         eliminated_teams, ineligible_teams, conference_winners, ineligible_sites = self.load_special_teams()
         return Builder(self.mens, self.year, self.teams, self.verbose, self.outputfile, first_weekend_sites, \
@@ -209,6 +211,12 @@ class Scraper:
                 team = filename[:filename.find(".json")]
                 reverse_team_dict[curr_team.team_out] = team
     
+    #def write_missing_games(self):
+        #self.teams["Houston"].games.add(Game("Xavier", "A", self.teams["Xavier"].NET, 66, 60, "12-01"))
+        #self.teams["Xavier"].games.add(Game("Houston", "H", self.teams["Houston"].NET, 60, 66, "12-01"))
+        #self.teams["Connecticut"].games.add(Game("Kansas", "A", self.teams["Kansas"].NET, 65, 69, "12-01"))
+        #self.teams["Kansas"].games.add(Game("Connecticut", "H", self.teams["Connecticut"].NET, 69, 65, "12-01"))
+
     #fetch one team's data from warrennolan.com
     #team: string indicating which team's data should be scraped
     def scrape_team_data(self, team):

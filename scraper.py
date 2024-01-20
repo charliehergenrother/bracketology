@@ -49,6 +49,8 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "Seton Hall": "HALL",
         "Penn State": "PSU",
         "Eastern Washington": "EWU",
+        "FGCU": "FGCU",
+        "Green Bay": "GB",
         "George Washington": "GW",
         "Florida State": "FSU",
         "Arizona State": "ASU",
@@ -58,6 +60,11 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "Stanford": "STAN",
         "Richmond": "RICH",
         "Rice": "RICE",
+        "Iowa": "IOWA",
+        "Oklahoma": "OKLA",
+        "Arizona": "ARIZ",
+        "Providence": "PROV",
+        "Wake Forest": "WAKE",
         "Virginia": "UVA",
         "Grand Canyon": "GCU",
         "South Carolina": "SCAR",
@@ -278,15 +285,18 @@ class Scraper:
         return location_prefix
 
     #construct the strings for a team's Q1 wins and Q2 and below losses for use in the resume
-    def get_wins_losses_strings(self, team):
+    def get_wins_losses_strings(self, team, builder):
         good_wins = list()
         bad_losses = list()
+        quality_seeds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, "FFO", "NFO"]
         for game in self.teams[team].games:
             if game.opponent in better_team_abbrs:
                 team_abbr = better_team_abbrs[game.opponent]
             else:
                 team_abbr = game.opponent[:3].upper()
-            if game.win and game.quadrant == 1:
+            if game.win and (game.quadrant == 1 or \
+                    (hasattr(builder.teams[reverse_team_dict[game.opponent]], "seed") and \
+                    builder.teams[reverse_team_dict[game.opponent]].seed in quality_seeds)):
                 good_wins.append({"team": self.get_location_prefix(game) + team_abbr, "NET": game.opp_NET})
             elif not game.win and game.quadrant >= 2:
                 bad_losses.append({"team": self.get_location_prefix(game) + game.opponent, "NET": game.opp_NET})
@@ -304,9 +314,9 @@ class Scraper:
         return win_string, loss_string
 
     #output a csv resume file containing information about a college basketball team
-    def output_resume(self):
+    def output_resume(self, builder):
         f = open(self.resumefile, "w+")
-        f.write("Team,Record,NET,PWR,SOS,Q1,Q2,Q3/4,Q1 wins,Q2+ losses\n")
+        f.write("Team,Record,NET,PWR,SOS,Q1,Q2,Q3/4,Quality Wins,Q2+ losses\n")
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             f.write(self.teams[team].team_out + ",")
             f.write("'" + self.teams[team].record + ",")
@@ -321,7 +331,7 @@ class Scraper:
             q4_record = self.teams[team].get_derived_record(4)
             f.write("'" + q4_record[:q4_record.find('-')] + q3_record[q3_record.find('-'):] + ',')
            
-            win_string, loss_string = self.get_wins_losses_strings(team)
+            win_string, loss_string = self.get_wins_losses_strings(team, builder)
             f.write('"' + win_string + '","' + loss_string + '"\n')
     
     #output an HTML resume page for all college basketball teams
@@ -340,7 +350,7 @@ class Scraper:
         f.write('      <tr class="header_row"><td>Team</td><td>Record</td><td>NET</td>')
         if self.mens:
             f.write('<td>Power</td><td>SOS</td>')
-        f.write('<td>Q1</td><td>Q2</td><td>Q3/4</td><td>Q1 Wins</td><td>Q2+ losses</td></tr>\n')
+        f.write('<td>Q1</td><td>Q2</td><td>Q3/4</td><td>Quality Wins</td><td>Q2+ losses</td></tr>\n')
         for index, team in enumerate(sorted(scorer.teams, key=lambda x: scorer.teams[x].score, reverse=True)):
             if not index % 2:
                 f.write('      <tr class="gray_row resume_row">')
@@ -358,7 +368,7 @@ class Scraper:
             q3_record = self.teams[team].get_derived_record(3)
             q4_record = self.teams[team].get_derived_record(4)
             f.write('<td>' + q4_record[:q4_record.find('-')] + q3_record[q3_record.find('-'):] + '</td>')
-            win_string, loss_string = self.get_wins_losses_strings(team)
+            win_string, loss_string = self.get_wins_losses_strings(team, builder)
             f.write('<td>' + win_string + '</td>')
             f.write('<td>' + loss_string + '</td>')
             f.write('</tr>\n')
@@ -794,7 +804,7 @@ def main():
             scorer.outputfile = scraper.outputfile
             scorer.output_scores()
         if scraper.resumefile:
-            scraper.output_resume()
+            scraper.output_resume(builder)
         if scraper.webfile:
             builder.webfile = scraper.webfile
             builder.output_bracket()

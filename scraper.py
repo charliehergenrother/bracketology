@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import date
+import re
 from team import Team
 from game import Game
 from builder import Builder, TEAM_COORDINATES_FILE
@@ -12,6 +13,7 @@ import json
 import requests
 import math
 import random
+import argparse
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
 
@@ -101,6 +103,22 @@ class Scraper:
     def __init__(self):
         self.teams = dict()
         return
+
+    def load_from_args(self, args):
+        self.year = str(args.year)
+        self.mens = not args.womens
+        self.outputfile = args.output_file
+        self.resumefile = args.resume_file
+        self.webfile = args.web_file
+        self.resumewebfile = args.resume_web_file
+        self.upcomingschedulefile = args.upcoming_schedule_file
+
+        self.verbose = args.verbose
+        self.tracker = args.tracker
+
+        self.datadir = "data/men/" + self.year + "/resumes/"
+        if args.womens:
+            self.datadir = "data/women/" + self.year + "/resumes/"
 
     #get the order of sites closest to a given set of coordinates (corresponding to a school)
     #param sites: dict containing names of sites and their coordinates
@@ -485,98 +503,52 @@ class Scraper:
 
 #accept command line arguments
 def process_args():
-    year = "2024"
-    argindex = 1
-    outputfile = ""
-    resumefile = ""
-    webfile = ""
-    resumewebfile = ""
-    upcomingschedulefile = ""
-    should_scrape = True
-    force_scrape = False
-    verbose = False
-    weightfile = ""
-    tracker = False
-    mens = True
-    future = False
-    monte_carlo = False
-    simulations = 0
+    parser = argparse.ArgumentParser(prog="Bracketology",
+                                     description="Welcome to auto-bracketology!")
+    parser.add_argument("-w", dest="womens", default=False, action="store_true", help="Women's tournament projection (Men's is default)")
+    parser.add_argument("-c", dest="sims", default=0, type=int, metavar="sims", help="Monte Carlo simulation. run <sims> number of simulation and report on how often a team made the tournament/got to final four/won championship")
+    parser.add_argument("-y", dest="year", default="2024", metavar="year", type=int, help="Make a bracket for a given year. 2021-present only.")
 
-    while argindex < len(sys.argv):
-        if sys.argv[argindex] == '-h':
-            print("Welcome to auto-bracketology!")
-            print("Usage:")
-            print("./scraper.py [-h] [-m/-w] [-f] [-c <sims>] [-y year] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-u resumewebfile] [-g] [-e|-s] [-v]")
-            print("     -h: print this help message")
-            print("     -m: men's tournament projection [default]")
-            print("     -w: women's tournament projection")
-            print("     -f: future (end-of-season) projection. default is to project the field as if the season ended today.")
-            print("     -c: Monte Carlo simulation. run <sims> number of simulation and report on how often a team made the tournament/got to final four/won championship")
-            print("     -y: make a bracket for given year. 2021-present only")
-            print("     -i: use weights located in given file")
-            print("     -o: set a csv filename where the final ranking will live")
-            print("     -r: set a csv filename where the final readable resume will live")
-            print("     -b: set an html filename where the displayed bracket will live")
-            print("     -u: set an html filename where the resume page will live")
-            print("     -g: set an html filename where the upcoming schedule will live")
-            print("     -e: override the scraping and use data currently stored")
-            print("     -s: scrape data anew regardless of whether data has been scraped today")
-            print("     -v: verbose. Print team resumes and bracketing procedure")
-            print("     -t: tracker mode. Generate weights and test their effectiveness")
-            sys.exit()
-        elif sys.argv[argindex] == '-w':
-            mens = False
-        elif sys.argv[argindex] == '-o':
-            outputfile = sys.argv[argindex + 1]
-            argindex += 1
-        elif sys.argv[argindex] == '-r':
-            resumefile = sys.argv[argindex + 1]
-            argindex += 1
-        elif sys.argv[argindex] == '-b':
-            webfile = sys.argv[argindex + 1]
-            argindex += 1
-        elif sys.argv[argindex] == '-u':
-            resumewebfile = sys.argv[argindex + 1]
-            argindex += 1
-        elif sys.argv[argindex] == '-g':
-            upcomingschedulefile = sys.argv[argindex + 1]
-            argindex += 1
-        elif sys.argv[argindex] == '-e':
-            should_scrape = False
-        elif sys.argv[argindex] == '-t':
-            tracker = True
-        elif sys.argv[argindex] == '-f':
-            future = True
-        elif sys.argv[argindex] == '-c':
-            monte_carlo = True
-            simulations = int(sys.argv[argindex + 1])
-            argindex += 1
-        elif sys.argv[argindex] == '-v':
-            verbose = True
-        elif sys.argv[argindex] == '-s':
-            force_scrape = True
-        elif sys.argv[argindex] == '-i':
-            weightfile = sys.argv[argindex + 1]
-            argindex += 1
-        elif sys.argv[argindex] == '-y':
-            if int(sys.argv[argindex + 1]) < 2021:
-                print("year not supported, sorry. Try 2021-present.")
-                sys.exit()
-            year = sys.argv[argindex + 1]
-            argindex += 1
-        argindex += 1
-    if mens:
-        datadir = "data/men/" + year + "/resumes/"
-    else:
-        datadir = "data/women/" + year + "/resumes/"
-    if not weightfile:
-        if mens:
-            weightfile = "lib/men/weights.txt"
-        else:
-            weightfile = "lib/women/weights.txt"
-    return year, mens, outputfile, resumefile, webfile, resumewebfile, upcomingschedulefile, \
-            datadir, should_scrape, force_scrape, verbose, tracker, weightfile, future, \
-            monte_carlo, simulations
+    #output files 
+    parser.add_argument("-i", dest="weight_file",
+                        metavar="weight_file", type=str, default="",
+                        help="Use weights located in a given file.")
+    parser.add_argument("-o", dest="output_file",
+                        metavar="output_file", type=str, default="",
+                        help="Set a csv filename where the final ranking will live")
+    parser.add_argument("-r", dest="resume_file",
+                        metavar="resume_file", type=str, default="",
+                        help="Set a CSV filename where the resume page will live")
+    parser.add_argument("-b", dest="web_file",
+                        metavar="web_file", type=str, default="",
+                        help="Set a HTML filename where the displayed bracket will live")
+    parser.add_argument("-u", dest="resume_web_file",
+                        metavar="resume_web_file", type=str, default="",
+                        help="Set a HTML filename where the resume page will live")
+    parser.add_argument("-g", dest="upcoming_schedule_file",
+                        metavar="upcoming_schedule_file", type=str, default="",
+                        help="Set a HTML filename where the upcoming schedule will live")
+
+    #bool flags 
+    parser.add_argument("-e", dest="skip_scrape", action="store_true", default=False, help="override the scraping and use data currently stored")
+    parser.add_argument("-s", dest="force_scrape", action="store_true", default=False, help="scrape data anew regardless of whether data has been scraped today")
+    parser.add_argument("-v", dest="verbose", action="store_true", default=False, help="Verbose. Print team resumes and bracketing procedure")
+    parser.add_argument("-t", dest="tracker", action="store_true", default=False, help="Tracker mode. Generate weights and test their effectiveness")
+    parser.add_argument("-f", dest="future", action="store_true", default=False, help="future (end-of-season) projection. default is to project the field as if the season ended today.")
+    
+    args = parser.parse_args()
+
+    print(args)
+
+    if args.year < 2021 or args.year > 2024:
+        print(f"year {args.year} not supported. Try 2021-present.")
+        sys.exit(1)
+
+    if args.skip_scrape and args.override:
+        print("Cannot use -s and -e flag at the same time!")
+        sys.exit(1)
+
+    return args
 
 def add_or_increment_key(key, dictionary):
     try:
@@ -778,9 +750,24 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
 
 def main():
     scraper = Scraper()
-    scraper.year, scraper.mens, scraper.outputfile, scraper.resumefile, scraper.webfile, resumewebfile, \
-            upcomingschedulefile, scraper.datadir, should_scrape, force_scrape, scraper.verbose, \
-            scraper.tracker, weightfile, future, monte_carlo, simulations = process_args()
+    args = process_args()
+    scraper.load_from_args(args)
+    resumewebfile = args.resume_web_file
+    upcomingschedulefile = args.upcoming_schedule_file
+    should_scrape = not args.skip_scrape
+    force_scrape = args.force_scrape
+
+    weightfile = args.weight_file
+    if args.weight_file == "":
+        weightfile = "lib/men/weights.txt"
+        if args.womens:
+            weightfile = "lib/women/weights.txt"
+
+    future = args.future
+    simulations = args.sims
+    monte_carlo = simulations > 0
+
+
     builder = scraper.load_data(should_scrape, force_scrape, future, monte_carlo)
     scorer = Scorer(builder, future, scraper.mens, scraper.tracker, monte_carlo)
     if scraper.tracker:

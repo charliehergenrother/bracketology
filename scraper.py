@@ -764,11 +764,6 @@ def main():
     simulations = args.sims
     monte_carlo = simulations > 0
 
-    print(scraper.__dict__)
-    print(resumewebfile, upcomingschedulefile, should_scrape, force_scrape, weightfile, future, simulations, monte_carlo)
-
-    sys.exit(1)
-
     builder = scraper.load_data(should_scrape, force_scrape, future, monte_carlo)
     scorer = Scorer(builder, future, scraper.mens, scraper.tracker, monte_carlo)
     if scraper.tracker:

@@ -544,10 +544,12 @@ def process_args():
         print(f"year {args.year} not supported. Try 2021-present.")
         sys.exit(1)
 
-    if args.skip_scrape and args.override:
+    if args.skip_scrape and args.force_scrape:
         print("Cannot use -s and -e flag at the same time!")
         sys.exit(1)
 
+    print(args)
+    sys.exit(1)
     return args
 
 def add_or_increment_key(key, dictionary):

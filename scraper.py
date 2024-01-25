@@ -110,15 +110,14 @@ class Scraper:
         self.outputfile = args.output_file
         self.resumefile = args.resume_file
         self.webfile = args.web_file
-        self.resumewebfile = args.resume_web_file
-        self.upcomingschedulefile = args.upcoming_schedule_file
-
-        self.verbose = args.verbose
-        self.tracker = args.tracker
 
         self.datadir = "data/men/" + self.year + "/resumes/"
         if args.womens:
             self.datadir = "data/women/" + self.year + "/resumes/"
+
+        self.verbose = args.verbose
+        self.tracker = args.tracker
+
 
     #get the order of sites closest to a given set of coordinates (corresponding to a school)
     #param sites: dict containing names of sites and their coordinates
@@ -766,6 +765,7 @@ def main():
     monte_carlo = simulations > 0
 
     print(scraper.__dict__)
+    print(resumewebfile, upcomingschedulefile, should_scrape, force_scrape, weightfile, future, simulations, monte_carlo)
 
     sys.exit(1)
 

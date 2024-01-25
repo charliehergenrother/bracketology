@@ -538,8 +538,6 @@ def process_args():
     
     args = parser.parse_args()
 
-    print(args)
-
     if args.year < 2021 or args.year > 2024:
         print(f"year {args.year} not supported. Try 2021-present.")
         sys.exit(1)
@@ -548,8 +546,6 @@ def process_args():
         print("Cannot use -s and -e flag at the same time!")
         sys.exit(1)
 
-    print(args)
-    sys.exit(1)
     return args
 
 def add_or_increment_key(key, dictionary):
@@ -769,6 +765,9 @@ def main():
     simulations = args.sims
     monte_carlo = simulations > 0
 
+    print(scraper.__dict__)
+
+    sys.exit(1)
 
     builder = scraper.load_data(should_scrape, force_scrape, future, monte_carlo)
     scorer = Scorer(builder, future, scraper.mens, scraper.tracker, monte_carlo)

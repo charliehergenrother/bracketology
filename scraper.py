@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from datetime import date
-import re
 from team import Team
 from game import Game
 from builder import Builder, TEAM_COORDINATES_FILE

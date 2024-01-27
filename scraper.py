@@ -788,11 +788,16 @@ def main():
         tracker.load_results()
         tracker.run_tracker(tuple())
         counter = 0
+        summed_weights = [0]*16
         for weights in sorted(tracker.weight_results, key=lambda x: tracker.weight_results[x]):
-            print([str(x).rjust(3) for x in weights], tracker.weight_results[weights])
+            #print([str(x).rjust(3) for x in weights], tracker.weight_results[weights])
             counter += 1
+            for index, weight in enumerate(weights):
+                summed_weights[index] += weight
+            summed_weights[15] += tracker.weight_results[weights]
             if (scraper.mens and counter > 50) or (not scraper.mens and counter > 100):
                 break
+        print([round(x/51, 4) for x in summed_weights])
     elif monte_carlo:
         run_monte_carlo(simulations, scorer, builder, weightfile)
     else:

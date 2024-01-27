@@ -430,7 +430,7 @@ class Scorer:
         try:
             return team.NCSOS_score
         except AttributeError:
-            if team.noncon_SOS > 151:
+            if team.noncon_SOS < 151:
                 team.NCSOS_score = (151 - team.noncon_SOS)/150
             else:   #limit how bad a really bad noncon schedule can hurt you
                 team.NCSOS_score = (151 - team.noncon_SOS)/450

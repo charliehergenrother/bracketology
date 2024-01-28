@@ -9,3 +9,4 @@ lib/assets
 lib/oldweights.txt
 lib/special_teams_base.json
 testweights.txt
+tracker_runner.sh

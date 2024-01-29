@@ -226,12 +226,6 @@ class Scraper:
                 team = filename[:filename.find(".json")]
                 reverse_team_dict[curr_team.team_out] = team
     
-    #def write_missing_games(self):
-        #self.teams["Houston"].games.add(Game("Xavier", "A", self.teams["Xavier"].NET, 66, 60, "12-01"))
-        #self.teams["Xavier"].games.add(Game("Houston", "H", self.teams["Houston"].NET, 60, 66, "12-01"))
-        #self.teams["Connecticut"].games.add(Game("Kansas", "A", self.teams["Kansas"].NET, 65, 69, "12-01"))
-        #self.teams["Kansas"].games.add(Game("Connecticut", "H", self.teams["Connecticut"].NET, 69, 65, "12-01"))
-
     #fetch one team's data from warrennolan.com
     #team: string indicating which team's data should be scraped
     def scrape_team_data(self, team):

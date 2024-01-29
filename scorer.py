@@ -120,6 +120,18 @@ class Scorer:
         team.loss_score = (10-num_losses)/10
         return team.loss_score
 
+    def get_results_based_score(self, team):
+        if self.tracker:
+            try:
+                return team.resume_score
+            except AttributeError:
+                pass
+        return self.calculate_results_based_score(team)
+
+    def calculate_results_based_score(self, team):
+        team.results_based_score = (-math.log(team.results_based + 19, 2)/2 + 3.16)
+        return team.results_based_score
+
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
     #param team: Team object to calculate score for
     def get_NET_score(self, team):
@@ -628,6 +640,7 @@ class Scorer:
                 print("Scoring", team)
             score = 0
             score += WEIGHTS["LOSS_WEIGHT"]*self.get_loss_score(self.teams[team])
+            #score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(self.teams[team])
             score += WEIGHTS["NET_WEIGHT"]*self.get_NET_score(self.teams[team])
             if self.monte_carlo:
                 score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team], team_kenpoms[team])

@@ -326,7 +326,7 @@ class Team:
             return sum([self.KenPom, self.BPI, self.Sagarin])/3
 
     def get_results_based(self):
-        return sum(self.KPI, self.SOR)/2
+        return sum([self.KPI, self.SOR])/2
 
     record = property(get_record)
     record_pct = property(get_record_pct)

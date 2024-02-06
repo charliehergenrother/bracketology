@@ -784,9 +784,6 @@ class Builder:
             if not (self.teams[team].auto_bid or self.teams[team].at_large_bid):
                 team_index += 1
                 continue
-            if team_conference not in self.conferences:
-                self.conferences[team_conference] = list()
-            self.conferences[team_conference].append(team)
             
             seed_count = 4
             seed_num = 0
@@ -828,6 +825,10 @@ class Builder:
                 placing_saved_team = True
                 if "/" not in team:
                     team_index -= 1
+            else:
+                if team_conference not in self.conferences:
+                    self.conferences[team_conference] = list()
+                self.conferences[team_conference].append(team)
             if self.verbose:
                 print("placing", team, seed_num)
             

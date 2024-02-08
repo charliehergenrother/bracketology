@@ -433,7 +433,10 @@ class Scorer:
         try:
             return team.SOS_score
         except AttributeError:
-            team.SOS_score = (151 - team.NET_SOS)/150
+            if team.NET_SOS < 151:
+                team.SOS_score = (151 - team.NET_SOS)/150
+            else:   #limit how bad a really bad schedule can hurt you
+                team.SOS_score = (151 - team.NET_SOS)/300
             return team.SOS_score
 
     #calculate score for a team's nonconference strength of schedule (scale: 1.000 = 1, 0.000 = 150)

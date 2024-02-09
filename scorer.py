@@ -521,7 +521,7 @@ class Scorer:
             return 0.02
 
     def get_NET_estimate(self, curr_NET, curr_KenPom):
-        NET_weight = 0.75
+        NET_weight = 0.8
         NET_estimate = (NET_weight*curr_NET) + (1 - NET_weight)*curr_KenPom
         return NET_estimate
 

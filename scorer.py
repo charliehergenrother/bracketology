@@ -15,6 +15,7 @@ WEIGHTS = {
         "Q1_WEIGHT": 0,
         "Q2_WEIGHT": 0,
         "Q3_WEIGHT": 0,
+        "RESULTS_BASED_WEIGHT": 0,
         "Q4_WEIGHT": 0,
         "ROAD_WEIGHT": 0,
         "NEUTRAL_WEIGHT": 0,
@@ -55,7 +56,8 @@ class Scorer:
             round(WEIGHTS["POWER_WEIGHT"], 5), \
             round(WEIGHTS["Q1_WEIGHT"], 5), \
             round(WEIGHTS["Q2_WEIGHT"], 5), \
-            round(WEIGHTS["Q3_WEIGHT"], 5), \
+            round(WEIGHTS["RESULTS_BASED_WEIGHT"], 5), \
+            #round(WEIGHTS["Q3_WEIGHT"], 5), \
             round(WEIGHTS["Q4_WEIGHT"], 5), \
             round(WEIGHTS["ROAD_WEIGHT"], 5), \
             round(WEIGHTS["NEUTRAL_WEIGHT"], 5), \
@@ -102,7 +104,7 @@ class Scorer:
         else:
             return "problems have arisen"
 
-    #calculate score for a team's raw number of losses (scale: 1.000 = 0, 0.000 = 10)
+    #calculate score for a team's winning percentage (scale: 1.000 = 1.000, 0.000 = 0.600)
     #param team: Team object to calculate score for
     def get_loss_score(self, team):
         if self.tracker:
@@ -113,11 +115,16 @@ class Scorer:
         return self.calculate_loss_score(team)
 
     def calculate_loss_score(self, team):
-        num_losses = int(team.record.split("-")[1])
+        record = team.record.split("-")
+        num_wins, num_losses = int(record[0]), int(record[1])
         if self.future:
             for game in team.future_games:
                 num_losses += (1 - game['win_prob'])
-        team.loss_score = (10-num_losses)/10
+                num_wins += (game['win_prob'])
+        try:
+            team.loss_score = ((num_wins/(num_wins + num_losses)) - 0.6)/0.4
+        except ZeroDivisionError:   #team did not play any games. COVID, ain't it crazy
+            team.loss_score = 0
         return team.loss_score
 
     def get_results_based_score(self, team):
@@ -643,7 +650,6 @@ class Scorer:
                 print("Scoring", team)
             score = 0
             score += WEIGHTS["LOSS_WEIGHT"]*self.get_loss_score(self.teams[team])
-            #score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(self.teams[team])
             score += WEIGHTS["NET_WEIGHT"]*self.get_NET_score(self.teams[team])
             if self.monte_carlo:
                 score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team], team_kenpoms[team])
@@ -652,6 +658,7 @@ class Scorer:
             score += WEIGHTS["Q1_WEIGHT"]*self.get_Q1_score(self.teams[team])
             score += WEIGHTS["Q2_WEIGHT"]*self.get_Q2_score(self.teams[team])
             score += WEIGHTS["Q3_WEIGHT"]*self.get_Q3_score(self.teams[team])
+            score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(self.teams[team])
             score += WEIGHTS["Q4_WEIGHT"]*self.get_Q4_score(self.teams[team])
             score += WEIGHTS["ROAD_WEIGHT"]*self.get_road_score(self.teams[team])
             score += WEIGHTS["NEUTRAL_WEIGHT"]*self.get_neutral_score(self.teams[team])
@@ -677,7 +684,8 @@ class Scorer:
                     "), Power(" + str(round(WEIGHTS["POWER_WEIGHT"], 5)) + \
                     "), Q1(" + str(round(WEIGHTS["Q1_WEIGHT"], 5)) + \
                     "), Q2(" + str(round(WEIGHTS["Q2_WEIGHT"], 5)) + \
-                    "), Q3(" + str(round(WEIGHTS["Q3_WEIGHT"], 5)) + \
+                    "), Results(" + str(round(WEIGHTS["RESULTS_BASED_WEIGHT"], 5)) + \
+                    #"), Q3(" + str(round(WEIGHTS["Q3_WEIGHT"], 5)) + \
                     "), Q4(" + str(round(WEIGHTS["Q4_WEIGHT"], 5)) + \
                     "), Road(" + str(round(WEIGHTS["ROAD_WEIGHT"], 5)) + \
                     "), Neutral(" + str(round(WEIGHTS["NEUTRAL_WEIGHT"], 5)) + \
@@ -695,7 +703,7 @@ class Scorer:
                         str(round(self.teams[team].power_score, 5)) + "," + \
                         str(round(self.teams[team].Q1_score, 5)) + "," + \
                         str(round(self.teams[team].Q2_score, 5)) + "," + \
-                        str(round(self.teams[team].Q3_score, 5)) + "," + \
+                        str(round(self.teams[team].results_based_score, 5)) + "," + \
                         str(round(self.teams[team].Q4_score, 5)) + "," + \
                         str(round(self.teams[team].road_score, 5)) + "," + \
                         str(round(self.teams[team].neutral_score, 5)) + "," + \

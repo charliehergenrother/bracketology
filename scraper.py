@@ -61,18 +61,24 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "Richmond": "RICH",
         "Rice": "RICE",
         "Iowa": "IOWA",
+        "Utah": "UTAH",
         "Oklahoma": "OKLA",
         "Arizona": "ARIZ",
         "Providence": "PROV",
         "Wake Forest": "WAKE",
         "Virginia": "UVA",
+        "Georgia": "UGA",
         "Grand Canyon": "GCU",
+        "George Mason": "GMU",
         "South Carolina": "SCAR",
         "Missouri": "MIZZ",
         "New Mexico": "NMX",
         "Boston College": "BC",
         "Tennessee": "TENN",
+        "Minnesota": "MINN",
+        "Washington": "WASH",
         "Connecticut": "CONN",
+        "Villanova": "VILL",
         "Marquette": "MARQ",
         "Clemson": "CLEM",
         "West Virginia": "WVU",
@@ -83,6 +89,8 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "Michigan": "MICH",
         "James Madison": "JMU",
         "Middle Tennessee": "MTSU",
+        "South Dakota State": "SDKS",
+        "Ball State": "BALL"
         }
 
 #class to turn the Team and Game objects into jsonifyable strings
@@ -310,12 +318,13 @@ class Scraper:
     #output a csv resume file containing information about a college basketball team
     def output_resume(self, builder):
         f = open(self.resumefile, "w+")
-        f.write("Team,Record,NET,PWR,SOS,Q1,Q2,Q3/4,Quality Wins,Q2+ losses\n")
+        f.write("Team,Record,NET,PWR,RES,SOS,Q1,Q2,Q3/4,Quality Wins,Q2+ losses\n")
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             f.write(self.teams[team].team_out + ",")
             f.write("'" + self.teams[team].record + ",")
             f.write(str(self.teams[team].NET) + ",")
             f.write(str(round(self.teams[team].predictive, 3)) + ",")
+            f.write(str(round(self.teams[team].results_based, 3)) + ",")
             f.write(str(self.teams[team].NET_SOS) + ",")
             f.write("'" + self.teams[team].get_derived_record(1) + ",")
             f.write("'" + self.teams[team].get_derived_record(2) + ",")
@@ -343,7 +352,7 @@ class Scraper:
         f.write('    <tbody>\n')
         f.write('      <tr class="header_row"><td>Team</td><td>Record</td><td>NET</td>')
         if self.mens:
-            f.write('<td>Power</td><td>SOS</td>')
+            f.write('<td>Power</td><td>RES</td>')
         f.write('<td>Q1</td><td>Q2</td><td>Q3/4</td><td>Quality Wins</td><td>Q2+ losses</td></tr>\n')
         for index, team in enumerate(sorted(scorer.teams, key=lambda x: scorer.teams[x].score, reverse=True)):
             if not index % 2:
@@ -355,7 +364,7 @@ class Scraper:
             f.write('<td>' + str(scorer.teams[team].NET) + '</td>')
             if self.mens:
                 f.write('<td>' + str(round(scorer.teams[team].predictive, 2)) + '</td>')
-                f.write('<td>' + str(scorer.teams[team].NET_SOS) + '</td>')
+                f.write('<td>' + str(scorer.teams[team].results_based) + '</td>')
             f.write('<td>' + scorer.teams[team].get_derived_record(1) + '</td>')
             f.write('<td>' + scorer.teams[team].get_derived_record(2) + '</td>')
             #quad 4+ wins, quad 3- losses

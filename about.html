@@ -39,25 +39,21 @@
         <div class="words_container">
             <p>Hi! If you're reading this, you've found my bracketology website. The goal of this site and the accompanying program is to procedurally generate a bracket every day based on a resume factors I've identified. The "Men's Bracket" and "Women's Bracket" pages show the bracket as it would be if the season ended today, while the "Men's Future Bracket" and "Women's Future Bracket" pages show my program's estimate of where each team will end up when all is said and done with the season, simulating the remainder of the games using KenPom.</p>
             <br>
-            <h2 class="section_header">15 Factors</h2>
+            <h2 class="section_header">11 Factors</h2>
             <br>
             <p>The factors that I am using to generate the men's bracket, along with their weight in the program:</p>
             <ul>
-                <li>Quadrant 1 record: 24.5%</li>
-                <li>Raw number of losses: 17.5%</li>
-                <li>Power ranking (average of KenPom and BPI ranking): 17.5%</li>
-                <li>Neutral court wins: 8.5%</li>
-                <li>Strength of schedule: 8.5%</li>
-                <li>Quadrant 2 record: 7.5%</li>
-                <li>Road wins: 5%</li>
-                <li>Top 10 wins: 3.5%</li>
-                <li>Top 25 wins: 3%</li>
-                <li>Nonconference strength of schedule: 1.5%</li>
-                <li>Quadrant 4 record: 1.25%</li>
-                <li>Quadrant 3 record: 0.75%</li>
-                <li>Bad (Q2 and below) losses: 0.5%</li>
-                <li>NET ranking: 0.25%</li>
-                <li>Awful (NET sub-200) losses: 0.25%</li>
+                <li>Power ranking (average of KenPom and BPI ranking): 22.5%</li>
+                <li>Winning percentage: 20%</li>
+                <li>Quadrant 1 record: 16%</li>
+                <li>Resume ranking (average of SOR and KPI ranking): 11%</li>
+                <li>Strength of schedule: 5.75%</li>
+                <li>Top 10 wins: 5.5%</li>
+                <li>Quadrant 2 record: 5%</li>
+                <li>Road wins: 4.75%</li>
+                <li>Neutral court wins: 3.75%</li>
+                <li>Top 25 wins: 3.75%</li>
+                <li>Quadrant 4 record: 2%</li>
             </ul>
             <br>
             <p>I arrived at the values for these weights through my own research and iterative testing with different combinations. Obviously, there is some overlap, so a win against a top 10 team will boost a team's score for both the Top 10 wins factor and the Top 25 wins factor, etc. The nitty-gritty of how this works is that a team's score for each factor is on a scale of 0 to 1, where 0 is near the lowest value a tournament-viable team would have on average (for example, 0 wins against top 25 teams translates to 0.0 for this factor) and 1 is the value a top-end team's resume would have (5 wins against top 25 teams translates to 1.0). The score for each factor is then multiplied by the factor's weight. Adding all those values up produces a team's total resume score from 0 to 1.</p>

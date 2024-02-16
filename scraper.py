@@ -634,7 +634,10 @@ def simulate_games(scorer, builder, weightfile):
     team_kenpoms = dict()
     random.shuffle(teams)
     for team in teams:
-        team_kenpom = scorer.kenpom_estimate(scorer.teams[team].KenPom)
+        if scorer.mens:
+            team_kenpom = scorer.kenpom_estimate(scorer.teams[team].KenPom)
+        else:
+            team_kenpom = scorer.kenpom_estimate(scorer.teams[team].NET)
         for game in scorer.teams[team].future_games:
             game_exists = False
             for existing_game in scorer.teams[team].games:
@@ -756,7 +759,11 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
             scorer.teams[team].seed = -1
         builder.first_weekend_sites = list(first_weekend_sites)
         builder.conference_winners = dict(conference_winners)
-        results = simulate_games(scorer, builder, weightfile)
+        try:
+            results = simulate_games(scorer, builder, weightfile)
+        except:
+            print("big ol failure, bummer boy")
+            continue
         for team in results['tournament']:
             add_or_increment_key(team[0], made_tournament)
             if team[0] in team_seeds:

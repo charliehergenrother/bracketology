@@ -74,7 +74,10 @@ class Scorer:
             sys.exit()
 
     def kenpom_estimate(self, rank):
-        return -0.0000026505*rank*rank*rank + 0.0015329*rank*rank - 0.349987*rank + 27.803
+        if self.mens:
+            return -0.0000026505*rank*rank*rank + 0.0015329*rank*rank - 0.349987*rank + 27.803
+        else:
+            return -0.0000030002*rank*rank*rank + 0.0018247*rank*rank - 0.42189*rank + 34.8
 
     def get_quadrant(self, opp_NET, location):
         if location == "H":

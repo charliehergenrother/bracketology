@@ -825,7 +825,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
             scorer.teams[team].region = -1
             scorer.teams[team].seed = -1
             if scorer.mens:
-                simmed_kenpoms[team] = rng.normal(team_kenpoms[team], 2)
+                simmed_kenpoms[team] = rng.normal(team_kenpoms[team], 3.5)
         builder.first_weekend_sites = list(first_weekend_sites)
         builder.conference_winners = dict(conference_winners)
         try:

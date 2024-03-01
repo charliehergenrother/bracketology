@@ -121,8 +121,6 @@ body {
     justify-content: space-between;
     list-style-type: none;
     font-family: Arial;
-    padding-top: 16px;
-    padding-bottom: 16px;
     padding-right: 10px;
     margin-top: 0px;
     margin-bottom: 0px;
@@ -131,6 +129,10 @@ body {
 
 .link_element {
     
+}
+
+.non_image_element {
+    padding-top: 16px;
 }
 
 .dropdown_element {

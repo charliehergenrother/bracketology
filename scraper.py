@@ -404,7 +404,7 @@ class Scraper:
                 if scorer.teams[team].seed == "NFO":
                     team_seed = 14
             if not hasattr(scorer.teams[team], "seed") or \
-                    (type(scorer.teams[team].seed) == int and scorer.teams[team].seed > 13):
+                    (type(scorer.teams[team].seed) == int and scorer.teams[team].seed > 17):
                 continue
             for game in scorer.teams[team].future_games:
                 try:

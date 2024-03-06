@@ -531,7 +531,7 @@ class Scorer:
             return 0.02
 
     def get_NET_estimate(self, curr_NET, curr_KenPom):
-        NET_weight = 0.9
+        NET_weight = 1
         NET_estimate = (NET_weight*curr_NET) + (1 - NET_weight)*curr_KenPom
         return NET_estimate
 
@@ -606,7 +606,7 @@ class Scorer:
                 else:
                     game["location"] = "H"
                 found_location = False
-            elif "images" in line and "conf-logo" not in line and "NA3" not in line:
+            elif "images" in line and "TBD" not in line and "conf-logo" not in line and "NA3" not in line:
                 found_game = True
                 opp_name = line[line.find("80x80")+6:line.find(".png")]
                 game["opponent"] = opp_name

@@ -92,7 +92,8 @@ better_team_abbrs = {"San Diego State": "SDSU",
         "James Madison": "JMU",
         "Middle Tennessee": "MTSU",
         "South Dakota State": "SDKS",
-        "Ball State": "BALL"
+        "Ball State": "BALL",
+        "South Florida": "USF"
         }
 
 #class to turn the Team and Game objects into jsonifyable strings

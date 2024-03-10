@@ -294,7 +294,6 @@ class Team:
         Q2_record = self.Q2_record
         Q3_record = self.Q3_record
         Q4_record = self.Q4_record
-        print(Q1_record, Q2_record, Q3_record, Q4_record)
         wins = int(Q1_record.split("-")[0])
         if quad > 1:
             wins += int(Q2_record.split("-")[0])

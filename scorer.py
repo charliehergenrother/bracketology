@@ -212,7 +212,6 @@ class Scorer:
     def calculate_Q2_score(self, team):
         if self.future:
             Q2_record = team.get_derived_record(2)
-            print(Q2_record)
             wins = int(Q2_record.split("-")[0])
             losses = int(Q2_record.split("-")[1])
             for game in team.future_games:
@@ -221,7 +220,10 @@ class Scorer:
                     wins += game['win_prob']
                 if game_quad >= 2:
                     losses += (1 - game['win_prob'])
-            team.Q2_score = ((wins/(wins + losses))-0.5)/0.5
+            try:
+                team.Q2_score = ((wins/(wins + losses))-0.5)/0.5
+            except ZeroDivisionError:   #2024 Fairfield women, I am incredibly proud of you
+                team.Q2_score = -1
         else:
             team.Q2_score = (team.get_derived_pct(2)-0.5)/0.5
         return team.Q2_score

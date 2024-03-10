@@ -1,6 +1,7 @@
 {
     "eliminated_teams": ["Lipscomb", "High-Point"],
     "conference_winners": {
+        "Ohio Valley": "Morehead-State"
     },
     "ineligible_teams": ["Bellarmine", "Le-Moyne", "Lindenwood", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Texas-AM-Commerce", "Tarleton-State", "Utah-Tech"],
     "ineligible_sites": {

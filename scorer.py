@@ -212,6 +212,7 @@ class Scorer:
     def calculate_Q2_score(self, team):
         if self.future:
             Q2_record = team.get_derived_record(2)
+            print(Q2_record)
             wins = int(Q2_record.split("-")[0])
             losses = int(Q2_record.split("-")[1])
             for game in team.future_games:

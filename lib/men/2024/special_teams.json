@@ -1,6 +1,9 @@
 {
-    "eliminated_teams": ["Lipscomb", "High-Point"],
+    "eliminated_teams": ["Lipscomb", "High-Point", "Eastern-Washington"],
     "conference_winners": {
+        "Atlantic Sun": "Stetson",
+        "Big South": "Longwood",
+        "Missouri Valley": "Drake",
         "Ohio Valley": "Morehead-State"
     },
     "ineligible_teams": ["Bellarmine", "Le-Moyne", "Lindenwood", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Texas-AM-Commerce", "Tarleton-State", "Utah-Tech"],

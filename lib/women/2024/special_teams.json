@@ -1,7 +1,14 @@
 {
-    "eliminated_teams": ["High-Point"],
+    "eliminated_teams": ["High-Point", "Old-Dominion"],
     "conference_winners": {
-        "Ohio Valley": "Tennessee-Martin"
+        "ACC": "Notre-Dame",
+        "Atlantic 10": "Richmond",
+        "Big South": "Presbyterian-College",
+        "Big Ten": "Iowa",
+        "Ohio Valley": "Tennessee-Martin",
+        "Pac-12": "USC",
+        "SEC": "South-Carolina",
+        "Southern": "Chattanooga"
     },
     "ineligible_teams": ["Bellarmine", "Le-Moyne", "Lindenwood", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Texas-AM-Commerce", "Tarleton-State", "Utah-Tech"]
 }

@@ -178,6 +178,10 @@ body {
     }
 }
 
+.seed_list_container {
+    font-family: Arial;
+}
+
 .words_container {
     width: 80%;
     font-family: Arial;

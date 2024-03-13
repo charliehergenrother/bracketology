@@ -19,13 +19,13 @@
         "Omaha": ["Creighton"],
         "Pittsburgh": ["Duquesne"],
         "Salt Lake City": ["Utah"],
-        "Brooklyn": [],
-        "Indianapolis": ["IUPUI"],
-        "Memphis": ["Memphis"],
-        "Spokane": ["Idaho"],
+        "Brooklyn": ["BYU"],
+        "Indianapolis": ["IUPUI", "BYU"],
+        "Memphis": ["Memphis", "BYU"],
+        "Spokane": ["Idaho", "BYU"],
         "Boston": ["Boston-College"],
         "Los Angeles": ["Pepperdine"],
-        "Dallas": [],
-        "Detroit": ["Detroit", "Oakland"]
+        "Dallas": ["BYU"],
+        "Detroit": ["Detroit", "Oakland", "BYU"]
     }
 }

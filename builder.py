@@ -217,7 +217,7 @@ class Builder:
                 if self.verbose:
                     print("teams are meeting too early in this region", region_num, team, test_team)
                 return False
-            #BUG: when we check if a play in team can go in a spot, this works correctly.
+            #TODO BUG: when we check if a play in team can go in a spot, this works correctly.
             #The rules about meeting too early are waived.
             #However, when we check if the better team can play a play in team, this works incorrectly.
             #The team object doesn't have that information.
@@ -599,7 +599,7 @@ class Builder:
                         return False, save_team, -1
             if reorg_seed == curr_reorg_max:    #we've gone as far as we can go
                 if self.verbose:
-                    print("gotta move somebody down. please do that.")
+                    print("Moving", team, "down from", seed_num)
                 if seed_num < 5:
                     self.replace_from_sites(seed_num, sites)
                 else:
@@ -711,15 +711,28 @@ class Builder:
                     self.first_weekend_num_to_name[region_num][seed_num] = site_name
                     break
             if seed_num not in self.first_weekend_num_to_name[region_num]:
+                if self.verbose:
+                    print("no remaining sites work for", team)
                 #couldn't choose a site bc the only site left is one where a team is ineligible to play at
                 sorted_teams = sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True)
                 remaining_site = self.first_weekend_sites[0]
-                team_to_switch = self.teams[sorted_teams[team_index-1]]
-                team_switch_site = self.first_weekend_num_to_name[team_to_switch.region][team_to_switch.seed]
-                if not self.try_site_switch(team_to_switch, team_switch_site, remaining_site, region_num, seed_num):
-                    team_to_switch = self.teams[sorted_teams[team_index-2]]
+                check_team_index = team_index
+                #grab previously-placed team. thanks for making this difficult, BYU
+                while True:
+                    check_team_index -= 1
+                    team_to_switch = self.teams[sorted_teams[check_team_index]]
+                    if self.verbose:
+                        print("try to switch with", team_to_switch.team_out)
+                    if self.teams[sorted_teams[check_team_index]].seed < 1: #team hasn't been placed
+                        continue
                     team_switch_site = self.first_weekend_num_to_name[team_to_switch.region][team_to_switch.seed]
-                    self.try_site_switch(team_to_switch, team_switch_site, remaining_site, region_num, seed_num)
+                    if team_switch_site in self.first_weekend_sites: #we already know the team can't go there
+                        continue
+                    if team in self.ineligible_sites[team_switch_site]: #BYU, you can't go here either
+                        continue
+                    self.do_site_switch(team_to_switch, team_switch_site, self.first_weekend_sites[0], region_num, seed_num)
+                    break
+
         else:   #womens
             site_name = self.get_team_out(team)
             self.first_weekend_name_to_num[site_name] = [[region_num, seed_num]]
@@ -733,25 +746,22 @@ class Builder:
                     break
             self.first_weekend_coords[site_name] = [latitude, longitude]
                
-    def try_site_switch(self, team_to_switch, team_switch_site, remaining_site, region_num, seed_num):
-        if team_switch_site != remaining_site:
-            self.first_weekend_num_to_name[region_num][seed_num] = team_switch_site
-            coord_index = 0
-            switch_site_list = self.first_weekend_name_to_num[team_switch_site]
-            while coord_index < len(switch_site_list):
-                if switch_site_list[coord_index][0] == team_to_switch.region and switch_site_list[coord_index][1] == team_to_switch.seed:
-                    del self.first_weekend_name_to_num[team_switch_site][coord_index]
-                    break
-                coord_index += 1
-            self.first_weekend_name_to_num[team_switch_site].append([region_num, seed_num])
-                    
-            self.first_weekend_num_to_name[team_to_switch.region][team_to_switch.seed] = remaining_site
-            if remaining_site not in self.first_weekend_name_to_num:
-                self.first_weekend_name_to_num[remaining_site] = [[team_to_switch.region, team_to_switch.seed]]
-            else:
-                self.first_weekend_name_to_num[remaining_site].append([team_to_switch.region, team_to_switch.seed])
-            return True
-        return False
+    def do_site_switch(self, team_to_switch, team_switch_site, remaining_site, region_num, seed_num):
+        self.first_weekend_num_to_name[region_num][seed_num] = team_switch_site
+        coord_index = 0
+        switch_site_list = self.first_weekend_name_to_num[team_switch_site]
+        while coord_index < len(switch_site_list):
+            if switch_site_list[coord_index][0] == team_to_switch.region and switch_site_list[coord_index][1] == team_to_switch.seed:
+                del self.first_weekend_name_to_num[team_switch_site][coord_index]
+                break
+            coord_index += 1
+        self.first_weekend_name_to_num[team_switch_site].append([region_num, seed_num])
+                
+        self.first_weekend_num_to_name[team_to_switch.region][team_to_switch.seed] = remaining_site
+        if remaining_site not in self.first_weekend_name_to_num:
+            self.first_weekend_name_to_num[remaining_site] = [[team_to_switch.region, team_to_switch.seed]]
+        else:
+            self.first_weekend_name_to_num[remaining_site].append([team_to_switch.region, team_to_switch.seed])
 
     #create a bracket based on the ordered team scores
     def build_bracket(self):
@@ -770,6 +780,7 @@ class Builder:
         auto_play_in_seeds = list()
         save_team = list()
         saved_teams = list()
+        self.seed_list = list()
         AUTO_MAX = AUTO_MAXES[self.year]
         AT_LARGE_MAX = 68 - AUTO_MAX
 
@@ -829,6 +840,7 @@ class Builder:
                 if team_conference not in self.conferences:
                     self.conferences[team_conference] = list()
                 self.conferences[team_conference].append(team)
+                self.seed_list.append(self.teams[team].team_out)
             if self.verbose:
                 print("placing", team, seed_num)
             
@@ -1091,6 +1103,12 @@ class Builder:
                     f.write('<td>' + self.teams[team[0]].team_out + ' (' + str(team[1]) + ')</td>')
             f.write('</tr>\n')
         f.write('  </table>\n')
+        f.write('</div>\n')
+        f.write('<div class="seed_list_container">\n')
+        f.write('  <ol>\n')
+        for team in self.seed_list:
+            f.write('    <li>' + team + '</li>\n')
+        f.write('  </ol>\n')
         f.write('</div>\n')
         f.write('</body>\n')
         f.write('</html>\n')

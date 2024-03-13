@@ -3,10 +3,15 @@
     "conference_winners": {
         "Atlantic Sun": "Stetson",
         "Big South": "Longwood",
+        "Coastal Athletic": "Charleston",
+        "Horizon": "Oakland",
         "Missouri Valley": "Drake",
+        "Northeast": "Wagner",
         "Ohio Valley": "Morehead-State",
         "Southern": "Samford",
-        "Sun Belt": "James-Madison"
+        "The Summit League": "South-Dakota-State",
+        "Sun Belt": "James-Madison",
+        "West Coast": "Saint-Marys-College"
     },
     "ineligible_teams": ["Bellarmine", "Le-Moyne", "Lindenwood", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Texas-AM-Commerce", "Tarleton-State", "Utah-Tech"],
     "ineligible_sites": {

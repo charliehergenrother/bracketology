@@ -1,16 +1,19 @@
 {
-    "eliminated_teams": ["High-Point", "Old-Dominion", "Albany", "North-Texas", "Tulsa"],
+    "eliminated_teams": ["High-Point", "Old-Dominion", "Albany", "North-Texas", "Tulsa", "Temple"],
     "conference_winners": {
         "ACC": "Notre-Dame",
         "Atlantic 10": "Richmond",
         "Big East": "Connecticut",
         "Big South": "Presbyterian-College",
         "Big Ten": "Iowa",
+        "Horizon": "Green-Bay",
         "Ohio Valley": "Tennessee-Martin",
         "Pac-12": "USC",
         "SEC": "South-Carolina",
         "Southern": "Chattanooga",
-        "Sun Belt": "Marshall"
+        "The Summit League": "South-Dakota-State",
+        "Sun Belt": "Marshall",
+        "West Coast": "Portland"
     },
     "ineligible_teams": ["Bellarmine", "Le-Moyne", "Lindenwood", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Texas-AM-Commerce", "Tarleton-State", "Utah-Tech"]
 }

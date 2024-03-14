@@ -2,8 +2,10 @@
     "eliminated_teams": ["High-Point", "Old-Dominion", "Albany", "North-Texas", "Tulsa", "Temple"],
     "conference_winners": {
         "ACC": "Notre-Dame",
+        "American Athletic": "Rice",
         "Atlantic 10": "Richmond",
         "Big East": "Connecticut",
+        "Big Sky": "Eastern-Washington",
         "Big South": "Presbyterian-College",
         "Big Ten": "Iowa",
         "Horizon": "Green-Bay",

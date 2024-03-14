@@ -2,13 +2,16 @@
     "eliminated_teams": ["Lipscomb", "High-Point", "Eastern-Washington", "Weber-State"],
     "conference_winners": {
         "Atlantic Sun": "Stetson",
+        "Big Sky": "Montana-State",
         "Big South": "Longwood",
         "Coastal Athletic": "Charleston",
         "Horizon": "Oakland",
         "Missouri Valley": "Drake",
         "Northeast": "Wagner",
         "Ohio Valley": "Morehead-State",
+        "Patriot League": "Colgate",
         "Southern": "Samford",
+        "Southland": "McNeese",
         "The Summit League": "South-Dakota-State",
         "Sun Belt": "James-Madison",
         "West Coast": "Saint-Marys-College"

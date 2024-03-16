@@ -1,6 +1,7 @@
 {
     "eliminated_teams": ["High-Point", "Old-Dominion", "Albany", "North-Texas", "Tulsa", "Temple"],
     "conference_winners": {
+        "America East": "Maine",
         "ACC": "Notre-Dame",
         "American Athletic": "Rice",
         "Atlantic 10": "Richmond",

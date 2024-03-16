@@ -1,5 +1,5 @@
 {
-    "eliminated_teams": ["Lipscomb", "High-Point", "Eastern-Washington", "Weber-State", "Dayton", "Louisiana-Tech", "Nevada", "Southern", "Richmond"],
+    "eliminated_teams": ["Lipscomb", "High-Point", "Eastern-Washington", "Weber-State", "Dayton", "Louisiana-Tech", "Nevada", "Southern", "Richmond", "UC-Irvine", "Sam-Houston-State", "Quinnipiac", "Norfolk-State", "Arizona", "Washington-State", "Tennessee", "Liberty", "North-Carolina-Central", "Kentucky"],
     "conference_winners": {
         "Atlantic Sun": "Stetson",
         "Big Sky": "Montana-State",
@@ -16,7 +16,7 @@
         "Sun Belt": "James-Madison",
         "West Coast": "Saint-Marys-College"
     },
-    "ineligible_teams": ["Bellarmine", "Le-Moyne", "Lindenwood", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Texas-AM-Commerce", "Tarleton-State", "Utah-Tech"],
+    "ineligible_teams": ["Bellarmine", "Le-Moyne", "Lindenwood", "Queens", "Saint-Thomas", "Southern-Indiana", "Stonehill", "Texas-AM-Commerce", "Tarleton-State", "UC-San-Diego", "Utah-Tech"],
     "ineligible_sites": {
         "Charlotte": ["Charlotte"],
         "Omaha": ["Creighton"],

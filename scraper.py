@@ -877,7 +877,7 @@ def main():
             summed_weights[15] += tracker.weight_results[weights]
             if (scraper.mens and counter > 50) or (not scraper.mens and counter > 100):
                 break
-        print([str(round(x/101, 3)).ljust(5) for x in summed_weights])
+        print([str(round(x/51, 3)).ljust(5) for x in summed_weights])
     elif monte_carlo:
         run_monte_carlo(simulations, scorer, builder, weightfile)
     else:

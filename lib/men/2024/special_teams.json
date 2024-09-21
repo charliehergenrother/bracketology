@@ -2,6 +2,7 @@
     "eliminated_teams": ["Lipscomb", "High-Point", "Eastern-Washington", "Weber-State", "Dayton", "Louisiana-Tech", "Nevada", "Southern", "Richmond", "UC-Irvine", "Sam-Houston-State", "Quinnipiac", "Norfolk-State", "Arizona", "Washington-State", "Tennessee", "Liberty", "North-Carolina-Central", "Kentucky", "FAU", "South-Florida", "Purdue", "Princeton", "Memphis"],
     "conference_winners": {
         "America East": "Vermont",
+        "American Athletic": "UAB",
         "Atlantic 10": "Duquesne",
         "ACC": "North-Carolina-State",
         "Atlantic Sun": "Stetson",
@@ -9,6 +10,7 @@
         "Big East": "Connecticut",
         "Big Sky": "Montana-State",
         "Big South": "Longwood",
+        "Big Ten": "Illinois",
         "Big West": "Long-Beach-State",
         "Coastal Athletic": "Charleston",
         "Conference USA": "Western-Kentucky",

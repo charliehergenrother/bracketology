@@ -206,8 +206,6 @@ class Scraper:
             self.do_scrape(today_date)
         else:
             self.do_load()
-        #if self.mens:  if those kansas and houston games ever get deleted, put this back
-            #self.write_missing_games()
         first_weekend_sites, first_weekend_rankings, region_rankings = self.load_coordinates()
         eliminated_teams, ineligible_teams, conference_winners, ineligible_sites = self.load_special_teams()
         return Builder(self.mens, self.year, self.teams, self.verbose, self.outputfile, first_weekend_sites, \
@@ -318,7 +316,7 @@ class Scraper:
  
         return win_string, loss_string
 
-    #output a csv resume file containing information about a college basketball team
+    #output a csv file containing resume information about all college basketball teams
     def output_resume(self, builder):
         f = open(self.resumefile, "w+")
         f.write("Team,Record,NET,PWR,RES,SOS,Q1,Q2,Q3/4,Quality Wins,Q2+ losses\n")
@@ -386,6 +384,7 @@ class Scraper:
         f.write('</body>\n')
         f.write('</html>\n')
 
+    #output an HTML page containing a schedule of tournament-relevant college basketball games
     def output_schedule_html(self, filename, scorer, builder):
         f = open(filename, "w")
         builder.output_meta(f)
@@ -435,7 +434,7 @@ class Scraper:
                     f.write('  <h2>' + month_translations[month] + ' ' + strday + '</h2>\n')
                     f.write('  <table class="schedule_table">\n')
                     gray = True
-                    #move this to own function, run on AM games and then PM games
+                    #TODO: move this to own function, run on AM games and then PM games
                     for game in sorted(future_games[datestring], key=lambda x: sorted_time(x[3])):
                         if game[2] == "H":
                             try:
@@ -670,33 +669,12 @@ def simulate_games(scorer, builder, weightfile, team_kenpoms):
             new_game = Game(scorer.teams[opponent].team_out, game['location'], game['NET'], 75, 0, '10-10')
             opp_game = Game(scorer.teams[team].team_out, reverse_location(game['location']), scorer.teams[team].NET, 0, 75, '10-10')
             win_result = random.random()
-            kenpom_change = random.random()
             if win_result < win_prob:
                 new_game.opp_score = 70
                 opp_game.team_score = 70
-                if not scorer.mens:
-                    if kenpom_change > 0.85:
-                        team_kenpom += 1
-                        team_kenpoms[opponent] -= 1
-                    elif kenpom_change > 0.5:
-                        team_kenpom += 0.5
-                        team_kenpoms[opponent] -= 0.5
-                    elif kenpom_change < 0.15:
-                        team_kenpom -= 0.5
-                        team_kenpoms[opponent] += 0.5
             else:
                 new_game.opp_score = 80
                 opp_game.team_score = 80
-                if not scorer.mens:
-                    if kenpom_change < 0.15:
-                        team_kenpom -= 1
-                        team_kenpoms[opponent] += 1
-                    elif kenpom_change < 0.5:
-                        team_kenpom -= 0.5
-                        team_kenpoms[opponent] += 0.5
-                    elif kenpom_change > 0.85:
-                        team_kenpom += 0.5
-                        team_kenpoms[opponent] -= 0.5
             scorer.teams[team].games.add(new_game)
             scorer.teams[opponent].games.add(opp_game)
             for index, future_game in enumerate(scorer.teams[opponent].future_games):
@@ -748,6 +726,7 @@ def print_Illinois(scorer, team_kenpoms):
     print(str(wins) + "-" + str(losses) + " (" + str(conf_wins) + "-" + str(conf_losses) + ")")
     print(team_kenpoms["Illinois"])
 
+#translates team string from kenpom's format to warren nolan's. all others are the same
 def translate_team(team):
     translations = {
             "Saint Mary's": "Saint-Marys-College",
@@ -804,6 +783,15 @@ def scrape_initial_kenpom(year, scorer):
 #run a monte carlo simulation of the remaining college basketball season
 def run_monte_carlo(simulations, scorer, builder, weightfile):
     rng = numpy.random.default_rng()
+    today_date = date.today()
+    selection_sunday = date(2025, 3, 16)
+    season_start = date(2024, 11, 4)
+    season_days = (selection_sunday - season_start).days
+    if season_start > today_date:
+        days_left = season_days
+    else:
+        days_left = (selection_sunday - today_date).days
+
     made_tournament = dict()
     final_fours = dict()
     national_champion = dict()
@@ -826,12 +814,13 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
             scorer.teams[team].region = -1
             scorer.teams[team].seed = -1
             if scorer.mens:
-                simmed_kenpoms[team] = rng.normal(team_kenpoms[team], 3.5)
+                simmed_kenpoms[team] = rng.normal(team_kenpoms[team], 5.8639*days_left/season_days)
         builder.first_weekend_sites = list(first_weekend_sites)
         builder.conference_winners = dict(conference_winners)
         try:
             results = simulate_games(scorer, builder, weightfile, simmed_kenpoms)
-        except:
+        except Exception as e:
+            print(e.message, e.args)
             print("big ol failure, bummer boy")
             continue
         for team in results['tournament']:

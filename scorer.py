@@ -562,7 +562,7 @@ class Scorer:
         self.teams[team].future_games = sched_obj
 
     def get_spread(self, team_kenpom, opp_kenpom, location):
-        team_spread_neutral = team_kenpom - opp_kenpom
+        team_spread_neutral = (team_kenpom - opp_kenpom)*0.675  #average possessions: 67.5
         if location == 'H':
             team_spread = team_spread_neutral + 3
         elif location == 'N':

@@ -5,7 +5,7 @@ import requests
 import sys
 import os
 
-SELECTION_SUNDAY_DATES = {"2024": 17, "2023": 12, "2022": 13, "2021": 14}
+SELECTION_SUNDAY_DATES = {"2025": 16, "2024": 17, "2023": 12, "2022": 13, "2021": 14}
 
 #class representing one college basketball team
 class Team:

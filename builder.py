@@ -4,7 +4,7 @@ from itertools import permutations
 from datetime import date
 import math
 
-AUTO_MAXES = {"2020": 32, "2021": 31, "2022": 32, "2023": 32, "2024": 32}
+AUTO_MAXES = {"2020": 32, "2021": 31, "2022": 32, "2023": 32, "2024": 32, "2025": 31}
 TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 
 #class to build a bracket from resume ratings of college basketball teams
@@ -940,6 +940,11 @@ class Builder:
             for region_nums in [[0, 1], [3, 2]]:
                 for seed_num in [1, 16, 8, 9, 5, 12, 4, 13, 6, 11, 3, 14, 7, 10, 2, 15]:
                     print(self.construct_line(max_len, region_nums[0], region_nums[1], seed_num))
+    
+    def projection_type(self):
+        if self.future:
+            return "Projected Selection Sunday Bracket"
+        return "Projected Bracket (if the season ended today)"
 
     def output_meta(self, f):
         f.write('<!DOCTYPE html>\n\n')
@@ -990,8 +995,11 @@ class Builder:
         self.output_meta(f)
         self.output_link_row(f)
         f.write('<body>\n\n')
+        f.write('<div class="title_row">\n')
+        f.write('  <h3> ' + self.projection_type() + '</h3>\n')
+        f.write('</div>\n')
         f.write('<div class="date_row">\n')
-        f.write('  <h4>Updated: ' + date.today().strftime("%m/%d/%y") + '</h4>')
+        f.write('  <h4>Updated: ' + date.today().strftime("%m/%d/%y") + '</h4>\n')
         f.write('</div>\n')
         f.write('<div class="bracket_container">\n')
         f.write('  <div class="region_column column1">\n')

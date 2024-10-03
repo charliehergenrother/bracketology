@@ -490,7 +490,7 @@ class Scraper:
 
 #accept command line arguments
 def process_args():
-    year = "2024"
+    year = "2025"
     argindex = 1
     outputfile = ""
     resumefile = ""

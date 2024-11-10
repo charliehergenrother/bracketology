@@ -534,6 +534,8 @@ class Scorer:
             return 0.02
 
     def get_NET_estimate(self, curr_NET, curr_KenPom):
+        #TODO fix once new data is in
+        return curr_KenPom
         today_date = date.today()
         selection_sunday = date(int(self.year), 3, SELECTION_SUNDAY_DATES[self.year])
         season_start = date(int(self.year) - 1, 11, 4)
@@ -542,7 +544,6 @@ class Scorer:
             days_left = season_days
         else:
             days_left = (selection_sunday - today_date).days
-
         # estimated NET begins as all KenPom and builds more actual NET in as the season progresses until 30 days, all becomes NET
         NET_weight = min(1, (season_days - days_left)/(season_days - 30))
         NET_estimate = (NET_weight*curr_NET) + (1 - NET_weight)*curr_KenPom
@@ -654,7 +655,7 @@ class Scorer:
                 elif "opp-record-line" in line:
                     opp_curr_NET = int(line[line.find("NET")+5:line.find("</span></span>")])
                     if self.mens:
-                        game["NET"] = self.get_NET_estimate(opp_curr_NET, self.teams[game['opponent']].KenPom)
+                        game["NET"] = self.get_NET_estimate(opp_curr_NET, team_kenpoms[game['opponent']]['rank'])
                     else:
                         game["NET"] = opp_curr_NET
                 elif "team-schedule__result" in line:           # game is in the past

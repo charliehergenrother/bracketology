@@ -5,7 +5,7 @@
         "American Athletic": "",
         "Atlantic 10": "",
         "ACC": "",
-        "Atlantic Sun": "",
+        "ASUN": "",
         "Big 12": "",
         "Big East": "",
         "Big Sky": "",
@@ -44,7 +44,7 @@
         "Raleigh": ["North-Carolina-State", "BYU"],
         "Seattle": ["Washington", "BYU"],
         "Newark": ["Seton-Hall"],
-        "San-Francisco": [],
+        "San Francisco": [],
         "Atlanta": ["Georgia-Tech", "BYU"],
         "Indianapolis": ["IUPUI", "BYU"]
     }

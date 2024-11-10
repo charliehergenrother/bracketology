@@ -28,8 +28,8 @@ WEIGHTS = {
 }
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
-TEAM_MEN_URL_START = "https://www.warrennolan.com/basketball/2024/team-clubhouse?team="
-TEAM_WOMEN_URL_START = "https://www.warrennolan.com/basketballw/2024/team-clubhouse?team="
+TEAM_MEN_URL_START = "https://www.warrennolan.com/basketball/2025/team-clubhouse?team="
+TEAM_WOMEN_URL_START = "https://www.warrennolan.com/basketballw/2025/team-clubhouse?team="
 
 #class to generate resume ratings from scraped data about college basketball teams
 class Scorer:
@@ -534,11 +534,21 @@ class Scorer:
             return 0.02
 
     def get_NET_estimate(self, curr_NET, curr_KenPom):
-        NET_weight = 1
+        today_date = date.today()
+        selection_sunday = date(int(self.year), 3, SELECTION_SUNDAY_DATES[self.year])
+        season_start = date(int(self.year) - 1, 11, 4)
+        season_days = (selection_sunday - season_start).days
+        if season_start > today_date:
+            days_left = season_days
+        else:
+            days_left = (selection_sunday - today_date).days
+
+        # estimated NET begins as all KenPom and builds more actual NET in as the season progresses until 30 days, all becomes NET
+        NET_weight = min(1, (season_days - days_left)/(season_days - 30))
         NET_estimate = (NET_weight*curr_NET) + (1 - NET_weight)*curr_KenPom
         return NET_estimate
 
-    def load_schedule(self, team):
+    def load_schedule(self, team, team_kenpoms):
         if not os.path.exists(self.schedule_datadir):
             print("creating schedules dir")
             os.makedirs(self.schedule_datadir)
@@ -550,7 +560,7 @@ class Scorer:
         saved_date = f.read().strip()
         f.close()
         if today_date != saved_date:
-            self.teams[team].future_games = self.do_schedule_scrape(team)
+            self.teams[team].future_games = self.do_schedule_scrape(team, team_kenpoms)
             print("scraped", team, "schedule!")
         else:
             self.do_schedule_load(team)
@@ -571,7 +581,7 @@ class Scorer:
             team_spread = team_spread_neutral - 3
         return team_spread
 
-    def do_schedule_scrape(self, team):
+    def do_schedule_scrape(self, team, team_kenpoms):
         month_translations = {"JAN": "01", "FEB": "02", "MAR": "03", "APR": "04", "MAY": "05", "JUN": "06", \
                 "JUL": "07", "AUG": "08", "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12"}
         if self.mens:
@@ -585,9 +595,10 @@ class Scorer:
         found_result = False
         found_location = False
         if self.mens:
-            team_kenpom = self.kenpom_estimate(self.teams[team].KenPom)
+            team_kenpom = team_kenpoms[team]
         else:
             team_kenpom = self.kenpom_estimate(self.teams[team].NET)    #crude, but all I've got
+            team_kenpoms[team] = team_kenpom
         for line in schedule_page.text.split("\n"):
             if not table_start:
                 if 'team-schedule' in line:
@@ -614,7 +625,10 @@ class Scorer:
                 opp_name = line[line.find("80x80")+6:line.find(".png")]
                 game["opponent"] = opp_name
             elif "team-schedule__info-tv" in line:
-                game["channel"] = line[line.find("TV: ")+4:line.find("</span>")]
+                if "TV: " in line:
+                    game["channel"] = line[line.find("TV: ")+4:line.find("</span>")]
+                else:
+                    game["channel"] = ""
             elif found_game:
                 if found_result:
                     if "team-schedule__result" not in line:     # game is in the future
@@ -628,17 +642,21 @@ class Scorer:
                         else:   #game time TBA
                             game["time"] = "0:00"
                         if self.mens:
-                            opp_kenpom = self.kenpom_estimate(self.teams[game['opponent']].KenPom)
+                            opp_kenpom = team_kenpoms[game['opponent']]
+                            team_spread = self.get_spread(team_kenpom["rating"], opp_kenpom["rating"], game['location'])
                         else:
                             opp_kenpom = self.kenpom_estimate(self.teams[game['opponent']].NET)
-                        team_spread = self.get_spread(team_kenpom, opp_kenpom, game['location'])
+                            team_spread = self.get_spread(team_kenpom, opp_kenpom, game['location'])
                         game['win_prob'] = self.get_win_prob(team_spread)
                         schedule_games.append(game)
                     found_result = False
                     found_game = False
                 elif "opp-record-line" in line:
-                    curr_NET = int(line[line.find("NET")+5:line.find("</span></span>")])
-                    game["NET"] = self.get_NET_estimate(curr_NET, self.teams[game['opponent']].KenPom)
+                    opp_curr_NET = int(line[line.find("NET")+5:line.find("</span></span>")])
+                    if self.mens:
+                        game["NET"] = self.get_NET_estimate(opp_curr_NET, self.teams[game['opponent']].KenPom)
+                    else:
+                        game["NET"] = opp_curr_NET
                 elif "team-schedule__result" in line:           # game is in the past
                     found_result = True
                     continue
@@ -651,20 +669,20 @@ class Scorer:
     def build_scores(self, WEIGHTS, team_kenpoms={}):
         for team in self.teams:
             if self.future:
-                self.load_schedule(team)
+                self.load_schedule(team, team_kenpoms)
             if self.verbose and not self.monte_carlo:
                 print("Scoring", team)
             score = 0
             score += WEIGHTS["LOSS_WEIGHT"]*self.get_loss_score(self.teams[team])
-            score += WEIGHTS["NET_WEIGHT"]*self.get_NET_score(self.teams[team])
+            #TODO add these back in once the data is correct score += WEIGHTS["NET_WEIGHT"]*self.get_NET_score(self.teams[team])
             if self.monte_carlo:
-                score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team], team_kenpoms[team])
+                score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team], team_kenpoms[team]["rating"])
             else:
-                score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team])
+                pass #score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team])
             score += WEIGHTS["Q1_WEIGHT"]*self.get_Q1_score(self.teams[team])
             score += WEIGHTS["Q2_WEIGHT"]*self.get_Q2_score(self.teams[team])
             score += WEIGHTS["Q3_WEIGHT"]*self.get_Q3_score(self.teams[team])
-            score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(self.teams[team])
+            #score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(self.teams[team])
             score += WEIGHTS["Q4_WEIGHT"]*self.get_Q4_score(self.teams[team])
             score += WEIGHTS["ROAD_WEIGHT"]*self.get_road_score(self.teams[team])
             score += WEIGHTS["NEUTRAL_WEIGHT"]*self.get_neutral_score(self.teams[team])
@@ -703,13 +721,17 @@ class Scorer:
                     "), Bad losses(" + str(round(WEIGHTS["BAD_LOSS_WEIGHT"], 5)) + \
                     "), Total Score\n")
             for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
+                        # TODO add these back in once the data is correct
+                        #str(round(self.teams[team].NET_score, 5)) + "," + \
+                        #str(round(self.teams[team].power_score, 5)) + "," + \
+                        #str(round(self.teams[team].results_based_score, 5)) + "," + \
                 line = self.teams[team].team_out + "," + \
                         str(round(self.teams[team].loss_score, 5)) + "," + \
-                        str(round(self.teams[team].NET_score, 5)) + "," + \
-                        str(round(self.teams[team].power_score, 5)) + "," + \
+                        "0," + \
+                        "0," + \
                         str(round(self.teams[team].Q1_score, 5)) + "," + \
                         str(round(self.teams[team].Q2_score, 5)) + "," + \
-                        str(round(self.teams[team].results_based_score, 5)) + "," + \
+                        "0," + \
                         str(round(self.teams[team].Q4_score, 5)) + "," + \
                         str(round(self.teams[team].road_score, 5)) + "," + \
                         str(round(self.teams[team].neutral_score, 5)) + "," + \

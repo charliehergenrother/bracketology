@@ -273,6 +273,11 @@ class Scraper:
                 team = line[team_start_index:line.find('">', team_start_index)]
                 self.scrape_team_data(team)
                 print("scraped", team + "!")
+        
+        #TODO women's pages not working yet
+        reverse_team_dict["West Georgia"] = "West-Georgia"
+        reverse_team_dict["Mercyhurst"] = "Mercyhurst"
+        reverse_team_dict["IU Indianapolis"] = "IU-Indianapolis"
 
         f = open(self.datadir + SCRAPE_DATE_FILE, "w+")
         f.write(today_date)
@@ -404,7 +409,7 @@ class Scraper:
                 if scorer.teams[team].seed == "NFO":
                     team_seed = 14
             if not hasattr(scorer.teams[team], "seed") or \
-                    (type(scorer.teams[team].seed) == int and scorer.teams[team].seed > 17):
+                    (type(scorer.teams[team].seed) == int and scorer.teams[team].seed > 12):
                 continue
             for game in scorer.teams[team].future_games:
                 try:
@@ -599,7 +604,7 @@ def reverse_location(location):
 def simulate_one_game(team1, team2, team_kenpoms, scorer):
     if "/" in team2:
         team2 = simulate_one_game(team2.split("/")[0], team2.split("/")[1], team_kenpoms, scorer)
-    team_spread = scorer.get_spread(team_kenpoms[team1], team_kenpoms[team2], 'N')
+    team_spread = scorer.get_spread(team_kenpoms[team1]["rating"], team_kenpoms[team2]["rating"], 'N')
     win_prob = scorer.get_win_prob(team_spread)
     #print(round(win_prob*100, 2), end="% ")
     win_result = random.random()
@@ -639,6 +644,7 @@ def simulate_tournament(builder, team_kenpoms, scorer):
 
 #run one simulation of the rest of the college basketball season
 def simulate_games(scorer, builder, weightfile, team_kenpoms):
+    #TODO: simulate conference tournaments
     results = {'tournament': list(), 'final_four': list(), 'champion': list()}
     teams = list(scorer.teams.keys())
     random.shuffle(teams)
@@ -706,6 +712,7 @@ def print_Illinois(scorer, team_kenpoms):
     conf_wins = 0
     conf_losses = 0
     for game in scorer.teams["Illinois"].games:
+        print("W" if game.team_score > game.opp_score else "L", end=' ')
         print(game.opponent.ljust(25), game.location, game.team_score, game.opp_score, game.opp_NET)
         if game.win:
             wins += 1
@@ -729,6 +736,9 @@ def print_Illinois(scorer, team_kenpoms):
 #translates team string from kenpom's format to warren nolan's. all others are the same
 def translate_team(team):
     translations = {
+            "Kansas City": "UMKC",
+            "CSUN": "Cal-State-Northridge",
+            "IU Indy": "IU-Indianapolis",
             "Saint Mary's": "Saint-Marys-College",
             "Florida Atlantic": "FAU",
             "Mississippi": "Ole-Miss",
@@ -757,7 +767,8 @@ def translate_team(team):
             "LIU": "Long-Island",
             "Saint Francis": "Saint-Francis-PA",
             "Southeast Missouri St.": "Southeast-Missouri",
-            "Detroit Mercy": "Detroit"
+            "Detroit Mercy": "Detroit",
+            "Texas A&M Commerce": "East-Texas-AM"
     }
     if team in translations:
         return translations[team]
@@ -776,8 +787,9 @@ def scrape_initial_kenpom(year, scorer):
                 anchor_index = line.find("team.php?")
                 team = line[line.find('">', anchor_index)+2:line.find("</a>")]
                 team = translate_team(team)
+                rank = int(line[line.find("hard_left")+11:line.find('</td>')])
                 rating = float(line[line.find("<td>")+4:line.find('</td><td class="td-left divide')])
-                team_kenpoms[team] = rating
+                team_kenpoms[team] = {"rating": rating, "rank": rank}
     return team_kenpoms
 
 #run a monte carlo simulation of the remaining college basketball season
@@ -800,7 +812,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
     conference_winners = dict(builder.conference_winners)
     team_kenpoms = scrape_initial_kenpom(builder.year, scorer)
     for team in scorer.teams:
-        scorer.load_schedule(team)
+        scorer.load_schedule(team, team_kenpoms)
         scorer.teams[team].saved_games = set(scorer.teams[team].games)
         scorer.teams[team].saved_future_games = list([dict(x) for x in scorer.teams[team].future_games])
     for i in range(simulations):
@@ -814,13 +826,17 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
             scorer.teams[team].region = -1
             scorer.teams[team].seed = -1
             if scorer.mens:
-                simmed_kenpoms[team] = rng.normal(team_kenpoms[team], 5.8639*days_left/season_days)
+                simmed_kenpoms[team] = {"rating": rng.normal(team_kenpoms[team]["rating"], 5.8639*days_left/season_days)}
+        rank_counter = 1
+        for team in sorted(simmed_kenpoms, key=lambda x: simmed_kenpoms[x]["rating"], reverse=True):
+            simmed_kenpoms[team]["rank"] = rank_counter
+            rank_counter += 1
         builder.first_weekend_sites = list(first_weekend_sites)
         builder.conference_winners = dict(conference_winners)
         try:
             results = simulate_games(scorer, builder, weightfile, simmed_kenpoms)
         except Exception as e:
-            print(e.message, e.args)
+            print(e)
             print("big ol failure, bummer boy")
             continue
         for team in results['tournament']:
@@ -871,7 +887,7 @@ def main():
         run_monte_carlo(simulations, scorer, builder, weightfile)
     else:
         weights = scorer.get_weights(weightfile)
-        scorer.build_scores(weights)
+        scorer.build_scores(weights, scrape_initial_kenpom(builder.year, scorer))
         builder.select_seed_and_print_field()
         builder.build_bracket()
         if scraper.outputfile:

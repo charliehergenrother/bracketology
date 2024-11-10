@@ -45,7 +45,7 @@ class Builder:
             at_large_bid = False
             if team in self.ineligible_teams:
                 continue
-            if team in self.eliminated_teams or (self.teams[team].conference in self.conference_winners and \
+            if team in self.eliminated_teams or (self.conference_winners[self.teams[team].conference] and \
                     self.conference_winners[self.teams[team].conference] != team):
                 #teams under .500 are ineligible for at-large bids
                 if self.teams[team].record_pct < 0.5 and not self.future:
@@ -70,7 +70,7 @@ class Builder:
                 if self.teams[team].conference != "Independent" and \
                         ((self.teams[team].conference in self.conference_winners and \
                         self.conference_winners[self.teams[team].conference] == team) or \
-                        (self.teams[team].conference not in self.conference_winners and \
+                        (self.conference_winners[self.teams[team].conference] == "" and \
                         team not in self.eliminated_teams and auto_bids < AUTO_MAX)):
                     auto_bids += 1
                     self.conference_winners[self.teams[team].conference] = team

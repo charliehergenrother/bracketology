@@ -59,16 +59,27 @@ class Team:
             if "team-menu__image\"" in line and not os.path.exists("./assets/" + team + ".png"):
                 image_url = "http://www.warrennolan.com" + line[line.find("src=")+5:line.find(" />")-1]
                 team_image = requests.get(image_url, stream=True)
-                with open("./lib/assets/" + team + ".png", "xb") as f:
+                with open("./assets/" + team + ".png", "xb") as f:
                     for chunk in team_image:
                         f.write(chunk)
             if "team-menu__name\"" in line:
                 self.team_out = line[line.find(">")+1:line.find(" <span")]
+                #TODO see below
+                manual_teams = {"IU-Indianapolis": "IU Indianapolis", "Mercyhurst": "Mercyhurst", "West-Georgia": "West Georgia"}
+                if team in manual_teams:
+                    self.team_out = manual_teams[team]
             if "team-menu__conference" in line:
                 self.conference = line[line.find('">', line.find("/conference/"))+2:line.find("</a>")]
+                #TODO see below
+                conf_manual_teams = {"IU-Indianapolis": "Horizon League", "Mercyhurst": "Northeast", "West-Georgia": "ASUN"}
+                if team in conf_manual_teams:
+                    self.conference = conf_manual_teams[team]
                 continue
             if "font-weight: bold; font-size: 16px;" in line:
-                self.NET = int(line[line.find("16px")+7:line.find("</span>")])
+                try:
+                    self.NET = int(line[line.find("16px")+7:line.find("</span>")])
+                except ValueError:  #TODO this is for the women's pages that aren't working. Mercyhurst, IU Indianapolis, West Georgia
+                    self.NET = 361
                 continue
             if not SOS_line:
                 if ("NET SOS") in line:
@@ -81,14 +92,20 @@ class Team:
                 if line.strip()[:line.strip().find("<")] == "N/A":
                     self.NET_SOS = 150
                 else:
-                    self.NET_SOS = int(line.strip()[:line.strip().find("<")])
+                    try:
+                        self.NET_SOS = int(line.strip()[:line.strip().find("<")])
+                    except ValueError: #TODO see above
+                        self.NET_SOS = 150
                 SOS_line += 1
                 continue
             elif SOS_line == 5:
                 if line.strip() == "N/A":   #2020-21 was crazy
                     self.noncon_SOS = 150
                 else:
-                    self.noncon_SOS = int(line.strip())
+                    try:
+                        self.noncon_SOS = int(line.strip())
+                    except ValueError: #TODO see above
+                        self.noncon_SOS = 150
                 SOS_line += 1
                 continue
             
@@ -100,11 +117,17 @@ class Team:
                 KPI_line += 1
                 continue
             elif KPI_line == 4:
-                self.KPI = int(line.strip()[:line.strip().find("<")])
+                try:
+                    self.KPI = int(line.strip()[:line.strip().find("<")])
+                except ValueError: #TODO see above
+                    self.KPI = 0
                 KPI_line += 1
                 continue
             elif KPI_line == 5:
-                self.SOR = int(line.strip())
+                try:
+                    self.SOR = int(line.strip())
+                except ValueError: #TODO see above
+                    self.SOR = 0
                 KPI_line += 1
                 continue
             
@@ -116,15 +139,24 @@ class Team:
                 BPI_line += 1
                 continue
             elif BPI_line == 5:
-                self.BPI = int(line.strip()[:line.strip().find("<")])
+                try:
+                    self.BPI = int(line.strip()[:line.strip().find("<")])
+                except ValueError: #TODO see above
+                    self.BPI = 0
                 BPI_line += 1
                 continue
             elif BPI_line == 6:
-                self.KenPom = int(line.strip()[:line.strip().find("<")])
+                try:
+                    self.KenPom = int(line.strip()[:line.strip().find("<")])
+                except ValueError: #TODO see above
+                    self.KenPom = 0
                 BPI_line += 1
                 continue
             elif BPI_line == 7:
-                self.Sagarin = int(line.strip())
+                try:
+                    self.Sagarin = int(line.strip())
+                except ValueError: #TODO see above
+                    self.Sagarin = 0
                 BPI_line += 1
                 continue
 

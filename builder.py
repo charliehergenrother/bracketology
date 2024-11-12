@@ -175,6 +175,8 @@ class Builder:
             first_weekend_site = self.first_weekend_num_to_name[region_num][self.get_host_seed(seed_num)]
             region_site = self.region_num_to_name[region_num]
             for site in [first_weekend_site, region_site]:
+                if site == region_site and team == "BYU":   #TODO: this was making me mad so. fix later, I guess
+                    continue
                 if team in self.ineligible_sites[site]:
                     if self.verbose:
                         print(team, "can't play in", site, "you silly goose")

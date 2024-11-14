@@ -670,7 +670,7 @@ def simulate_games(scorer, builder, weightfile, team_kenpoms):
             else:
                 opp_kenpom = scorer.kenpom_estimate(scorer.teams[opponent].KenPom)
                 team_kenpoms[opponent] = opp_kenpom
-            team_spread = scorer.get_spread(team_kenpom, opp_kenpom, game['location'])
+            team_spread = scorer.get_spread(team_kenpom['rating'], opp_kenpom['rating'], game['location'])
             win_prob = scorer.get_win_prob(team_spread)
             new_game = Game(scorer.teams[opponent].team_out, game['location'], game['NET'], 75, 0, '10-10')
             opp_game = Game(scorer.teams[team].team_out, reverse_location(game['location']), scorer.teams[team].NET, 0, 75, '10-10')
@@ -815,6 +815,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
         scorer.load_schedule(team, team_kenpoms)
         scorer.teams[team].saved_games = set(scorer.teams[team].games)
         scorer.teams[team].saved_future_games = list([dict(x) for x in scorer.teams[team].future_games])
+    successful_runs = 0
     for i in range(simulations):
         print("Running sim", i)
         simmed_kenpoms = dict()
@@ -849,17 +850,20 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
             add_or_increment_key(team, final_fours)
         for team in results['champion']:
             add_or_increment_key(team, national_champion)
+        successful_runs += 1
     for team in sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x]):
         print(team.ljust(20), made_tournament[team], round(sum(team_seeds[team])/made_tournament[team], 2), \
                 min(team_seeds[team]), max(team_seeds[team]))
     print()
+    print("Successful runs:", successful_runs)
+    print()
     print("FINAL FOURS")
     for team in sorted(final_fours, key=lambda x: final_fours[x], reverse=True):
-        print(team.ljust(20), final_fours[team], "+" + str(round((100/(final_fours[team]/simulations))-100, 0)))
+        print(team.ljust(20), final_fours[team], "+" + str(int((100/(final_fours[team]/successful_runs))-100)))
     print()
     print("NATIONAL CHAMPIONS")
     for team in sorted(national_champion, key=lambda x: national_champion[x], reverse=True):
-        print(team.ljust(20), national_champion[team], "+" + str(round((100/(national_champion[team]/simulations))-100, 0)))
+        print(team.ljust(20), national_champion[team], "+" + str(int((100/(national_champion[team]/successful_runs))-100)))
 
 def main():
     scraper = Scraper()

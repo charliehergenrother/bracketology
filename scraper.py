@@ -510,29 +510,31 @@ def process_args():
     mens = True
     future = False
     monte_carlo = False
+    mc_outputfile = ""
     simulations = 0
 
     while argindex < len(sys.argv):
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-m/-w] [-f] [-c <sims>] [-y year] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-u resumewebfile] [-g] [-e|-s] [-v]")
+            print("./scraper.py [-h] [-m/-w] [-y year] [-f [-g schedulefile]] [-c <sims> [-d montecarlofile]] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-u resumewebfile] [-e|-s] [-t] [-v]")
             print("     -h: print this help message")
             print("     -m: men's tournament projection [default]")
             print("     -w: women's tournament projection")
-            print("     -f: future (end-of-season) projection. default is to project the field as if the season ended today.")
-            print("     -c: Monte Carlo simulation. run <sims> number of simulation and report on how often a team made the tournament/got to final four/won championship")
             print("     -y: make a bracket for given year. 2021-present only")
+            print("     -f: future (end-of-season) projection. default is to project the field as if the season ended today.")
+            print("     -g: set an html filename where the upcoming schedule will live")
+            print("     -c: Monte Carlo simulation. run <sims> number of simulation and report on how often a team made the tournament/got to final four/won championship")
+            print("     -d: set a csv filename where the monte carlo output will live")
             print("     -i: use weights located in given file")
             print("     -o: set a csv filename where the final ranking will live")
             print("     -r: set a csv filename where the final readable resume will live")
             print("     -b: set an html filename where the displayed bracket will live")
             print("     -u: set an html filename where the resume page will live")
-            print("     -g: set an html filename where the upcoming schedule will live")
             print("     -e: override the scraping and use data currently stored")
             print("     -s: scrape data anew regardless of whether data has been scraped today")
-            print("     -v: verbose. Print team resumes and bracketing procedure")
             print("     -t: tracker mode. Generate weights and test their effectiveness")
+            print("     -v: verbose. Print team resumes and bracketing procedure")
             sys.exit()
         elif sys.argv[argindex] == '-w':
             mens = False
@@ -568,6 +570,9 @@ def process_args():
         elif sys.argv[argindex] == '-i':
             weightfile = sys.argv[argindex + 1]
             argindex += 1
+        elif sys.argv[argindex] == '-d':
+            mc_outputfile = sys.argv[argindex + 1]
+            argindex += 1
         elif sys.argv[argindex] == '-y':
             if int(sys.argv[argindex + 1]) < 2021:
                 print("year not supported, sorry. Try 2021-present.")
@@ -586,7 +591,7 @@ def process_args():
             weightfile = "lib/women/weights.txt"
     return year, mens, outputfile, resumefile, webfile, resumewebfile, upcomingschedulefile, \
             datadir, should_scrape, force_scrape, verbose, tracker, weightfile, future, \
-            monte_carlo, simulations
+            monte_carlo, mc_outputfile, simulations
 
 def add_or_increment_key(key, dictionary):
     try:
@@ -793,7 +798,7 @@ def scrape_initial_kenpom(year, scorer):
     return team_kenpoms
 
 #run a monte carlo simulation of the remaining college basketball season
-def run_monte_carlo(simulations, scorer, builder, weightfile):
+def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     rng = numpy.random.default_rng()
     today_date = date.today()
     selection_sunday = date(2025, 3, 16)
@@ -851,25 +856,45 @@ def run_monte_carlo(simulations, scorer, builder, weightfile):
         for team in results['champion']:
             add_or_increment_key(team, national_champion)
         successful_runs += 1
+    if mc_outputfile:
+        f = open(mc_outputfile, "w")
+        f.write("successes:," + str(successful_runs) + "\n")
+        f.write("MAKE TOURNAMENT\n")
+        f.write("Team,Chance\n")
     for team in sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x]):
         print(team.ljust(20), made_tournament[team], round(sum(team_seeds[team])/made_tournament[team], 2), \
                 min(team_seeds[team]), max(team_seeds[team]))
+        if mc_outputfile:
+            f.write(team + "," + str(made_tournament[team]/successful_runs) + "\n")
+    if mc_outputfile:
+        f.write("\n")
+        f.write("FINAL FOURS\n")
+        f.write("Team,Odds\n")
     print()
     print("Successful runs:", successful_runs)
     print()
     print("FINAL FOURS")
     for team in sorted(final_fours, key=lambda x: final_fours[x], reverse=True):
-        print(team.ljust(20), final_fours[team], "+" + str(int((100/(final_fours[team]/successful_runs))-100)))
+        odds = str(int((100/(final_fours[team]/successful_runs))-100))
+        print(team.ljust(20), final_fours[team], "+" + odds)
+        if mc_outputfile:
+            f.write(team + "," + odds + "\n")
     print()
     print("NATIONAL CHAMPIONS")
+    if mc_outputfile:
+        f.write("\n")
+        f.write("NATIONAL CHAMPIONS\n")
+        f.write("Team,Odds\n")
     for team in sorted(national_champion, key=lambda x: national_champion[x], reverse=True):
         print(team.ljust(20), national_champion[team], "+" + str(int((100/(national_champion[team]/successful_runs))-100)))
+        if mc_outputfile:
+            f.write(team + "," + odds + "\n")
 
 def main():
     scraper = Scraper()
     scraper.year, scraper.mens, scraper.outputfile, scraper.resumefile, scraper.webfile, resumewebfile, \
             upcomingschedulefile, scraper.datadir, should_scrape, force_scrape, scraper.verbose, \
-            scraper.tracker, weightfile, future, monte_carlo, simulations = process_args()
+            scraper.tracker, weightfile, future, monte_carlo, mc_outputfile, simulations = process_args()
     builder = scraper.load_data(should_scrape, force_scrape, future, monte_carlo)
     scorer = Scorer(builder, future, scraper.mens, scraper.tracker, monte_carlo)
     if scraper.tracker:
@@ -888,7 +913,7 @@ def main():
                 break
         print([str(round(x/51, 3)).ljust(5) for x in summed_weights])
     elif monte_carlo:
-        run_monte_carlo(simulations, scorer, builder, weightfile)
+        run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile)
     else:
         weights = scorer.get_weights(weightfile)
         scorer.build_scores(weights, scrape_initial_kenpom(builder.year, scorer))

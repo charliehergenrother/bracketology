@@ -886,6 +886,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
         f.write("NATIONAL CHAMPIONS\n")
         f.write("Team,Odds\n")
     for team in sorted(national_champion, key=lambda x: national_champion[x], reverse=True):
+        odds = str(int((100/(national_champion[team]/successful_runs))-100))
         print(team.ljust(20), national_champion[team], "+" + str(int((100/(national_champion[team]/successful_runs))-100)))
         if mc_outputfile:
             f.write(team + "," + odds + "\n")

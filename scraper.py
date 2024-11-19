@@ -229,8 +229,8 @@ class Scraper:
                         game_obj["team_score"], game_obj["opp_score"], game_obj["date"]))
                 curr_team = Team()
                 curr_team.fill_data(team_obj["conference"], team_obj["NET"], team_obj["KenPom"], team_obj["BPI"],
-                        team_obj["Sagarin"], team_obj["KPI"], team_obj["SOR"], team_obj["NET_SOS"], \
-                        team_obj["noncon_SOS"], games, team_obj["team_out"])
+                        team_obj["Sagarin"], team_obj["Trank"], team_obj["KPI"], team_obj["SOR"], team_obj["WAB"],
+                        team_obj["NET_SOS"], team_obj["noncon_SOS"], games, team_obj["team_out"])
                 self.teams[filename[:filename.find(".json")]] = curr_team
                 team = filename[:filename.find(".json")]
                 reverse_team_dict[curr_team.team_out] = team

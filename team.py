@@ -11,7 +11,7 @@ SELECTION_SUNDAY_DATES = {"2025": 16, "2024": 17, "2023": 12, "2022": 13, "2021"
 class Team:
 
     def reprJSON(self):
-        return dict(conference=self.conference, NET=self.NET, KenPom=self.KenPom, BPI=self.BPI, Sagarin=self.Sagarin, KPI=self.KPI, SOR=self.SOR, NET_SOS=self.NET_SOS, noncon_SOS=self.noncon_SOS, games=self.games, team_out=self.team_out)
+        return dict(conference=self.conference, NET=self.NET, KenPom=self.KenPom, BPI=self.BPI, Sagarin=self.Sagarin, Trank=self.Trank, KPI=self.KPI, SOR=self.SOR, WAB=self.WAB, NET_SOS=self.NET_SOS, noncon_SOS=self.noncon_SOS, games=self.games, team_out=self.team_out)
 
     def __init__(self):
         self.conference = ""
@@ -20,8 +20,10 @@ class Team:
         self.KenPom = 0
         self.BPI = 0
         self.Sagarin = 0
+        self.Trank = 0
         self.KPI = 0
         self.SOR = 0
+        self.WAB = 0
         self.NET_SOS = 0
         self.noncon_SOS = 0
         self.games = set()
@@ -29,15 +31,17 @@ class Team:
         self.at_large_bid = False
         self.play_in = False
     
-    def fill_data(self, conf, net, kp, bpi, sag, kpi, sor, netsos, ncsos, gms, to):
+    def fill_data(self, conf, net, kp, bpi, sag, tr, kpi, sor, wab, netsos, ncsos, gms, to):
         self.conference = conf
         self.team_out = to
         self.NET = net
         self.KenPom = kp
         self.BPI = bpi
         self.Sagarin = sag
+        self.Trank = tr
         self.KPI = kpi
         self.SOR = sor
+        self.WAB = wab
         self.NET_SOS = netsos
         self.noncon_SOS = ncsos
         self.games = gms
@@ -88,7 +92,7 @@ class Team:
             elif SOS_line < 4:
                 SOS_line += 1
                 continue
-            elif SOS_line == 4:
+
                 if line.strip()[:line.strip().find("<")] == "N/A":
                     self.NET_SOS = 150
                 else:
@@ -113,21 +117,35 @@ class Team:
                 if ("KPI") in line:
                     KPI_line += 1
                     continue
-            elif KPI_line < 4:
+            elif KPI_line < 6:
                 KPI_line += 1
                 continue
-            elif KPI_line == 4:
+            elif KPI_line == 6:
                 try:
                     self.KPI = int(line.strip()[:line.strip().find("<")])
-                except ValueError: #TODO see above
+                except ValueError: #TODO see above #TODO this is also cause KPI is blank rn
                     self.KPI = 0
                 KPI_line += 1
                 continue
-            elif KPI_line == 5:
+            elif KPI_line == 7:
                 try:
-                    self.SOR = int(line.strip())
+                    self.SOR = int(line.strip()[:line.strip().find("<")])
                 except ValueError: #TODO see above
                     self.SOR = 0
+                KPI_line += 1
+                continue
+            elif KPI_line == 8:
+                try:
+                    self.Trank = int(line.strip()[:line.strip().find("<")])
+                except ValueError: #TODO see above
+                    self.Trank = 0
+                KPI_line += 1
+                continue
+            elif KPI_line == 9:
+                try:
+                    self.WAB = int(line.strip())
+                except ValueError: #TODO see above
+                    self.WAB = 0
                 KPI_line += 1
                 continue
             
@@ -358,7 +376,10 @@ class Team:
             return sum([self.KenPom, self.BPI, self.Sagarin])/3
 
     def get_results_based(self):
-        return sum([self.KPI, self.SOR])/2
+        if self.KPI == 0:
+            return sum([self.WAB, self.SOR])/2
+        else:
+            return sum([self.KPI, self.SOR, self.WAB])/2
 
     record = property(get_record)
     record_pct = property(get_record_pct)

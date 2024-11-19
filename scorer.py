@@ -139,7 +139,21 @@ class Scorer:
         return self.calculate_results_based_score(team)
 
     def calculate_results_based_score(self, team):
-        team.results_based_score = (-math.log(team.results_based + 19, 2)/2 + 3.16)
+        if self.future:
+            today_date = date.today()
+            selection_sunday = date(int(self.year), 3, SELECTION_SUNDAY_DATES[self.year])
+            season_start = date(int(self.year) - 1, 11, 4)
+            season_days = (selection_sunday - season_start).days
+            if season_start > today_date:
+                days_left = season_days
+            else:
+                days_left = (selection_sunday - today_date).days
+            # estimated RES begins as all KenPom and builds more actual RES in as the season progresses until 30 days, all becomes RES
+            RES_weight = min(1, (season_days - days_left)/(season_days - 30))
+            RES_estimate = (RES_weight*team.results_based) + (1 - RES_weight)*team.predictive
+            team.results_based_score = (-math.log(RES_estimate + 19, 2)/2 + 3.16)
+        else:
+            team.results_based_score = (-math.log(team.results_based + 19, 2)/2 + 3.16)
         return team.results_based_score
 
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
@@ -167,6 +181,7 @@ class Scorer:
         return self.calculate_power_score(team, team_kenpom)
 
     def calculate_power_score(self, team, team_kenpom=0):
+        #TODO seems like this can probably be better
         if self.monte_carlo:
             est_rank = (team_kenpom - 33)*(team_kenpom - 33)/5
             team.power_score = (-math.log(est_rank + 19, 2)/2 + 3.16)
@@ -679,11 +694,11 @@ class Scorer:
             if self.monte_carlo:
                 score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team], team_kenpoms[team]["rating"])
             else:
-                pass #score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team])
+                score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team])
             score += WEIGHTS["Q1_WEIGHT"]*self.get_Q1_score(self.teams[team])
             score += WEIGHTS["Q2_WEIGHT"]*self.get_Q2_score(self.teams[team])
             score += WEIGHTS["Q3_WEIGHT"]*self.get_Q3_score(self.teams[team])
-            #score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(self.teams[team])
+            score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(self.teams[team])
             score += WEIGHTS["Q4_WEIGHT"]*self.get_Q4_score(self.teams[team])
             score += WEIGHTS["ROAD_WEIGHT"]*self.get_road_score(self.teams[team])
             score += WEIGHTS["NEUTRAL_WEIGHT"]*self.get_neutral_score(self.teams[team])
@@ -724,15 +739,13 @@ class Scorer:
             for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
                         # TODO add these back in once the data is correct
                         #str(round(self.teams[team].NET_score, 5)) + "," + \
-                        #str(round(self.teams[team].power_score, 5)) + "," + \
-                        #str(round(self.teams[team].results_based_score, 5)) + "," + \
                 line = self.teams[team].team_out + "," + \
                         str(round(self.teams[team].loss_score, 5)) + "," + \
                         "0," + \
-                        "0," + \
+                        str(round(self.teams[team].power_score, 5)) + "," + \
                         str(round(self.teams[team].Q1_score, 5)) + "," + \
                         str(round(self.teams[team].Q2_score, 5)) + "," + \
-                        "0," + \
+                        str(round(self.teams[team].results_based_score, 5)) + "," + \
                         str(round(self.teams[team].Q4_score, 5)) + "," + \
                         str(round(self.teams[team].road_score, 5)) + "," + \
                         str(round(self.teams[team].neutral_score, 5)) + "," + \

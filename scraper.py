@@ -654,10 +654,7 @@ def simulate_games(scorer, builder, weightfile, team_kenpoms):
     teams = list(scorer.teams.keys())
     random.shuffle(teams)
     for team in teams:
-        if scorer.mens:
-            team_kenpom = team_kenpoms[team]
-        else:
-            team_kenpom = scorer.kenpom_estimate(scorer.teams[team].NET)
+        team_kenpom = team_kenpoms[team]
         for game in scorer.teams[team].future_games:
             game_exists = False
             for existing_game in scorer.teams[team].games:
@@ -670,11 +667,7 @@ def simulate_games(scorer, builder, weightfile, team_kenpoms):
             if game_exists: 
                 continue
             opponent = game['opponent']
-            if opponent in team_kenpoms:
-                opp_kenpom = team_kenpoms[opponent]
-            else:
-                opp_kenpom = scorer.kenpom_estimate(scorer.teams[opponent].KenPom)
-                team_kenpoms[opponent] = opp_kenpom
+            opp_kenpom = team_kenpoms[opponent]
             team_spread = scorer.get_spread(team_kenpom['rating'], opp_kenpom['rating'], game['location'])
             win_prob = scorer.get_win_prob(team_spread)
             new_game = Game(scorer.teams[opponent].team_out, game['location'], game['NET'], 75, 0, '10-10')
@@ -738,8 +731,94 @@ def print_Illinois(scorer, team_kenpoms):
     print(str(wins) + "-" + str(losses) + " (" + str(conf_wins) + "-" + str(conf_losses) + ")")
     print(team_kenpoms["Illinois"])
 
+def translate_team_sonny(team):
+    translations = {
+            "St. Peter'S": "Saint-Peters",
+            "Texas Rio Grande Valley": "UTRGV",
+            "Nebraska Omaha": "Omaha",
+            "Byu": "BYU",
+            "Texas El Paso": "UTEP",
+            "Southern Mississippi": "Southern-Miss",
+            "Queens Nc": "Queens",
+            "St. Joseph'S Pa.": "Saint-Josephs",
+            "Wisconsin Green Bay": "Green-Bay",
+            "Vcu": "VCU",
+            "Long Island University": "Long-Island",
+            "St. Thomas Mn.": "Saint-Thomas",
+            "Smu": "SMU",
+            "St. John'S": "Saint-Johns",
+            "California Riverside": "UC-Riverside",
+            "Tarleton": "Tarleton-State",
+            "Iupui": "IU-Indianapolis",
+            "Pennsylvania": "Penn",
+            "William & Mary": "William-Mary",
+            "Texas Arlington": "UTA",
+            "Miami Florida": "Miami-FL",
+            "Tennessee Chattanooga": "Chattanooga",
+            "North Carolina Charlotte": "Charlotte",
+            "Southern Cal": "USC",
+            "Utah Valley St.": "Utah-Valley",
+            "Oakland Mi": "Oakland",
+            "Nevada Las Vegas": "UNLV",
+            "Missouri Kansas City": "UMKC",
+            "Massachusetts": "UMass",
+            "Louisiana-Monroe": "ULM",
+            "California Irvine": "UC-Irvine",
+            "St. Francis Pa.": "Saint-Francis-PA",
+            "Middle Tennessee St.": "Middle-Tennessee",
+            "California San Diego": "UC-San-Diego",
+            "California Santa Barbara": "UC-Santa-Barbara",
+            "Texas San Antonio": "UTSA",
+            "Towson St.": "Towson",
+            "Mississippi": "Ole-Miss",
+            "Louisiana-Lafayette": "Louisiana",
+            "Siu Edwardsville": "SIUE",
+            "Ohio University": "Ohio",
+            "N.J. Tech": "NJIT",
+            "Lsu": "LSU",
+            "Alabama Birmingham": "UAB",
+            "Wisconsin Milwaukee": "Milwaukee",
+            "Ucla": "UCLA",
+            "Mass-Lowell": "UMass-Lowell",
+            "Se Louisiana": "Southeastern-Louisiana",
+            "Mt. St. Mary'S Md.": "Mount-Saint-Marys",
+            "Maryland Baltimore County": "UMBC",
+            "Miami Ohio": "Miami-OH",
+            "Troy St.": "Troy",
+            "Florida Atlantic": "FAU",
+            "Central Florida": "UCF",
+            "Depaul": "DePaul",
+            "Arkansas Little Rock": "Little-Rock",
+            "Nicholls St.": "Nicholls",
+            "Central Connecticut St.": "Central-Connecticut",
+            "Cal Baptist": "California-Baptist",
+            "California Davis": "UC-Davis",
+            "Purdue Ft. Wayne": "Purdue-Fort-Wayne",
+            "Tcu": "TCU",
+            "Illinois Chicago": "UIC",
+            "Seattle": "Seattle-University",
+            "North Carolina Greensboro": "UNCG",
+            "Loyola Illinois": "Loyola-Chicago",
+            "Se Missouri St.": "Southeast-Missouri",
+            "College Of Charleston": "Charleston",
+            "Florida International": "FIU",
+            "North Carolina Asheville": "UNC-Asheville",
+            "Prairie View": "Prairie-View-AM",
+            "S. F. Austin": "Stephen-F-Austin",
+            "Mcneese St.": "McNeese",
+            "St. Mary'S Ca.": "Saint-Marys-College",
+            "Monmouth Nj": "Monmouth",
+            "Florida Gulf Coast": "FGCU",
+            "North Carolina Wilmington": "UNCW",
+    }
+    if team in translations:
+        return translations[team]
+    if team[:3] == "St.":
+        team = team.replace("St.", "Saint")
+    return team.replace(" ", "-").replace("St.", "State").replace("'", "").replace("&", "")
+
 #translates team string from kenpom's format to warren nolan's. all others are the same
-def translate_team(team):
+def translate_team_kenpom(team):
     translations = {
             "Kansas City": "UMKC",
             "CSUN": "Cal-State-Northridge",
@@ -782,19 +861,34 @@ def translate_team(team):
     return team.replace(" ", "-").replace("St.", "State").replace("'", "").replace("&", "")
 
 def scrape_initial_kenpom(year, scorer):
-    if not scorer.mens:
-        return dict()
-    os.system('wget --user-agent="Mozilla" -O data/men/' + year + '/kenpoms.html https://kenpom.com/')
     team_kenpoms = dict()
-    with open("data/men/" + year + "/kenpoms.html", "r") as f:
-        for line in f.read().split("\n"):
-            if "team.php?" in line:
-                anchor_index = line.find("team.php?")
-                team = line[line.find('">', anchor_index)+2:line.find("</a>")]
-                team = translate_team(team)
-                rank = int(line[line.find("hard_left")+11:line.find('</td>')])
-                rating = float(line[line.find("<td>")+4:line.find('</td><td class="td-left divide')])
-                team_kenpoms[team] = {"rating": rating, "rank": rank}
+    if scorer.mens:
+        os.system('wget --user-agent="Mozilla" -O data/men/' + year + '/kenpoms.html https://kenpom.com/')
+        with open("data/men/" + year + "/kenpoms.html", "r") as f:
+            for line in f.read().split("\n"):
+                if "team.php?" in line:
+                    anchor_index = line.find("team.php?")
+                    team = line[line.find('">', anchor_index)+2:line.find("</a>")]
+                    team = translate_team_kenpom(team)
+                    rank = int(line[line.find("hard_left")+11:line.find('</td>')])
+                    rating = float(line[line.find("<td>")+4:line.find('</td><td class="td-left divide')])
+                    team_kenpoms[team] = {"rating": rating, "rank": rank}
+    else:
+        os.system('wget -O data/women/' + year + '/sonnys.html https://sonnymoorepowerratings.com/w-basket.htm')
+        with open("data/women/" + year + "/sonnys.html", "r") as f:
+            table_start = False
+            for line in f.read().split("\n"):
+                if line.strip() == "<B>":
+                    table_start = True
+                    continue
+                if table_start:
+                    team = line[4:33].strip().title()
+                    team = translate_team_sonny(team)
+                    rank = int(line[:3].strip())
+                    rating = float(line[55:])
+                    team_kenpoms[team] = {"rating": rating, "rank": rank}
+                    if rank == 363:
+                        break
     return team_kenpoms
 
 #run a monte carlo simulation of the remaining college basketball season

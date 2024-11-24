@@ -73,12 +73,6 @@ class Scorer:
             print("ya dun goofed with your weights")
             sys.exit()
 
-    def kenpom_estimate(self, rank):
-        if self.mens:
-            return -0.0000026505*rank*rank*rank + 0.0015329*rank*rank - 0.349987*rank + 27.803
-        else:
-            return -0.0000030002*rank*rank*rank + 0.0018247*rank*rank - 0.42189*rank + 34.8
-
     def get_quadrant(self, opp_NET, location):
         if location == "H":
             if opp_NET <= 30:
@@ -610,11 +604,7 @@ class Scorer:
         found_game = False
         found_result = False
         found_location = False
-        if self.mens:
-            team_kenpom = team_kenpoms[team]
-        else:
-            team_kenpom = self.kenpom_estimate(self.teams[team].NET)    #crude, but all I've got
-            team_kenpoms[team] = team_kenpom
+        team_kenpom = team_kenpoms[team]
         for line in schedule_page.text.split("\n"):
             if not table_start:
                 if 'team-schedule' in line:
@@ -657,22 +647,15 @@ class Scorer:
                                 game["time"] = game["time"].replace("PM", "AM")
                         else:   #game time TBA
                             game["time"] = "0:00"
-                        if self.mens:
-                            opp_kenpom = team_kenpoms[game['opponent']]
-                            team_spread = self.get_spread(team_kenpom["rating"], opp_kenpom["rating"], game['location'])
-                        else:
-                            opp_kenpom = self.kenpom_estimate(self.teams[game['opponent']].NET)
-                            team_spread = self.get_spread(team_kenpom, opp_kenpom, game['location'])
+                        opp_kenpom = team_kenpoms[game['opponent']]
+                        team_spread = self.get_spread(team_kenpom["rating"], opp_kenpom["rating"], game['location'])
                         game['win_prob'] = self.get_win_prob(team_spread)
                         schedule_games.append(game)
                     found_result = False
                     found_game = False
                 elif "opp-record-line" in line:
                     opp_curr_NET = int(line[line.find("NET")+5:line.find("</span></span>")])
-                    if self.mens:
-                        game["NET"] = self.get_NET_estimate(opp_curr_NET, team_kenpoms[game['opponent']]['rank'])
-                    else:
-                        game["NET"] = opp_curr_NET
+                    game["NET"] = self.get_NET_estimate(opp_curr_NET, team_kenpoms[game['opponent']]['rank'])
                 elif "team-schedule__result" in line:           # game is in the past
                     found_result = True
                     continue

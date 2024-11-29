@@ -255,6 +255,7 @@ class Builder:
     #remove all teams from their seed lines in order to attempt to reorganize them
     #param seed_num: seed number to delete
     #returns: list of teams being deleted, list of [team, region_num, site_name] for each
+    #TODO BUG: if a team gets bumped down past one play-in game, but not both, this breaks. the play-in matchup doesn't get deleted and saved
     def delete_and_save_seed(self, seed_num):
         teams_to_fix = list()
         sites = list()

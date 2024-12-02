@@ -543,8 +543,6 @@ class Scorer:
             return 0.02
 
     def get_NET_estimate(self, curr_NET, curr_KenPom):
-        #TODO fix once new data is in
-        return curr_KenPom
         today_date = date.today()
         selection_sunday = date(int(self.year), 3, SELECTION_SUNDAY_DATES[self.year])
         season_start = date(int(self.year) - 1, 11, 4)
@@ -673,7 +671,7 @@ class Scorer:
                 print("Scoring", team)
             score = 0
             score += WEIGHTS["LOSS_WEIGHT"]*self.get_loss_score(self.teams[team])
-            #TODO add these back in once the data is correct score += WEIGHTS["NET_WEIGHT"]*self.get_NET_score(self.teams[team])
+            score += WEIGHTS["NET_WEIGHT"]*self.get_NET_score(self.teams[team])
             if self.monte_carlo:
                 score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(self.teams[team], team_kenpoms[team]["rating"])
             else:
@@ -720,11 +718,9 @@ class Scorer:
                     "), Bad losses(" + str(round(WEIGHTS["BAD_LOSS_WEIGHT"], 5)) + \
                     "), Total Score\n")
             for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
-                        # TODO add these back in once the data is correct
-                        #str(round(self.teams[team].NET_score, 5)) + "," + \
                 line = self.teams[team].team_out + "," + \
                         str(round(self.teams[team].loss_score, 5)) + "," + \
-                        "0," + \
+                        str(round(self.teams[team].NET_score, 5)) + "," + \
                         str(round(self.teams[team].power_score, 5)) + "," + \
                         str(round(self.teams[team].Q1_score, 5)) + "," + \
                         str(round(self.teams[team].Q2_score, 5)) + "," + \

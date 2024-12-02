@@ -175,7 +175,7 @@ class Scorer:
         return self.calculate_power_score(team, team_kenpom)
 
     def calculate_power_score(self, team, team_kenpom=0):
-        #TODO seems like this can probably be better
+        #TODO seems like this can probably be better. generate ranks AND ratings
         if self.monte_carlo:
             est_rank = (team_kenpom - 33)*(team_kenpom - 33)/5
             team.power_score = (-math.log(est_rank + 19, 2)/2 + 3.16)

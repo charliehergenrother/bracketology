@@ -1,41 +1,46 @@
 <!DOCTYPE html>
 
 <html>
-    <head>
-        <link rel="stylesheet" href="styling.css">
-    </head>
-    <body>
-        <div class="link_row">
-            <nav>
-                <ul class="link_list">
-                    <li>
-                        <b>Charlie Hergenrother's Bracketology</b>
-                    </li>
-                    <li class="link_element">
-                        <a href="men.html">Men's Bracket</a>
-                    </li>
-                    <li class="link_element">
-                        <a href="menresumes.html">Men's Resumes</a>
-                    </li>
-                    <li class="link_element">
-                        <a href="women.html">Women's Bracket</a>
-                    </li>
-                    <li class="link_element">
-                        <a href="womenresumes.html">Women's Resumes</a>
-                    </li>
-                    <li class="link_element">
-                        <a href="menfuture.html">Men's Future Bracket</a>
-                    </li>
-                    <li class="link_element">
-                        <a href="womenfuture.html">Women's Future Bracket</a>
-                    </li>
-                    <li class="link_element">
-                        <a href="about.html">About</a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
+<head>
+  <link rel="icon" type="image/x-icon" href="assets/chergieball.ico">
+  <link rel="stylesheet" href="styling.css">
+</head>
 
+<div class="link_row">
+  <nav>
+    <ul class="link_list">
+      <li>
+        <img src=assets/chergieball.ico height="50px" style="padding-top: 5px;"></img>
+      </li>
+      <li class="non_image_element">
+        <b style="font-size: 20px;">Charlie Hergenrother's Bracketology</b>
+      </li>
+      <li class="non_image_element dropdown_element">
+        <button class="dropdown_button">Men's Bracketology</button>
+        <div class="dropdown_content">
+          <a href="men.html">Men's Bracket</a>
+          <a href="menfuture.html">Men's Future Bracket</a>
+          <a href="menresumes.html">Men's Resumes</a>
+          <a href="menschedule.html">Men's Schedule</a>
+        </div>
+      </li>
+      <li class="non_image_element dropdown_element">
+        <button class="dropdown_button">Women's Bracketology</button>
+        <div class="dropdown_content">
+          <a href="women.html">Women's Bracket</a>
+          <a href="womenfuture.html">Women's Future Bracket</a>
+          <a href="womenresumes.html">Women's Resumes</a>
+          <a href="womenschedule.html">Women's Schedule</a>
+        </div>
+      </li>
+      <li class="non_image_element link_element">
+        <a href="about.html">About</a>
+      </li>
+    </ul>
+  </nav>
+</div>
+
+    <body>
         <div class="words_container">
             <p>Hi! If you're reading this, you've found my bracketology website. The goal of this site and the accompanying program is to procedurally generate a bracket every day based on a resume factors I've identified. The "Men's Bracket" and "Women's Bracket" pages show the bracket as it would be if the season ended today, while the "Men's Future Bracket" and "Women's Future Bracket" pages show my program's estimate of where each team will end up when all is said and done with the season, simulating the remainder of the games using KenPom.</p>
             <br>
@@ -43,17 +48,19 @@
             <br>
             <p>The factors that I am using to generate the men's bracket, along with their weight in the program:</p>
             <ul>
-                <li>Power ranking (average of KenPom and BPI ranking): 22.5%</li>
-                <li>Winning percentage: 20%</li>
+                <li>Winning percentage: 20.5%</li>
+                <li>Power ranking (average of KenPom and BPI ranking): 20.25%</li>
                 <li>Quadrant 1 record: 16%</li>
-                <li>Resume ranking (average of SOR and KPI ranking): 11%</li>
-                <li>Strength of schedule: 5.75%</li>
-                <li>Top 10 wins: 5.5%</li>
-                <li>Quadrant 2 record: 5%</li>
-                <li>Road wins: 4.75%</li>
-                <li>Neutral court wins: 3.75%</li>
-                <li>Top 25 wins: 3.75%</li>
-                <li>Quadrant 4 record: 2%</li>
+                <li>Resume ranking (average of SOR and KPI ranking): 13%</li>
+                <li>Strength of schedule: 7.75%</li>
+                <li>Top 10 wins: 4.5%</li>
+                <li>Road wins: 4.25%</li>
+                <li>Neutral court wins: 4.25%</li>
+                <li>Top 25 wins: 4%</li>
+                <li>Quadrant 2 record: 2.25%</li>
+                <li>Quadrant 4 record: 1.75%</li>
+                <li>Nonconference strength of schedule: 1.25%</li>
+                <li>Awful (NET sub-200) losses: 0.25%</li>
             </ul>
             <br>
             <p>I arrived at the values for these weights through my own research and iterative testing with different combinations. Obviously, there is some overlap, so a win against a top 10 team will boost a team's score for both the Top 10 wins factor and the Top 25 wins factor, etc. The nitty-gritty of how this works is that a team's score for each factor is on a scale of 0 to 1, where 0 is near the lowest value a tournament-viable team would have on average (for example, 0 wins against top 25 teams translates to 0.0 for this factor) and 1 is the value a top-end team's resume would have (5 wins against top 25 teams translates to 1.0). The score for each factor is then multiplied by the factor's weight. Adding all those values up produces a team's total resume score from 0 to 1.</p>
@@ -62,18 +69,17 @@
             <br>
             <p>The corresponding factors for the women's bracket:</p>
             <ul>
-                <li>Quadrant 1 record: 24.5%</li>
-                <li>Neutral court wins: 11.75%</li>
-                <li>NET ranking: 11.5%</li>
-                <li>Quadrant 2 record: 8.75%</li>
-                <li>Bad (Q2 and below) losses: 8%</li>
-                <li>Top 10 wins: 7.5%</li>
-                <li>Raw number of losses: 6.5%</li>
-                <li>Awful (NET sub-200) losses: 5.25%</li>
-                <li>Road wins: 5%</li>
-                <li>Top 25 wins: 4.75%</li>
-                <li>Quadrant 3 record: 3.75%</li>
-                <li>Quadrant 4 record: 2.75%</li>
+                <li>NET ranking: 23.5%</li>
+                <li>Quadrant 1 record: 17.5%</li>
+                <li>Quadrant 3 record: 11%</li>
+                <li>Quadrant 2 record: 9%</li>
+                <li>Awful (NET sub-200) losses: 8%</li>
+                <li>Road wins: 7%</li>
+                <li>Top 25 wins: 7%</li>
+                <li>Winning percentage: 6%</li>
+                <li>Neutral court wins: 5%</li>
+                <li>Bad (Q2 and below) losses: 4.5%</li>
+                <li>Top 10 wins: 1.5%</li>
             </ul>
             <br>
             <p>Unfortunately, power rating stats are less readily available on the women's side, and I'm unclear on which the NCAA considers, if any. The NET is a decent enough approximation, but in general, the weights here are not as finely tuned as they are on the men's side, mostly due to lack of data.</p>

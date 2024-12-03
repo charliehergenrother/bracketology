@@ -92,7 +92,7 @@ class Team:
             elif SOS_line < 4:
                 SOS_line += 1
                 continue
-
+            elif SOS_line == 4:
                 if line.strip()[:line.strip().find("<")] == "N/A":
                     self.NET_SOS = 150
                 else:
@@ -117,31 +117,24 @@ class Team:
                 if ("KPI") in line:
                     KPI_line += 1
                     continue
-            elif KPI_line < 6:
+            elif KPI_line < 5:
                 KPI_line += 1
                 continue
-            elif KPI_line == 6:
+            elif KPI_line == 5:
                 try:
                     self.KPI = int(line.strip()[:line.strip().find("<")])
                 except ValueError: #TODO see above #TODO this is also cause KPI is blank rn
                     self.KPI = 0
                 KPI_line += 1
                 continue
-            elif KPI_line == 7:
+            elif KPI_line == 6:
                 try:
                     self.SOR = int(line.strip()[:line.strip().find("<")])
                 except ValueError: #TODO see above
                     self.SOR = 0
                 KPI_line += 1
                 continue
-            elif KPI_line == 8:
-                try:
-                    self.Trank = int(line.strip()[:line.strip().find("<")])
-                except ValueError: #TODO see above
-                    self.Trank = 0
-                KPI_line += 1
-                continue
-            elif KPI_line == 9:
+            elif KPI_line == 7:
                 try:
                     self.WAB = int(line.strip())
                 except ValueError: #TODO see above
@@ -153,24 +146,25 @@ class Team:
                 if ("BPI") in line:
                     BPI_line += 1
                     continue
-            elif BPI_line < 5:
+            elif BPI_line < 6:
                 BPI_line += 1
                 continue
-            elif BPI_line == 5:
+            elif BPI_line == 6:
                 try:
                     self.BPI = int(line.strip()[:line.strip().find("<")])
                 except ValueError: #TODO see above
                     self.BPI = 0
                 BPI_line += 1
                 continue
-            elif BPI_line == 6:
+            elif BPI_line == 7:
                 try:
                     self.KenPom = int(line.strip()[:line.strip().find("<")])
                 except ValueError: #TODO see above
                     self.KenPom = 0
                 BPI_line += 1
                 continue
-            elif BPI_line == 7:
+            #TODO i'm just putting T-rank in sagarin rn cause i'm lazy. gotta fix & stay compatible with old years
+            elif BPI_line == 8:
                 try:
                     self.Sagarin = int(line.strip())
                 except ValueError: #TODO see above
@@ -379,7 +373,7 @@ class Team:
         if self.KPI == 0:
             return sum([self.WAB, self.SOR])/2
         else:
-            return sum([self.KPI, self.SOR, self.WAB])/2
+            return sum([self.KPI, self.SOR, self.WAB])/3
 
     record = property(get_record)
     record_pct = property(get_record_pct)

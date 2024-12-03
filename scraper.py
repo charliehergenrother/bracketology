@@ -370,7 +370,7 @@ class Scraper:
             f.write('<td>' + str(scorer.teams[team].NET) + '</td>')
             if self.mens:
                 f.write('<td>' + str(round(scorer.teams[team].predictive, 2)) + '</td>')
-                f.write('<td>' + str(scorer.teams[team].results_based) + '</td>')
+                f.write('<td>' + str(round(scorer.teams[team].results_based, 2)) + '</td>')
             f.write('<td>' + scorer.teams[team].get_derived_record(1) + '</td>')
             f.write('<td>' + scorer.teams[team].get_derived_record(2) + '</td>')
             #quad 4+ wins, quad 3- losses

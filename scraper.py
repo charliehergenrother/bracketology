@@ -861,6 +861,7 @@ def translate_team_kenpom(team):
     return team.replace(" ", "-").replace("St.", "State").replace("'", "").replace("&", "")
 
 def scrape_initial_kenpom(year, scorer):
+    #TODO maybe only do this once a day
     team_kenpoms = dict()
     if scorer.mens:
         os.system('wget --user-agent="Mozilla" -O data/men/' + year + '/kenpoms.html https://kenpom.com/')
@@ -882,12 +883,12 @@ def scrape_initial_kenpom(year, scorer):
                     table_start = True
                     continue
                 if table_start:
-                    team = line[4:33].strip().title()
+                    team = line[4:32].strip().title()
                     team = translate_team_sonny(team)
                     rank = int(line[:3].strip())
                     rating = float(line[55:])
                     team_kenpoms[team] = {"rating": rating, "rank": rank}
-                    if rank == 363:
+                    if rank == 362:     #TODO ? How many teams are there?
                         break
     return team_kenpoms
 

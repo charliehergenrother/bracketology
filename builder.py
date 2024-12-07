@@ -1035,7 +1035,7 @@ class Builder:
                     f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td>' + self.get_team_out(team))
                     if self.teams[team].auto_bid:
                         f.write("*")
-                    f.write(" (" + self.teams[team].record + ")</td>\n")
+                    f.write(" (" + self.teams[team].record + ")</td>")
                 else:
                     team1 = team.split("/")[0]
                     team2 = team.split("/")[1]
@@ -1047,12 +1047,13 @@ class Builder:
                     f.write(" (" + self.teams[team1].record + ")/" + self.get_team_out(team2))
                     if self.teams[team2].auto_bid:
                         f.write("*")
-                    f.write(" (" + self.teams[team2].record + ")</td>\n")
+                    f.write(" (" + self.teams[team2].record + ")</td>")
                 if region_num in [1, 2]:
                     f.write('<td>')
                     if seed_num in [8, 4, 3, 2]:
                         f.write(self.first_weekend_num_to_name[region_num][site_seed_lines[seed_num]])
                     f.write('</td>')
+                f.write('</tr>\n')
 
             f.write('        </tbody>\n')
             f.write('      </table>\n')

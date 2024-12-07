@@ -171,7 +171,7 @@ body {
 }
 
 .bubble_container {
-    float: inline-start;
+    display: inline-block;
 
     td {
         margin-right: 10px;

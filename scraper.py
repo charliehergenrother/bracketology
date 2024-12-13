@@ -1090,9 +1090,29 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
         for conference in results['conference']:
             add_or_increment_key(results['conference'][conference][0], final_conference_winners[conference])
         successful_runs += 1
+    
+
+    print("Successful runs:", successful_runs)
+    print("CONFERENCES")
     if mc_outputfile:
         f = open(mc_outputfile, "w")
         f.write("successes:," + str(successful_runs) + "\n")
+        f.write("WIN CONFERENCE\n")
+    
+    for conference in final_conference_winners:
+        print()
+        print(conference)
+        if mc_outputfile:
+            f.write(conference + "\n")
+        for team in sorted(final_conference_winners[conference], key = lambda x: final_conference_winners[conference][x], reverse=True):
+            odds = str(int((100/(final_conference_winners[conference][team]/successful_runs))-100))
+            print(team.ljust(20), final_conference_winners[conference][team], "+" + odds)
+            if mc_outputfile:
+                f.write(team + "," + odds + "\n")
+        if mc_outputfile:
+            f.write("\n")
+
+    if mc_outputfile:
         f.write("MAKE TOURNAMENT\n")
         f.write("Team,Chance\n")
     for team in sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x]):
@@ -1100,21 +1120,11 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
                 min(team_seeds[team]), max(team_seeds[team]))
         if mc_outputfile:
             f.write(team + "," + str(made_tournament[team]/successful_runs) + "\n")
-    print()
-    print("CONFERENCES")
-    print()
-    for conference in final_conference_winners:
-        print()
-        print(conference)
-        for team in sorted(final_conference_winners[conference], key = lambda x: final_conference_winners[conference][x], reverse=True):
-            odds = str(int((100/(final_conference_winners[conference][team]/successful_runs))-100))
-            print(team.ljust(20), final_conference_winners[conference][team], "+" + odds)
+    
     if mc_outputfile:
         f.write("\n")
         f.write("FINAL FOURS\n")
         f.write("Team,Odds\n")
-    print()
-    print("Successful runs:", successful_runs)
     print()
     print("FINAL FOURS")
     for team in sorted(final_fours, key=lambda x: final_fours[x], reverse=True):

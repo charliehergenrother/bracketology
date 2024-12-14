@@ -620,13 +620,6 @@ def simulate_one_tournament_game(team1, team2, team_kenpoms, scorer):
     else:
         winner = team2
         #print(team2, "over", team1)
-    if not scorer.mens:
-        if kenpom_change > 0.85:
-            team_kenpoms[winner] += 1
-        elif kenpom_change > 0.5:
-            team_kenpoms[winner] += 0.5
-        elif kenpom_change < 0.15:
-            team_kenpoms[winner] -= 0.5
     return winner
 
 def simulate_tournament(builder, team_kenpoms, scorer):
@@ -819,7 +812,8 @@ def simulate_games(scorer, builder, weightfile, team_kenpoms):
                 scorer.teams[opponent].future_games = scorer.teams[opponent].future_games[:index]
         team_kenpoms[team] = team_kenpom
    
-    conf_reg_winners = simulate_conference_tournaments(scorer, builder, team_kenpoms)
+    if builder.mens:
+        conf_reg_winners = simulate_conference_tournaments(scorer, builder, team_kenpoms)
     #print_Illinois(scorer, team_kenpoms)
     weights = scorer.get_weights(weightfile)
     scorer.build_scores(weights, team_kenpoms)
@@ -831,8 +825,9 @@ def simulate_games(scorer, builder, weightfile, team_kenpoms):
     winners = simulate_tournament(builder, team_kenpoms, scorer)
     results['final_four'] += winners[-7:-3]
     results['champion'].append(winners[-1])
-    for conference in conf_reg_winners:
-        results['conference'][conference].append(conf_reg_winners[conference])
+    if builder.mens:
+        for conference in conf_reg_winners:
+            results['conference'][conference].append(conf_reg_winners[conference])
     return results
 
 def print_Illinois(scorer, team_kenpoms):
@@ -1063,8 +1058,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
             scorer.teams[team].seed = -1
             scorer.teams[team].conference_wins = 0
             scorer.teams[team].conference_losses = 0
-            if scorer.mens:
-                simmed_kenpoms[team] = {"rating": rng.normal(team_kenpoms[team]["rating"], 5.8639*days_left/season_days)}
+            simmed_kenpoms[team] = {"rating": rng.normal(team_kenpoms[team]["rating"], 5.8639*days_left/season_days)}
         rank_counter = 1
         for team in sorted(simmed_kenpoms, key=lambda x: simmed_kenpoms[x]["rating"], reverse=True):
             simmed_kenpoms[team]["rank"] = rank_counter
@@ -1087,8 +1081,9 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
             add_or_increment_key(team, final_fours)
         for team in results['champion']:
             add_or_increment_key(team, national_champion)
-        for conference in results['conference']:
-            add_or_increment_key(results['conference'][conference][0], final_conference_winners[conference])
+        if builder.mens:
+            for conference in results['conference']:
+                add_or_increment_key(results['conference'][conference][0], final_conference_winners[conference])
         successful_runs += 1
     
 

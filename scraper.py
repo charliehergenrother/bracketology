@@ -20,7 +20,9 @@ SCRAPE_DATE_FILE = "scrapedate.txt"
 reverse_team_dict = dict()
 
 #for use when outputting resumes in "Q1 Wins" column
-better_team_abbrs = {"San Diego State": "SDSU", 
+better_team_abbrs = {
+        "UC Irvine": "UCI",
+        "San Diego State": "SDSU", 
         "Kansas State": "KSU",
         "Ohio State": "OSU",
         "Oklahoma State": "OKST",
@@ -1110,6 +1112,8 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     if mc_outputfile:
         f.write("MAKE TOURNAMENT\n")
         f.write("Team,Chance\n")
+    print()
+    print("TOURNAMENT CHANCES")
     for team in sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x]):
         print(team.ljust(20), made_tournament[team], round(sum(team_seeds[team])/made_tournament[team], 2), \
                 min(team_seeds[team]), max(team_seeds[team]))

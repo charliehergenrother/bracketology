@@ -188,7 +188,6 @@ class Team:
                 continue
             if game_line == 1:
                 curr_game = Game("", "", 0, 0, 0, "")
-                curr_game.opp_NET = int(line[line.find(">")+1:line.find("</div>")])
                 game_line += 1
                 continue
             if game_line == 2:
@@ -235,104 +234,6 @@ class Team:
             return 0
         return wins/(wins + losses)
 
-    def get_Q1_record(self):
-        wins = 0
-        losses = 0
-        for game in self.games:
-            if game.opp_NET <= 30 or (game.opp_NET <= 50 and game.location == "N") or (game.opp_NET <= 75 and game.location == "A"):
-                if game.margin > 0:
-                    wins += 1
-                else:
-                    losses += 1
-        return str(wins) + "-" + str(losses)
-
-    def get_Q1_pct(self):
-        record = self.Q1_record
-        wins = int(record.split("-")[0])
-        losses = int(record.split("-")[1])
-        try:
-            return wins/(wins + losses)
-        except ZeroDivisionError:
-            return 0
-
-    def get_fuzzy_Q1_record(self):
-        wins = 0
-        losses = 0
-        for game in self.games:
-            if game.opp_NET <= 25 or (game.opp_NET <= 45 and game.location == "N") or (game.opp_NET <= 70 and game.location == "A"):
-                if game.margin > 0:
-                    wins += 1
-                else:
-                    losses += 1
-            elif game.opp_NET <= 35:
-                if game.margin > 0:
-                    wins += (35 - game.opp_NET)/10
-        return str(wins) + "-" + str(losses)
-
-    def get_Q2_record(self):
-        wins = 0
-        losses = 0
-        for game in self.games:
-            if (game.opp_NET >= 31 and game.opp_NET <= 75 and game.location == "H") or \
-                (game.opp_NET >= 51 and game.opp_NET <= 100 and game.location == "N") or \
-                (game.opp_NET >= 76 and game.opp_NET <= 135 and game.location == "A"):
-                if game.margin > 0:
-                    wins += 1
-                else:
-                    losses += 1
-        return str(wins) + "-" + str(losses)
-
-    def get_Q2_pct(self):
-        record = self.Q2_record
-        wins = int(record.split("-")[0])
-        losses = int(record.split("-")[1])
-        try:
-            return wins/(wins + losses)
-        except ZeroDivisionError:
-            return 0
-
-    def get_Q3_record(self):
-        wins = 0
-        losses = 0
-        for game in self.games:
-            if (game.opp_NET >= 76 and game.opp_NET <= 160 and game.location == "H") or \
-                (game.opp_NET >= 101 and game.opp_NET <= 200 and game.location == "N") or \
-                (game.opp_NET >= 136 and game.opp_NET <= 240 and game.location == "A"):
-                if game.margin > 0:
-                    wins += 1
-                else:
-                    losses += 1
-        return str(wins) + "-" + str(losses)
-
-    def get_Q3_pct(self):
-        record = self.Q3_record
-        wins = int(record.split("-")[0])
-        losses = int(record.split("-")[1])
-        try:
-            return wins/(wins + losses)
-        except ZeroDivisionError:
-            return 0
-
-    def get_Q4_record(self):
-        wins = 0
-        losses = 0
-        for game in self.games:
-            if game.opp_NET >= 241 or (game.opp_NET >= 201 and game.location == "N") or (game.opp_NET >= 161 and game.location == "H"):
-                if game.margin > 0:
-                    wins += 1
-                else:
-                    losses += 1
-        return str(wins) + "-" + str(losses)
-
-    def get_Q4_pct(self):
-        record = self.Q1_record
-        wins = int(record.split("-")[0])
-        losses = int(record.split("-")[1])
-        try:
-            return wins/(wins + losses)
-        except ZeroDivisionError:
-            return 0
-    
     def get_derived_record(self, quad):
         Q1_record = self.Q1_record
         Q2_record = self.Q2_record
@@ -377,14 +278,6 @@ class Team:
 
     record = property(get_record)
     record_pct = property(get_record_pct)
-    Q1_record = property(get_Q1_record)
-    Q2_record = property(get_Q2_record)
-    Q3_record = property(get_Q3_record)
-    Q4_record = property(get_Q4_record)
-    Q1_pct = property(get_Q1_pct)
-    Q2_pct = property(get_Q2_pct)
-    Q3_pct = property(get_Q3_pct)
-    Q4_pct = property(get_Q4_pct)
     #derived_Q1_record = property(get_derived_Q1_record)
     #derived_Q2_record = property(get_derived_Q2_record)
     #derived_Q3_record = property(get_derived_Q3_record)

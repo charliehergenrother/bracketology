@@ -209,7 +209,7 @@ class Builder:
                 continue
             game_count = 0
             for game in self.teams[test_team].games:
-                if self.reverse_team_dict[game.opponent] == team:
+                if game.opponent == team:
                     game_count += 1
             if self.future:
                 for game in self.teams[test_team].future_games:
@@ -239,7 +239,7 @@ class Builder:
         #Want to avoid regular season rematches in the first round
         if 17 - seed_num in self.regions[region_num]:
             for game in self.teams[team].games:
-                if self.reverse_team_dict[game.opponent] == self.regions[region_num][17 - seed_num]:
+                if game.opponent == self.regions[region_num][17 - seed_num]:
                     if self.verbose:
                         print("regular season rematch in the first round")
                     return False

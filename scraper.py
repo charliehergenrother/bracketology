@@ -16,48 +16,50 @@ import subprocess
 import numpy
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
+TEAM_MEN_URL_START = "https://www.warrennolan.com/basketball/2025/team-clubhouse?team="
+TEAM_WOMEN_URL_START = "https://www.warrennolan.com/basketballw/2025/team-clubhouse?team="
 
 reverse_team_dict = dict()
 
 #for use when outputting resumes in "Q1 Wins" column
 better_team_abbrs = {
-        "UC Irvine": "UCI",
-        "San Diego State": "SDSU", 
-        "Kansas State": "KSU",
-        "Ohio State": "OSU",
-        "Oklahoma State": "OKST",
-        "Oregon State": "ORST",
-        "Michigan State": "MSU",
-        "Mississippi State": "MSST",
-        "Washington State": "WSU",
-        "Texas Tech": "TTU",
-        "Indiana State": "INST",
-        "Iowa State": "ISU",
-        "Georgia Tech": "GT",
-        "Virginia Tech": "VT",
-        "Colorado State": "CSU",
+        "UC-Irvine": "UCI",
+        "San-Diego-State": "SDSU", 
+        "Kansas-State": "KSU",
+        "Ohio-State": "OSU",
+        "Oklahoma-State": "OKST",
+        "Oregon-State": "ORST",
+        "Michigan-State": "MSU",
+        "Mississippi-State": "MSST",
+        "Washington-State": "WSU",
+        "Texas-Tech": "TTU",
+        "Indiana-State": "INST",
+        "Iowa-State": "ISU",
+        "Georgia-Tech": "GT",
+        "Virginia-Tech": "VT",
+        "Colorado-State": "CSU",
         "Kentucky": "UK",
-        "Saint Mary's College": "SMC",
-        "Saint John's": "STJN",
-        "Saint Joseph's": "STJS",
-        "Saint Bonaventure": "STBN",
-        "Ole Miss": "MISS",
-        "Utah State": "UTST",
-        "Texas A&M": "TA&M",
-        "San Francisco": "SF",
-        "Santa Clara": "SCL",
-        "North Carolina": "UNC",
-        "North Carolina State": "NCST",
+        "Saint-Marys-College": "SMC",
+        "Saint-Johns": "STJN",
+        "Saint-Josephs": "STJS",
+        "Saint-Bonaventure": "STBN",
+        "Ole-Miss": "MISS",
+        "Utah-State": "UTST",
+        "Texas-AM": "TA&M",
+        "San-Francisco": "SF",
+        "Santa-Clara": "SCL",
+        "North-Carolina": "UNC",
+        "North-Carolina-State": "NCST",
         "Northwestern": "NWST",
-        "Notre Dame": "ND",
-        "Seton Hall": "HALL",
-        "Penn State": "PSU",
-        "Eastern Washington": "EWU",
+        "Notre-Dame": "ND",
+        "Seton-Hall": "HALL",
+        "Penn-State": "PSU",
+        "Eastern-Washington": "EWU",
         "FGCU": "FGCU",
-        "Green Bay": "GB",
-        "George Washington": "GW",
-        "Florida State": "FSU",
-        "Arizona State": "ASU",
+        "Green-Bay": "GB",
+        "George-Washington": "GW",
+        "Florida-State": "FSU",
+        "Arizona-State": "ASU",
         "Florida": "FLA",
         "Colorado": "COLO",
         "Pittsburgh": "PITT",
@@ -69,15 +71,15 @@ better_team_abbrs = {
         "Oklahoma": "OKLA",
         "Arizona": "ARIZ",
         "Providence": "PROV",
-        "Wake Forest": "WAKE",
+        "Wake-Forest": "WAKE",
         "Virginia": "UVA",
         "Georgia": "UGA",
-        "Grand Canyon": "GCU",
-        "George Mason": "GMU",
-        "South Carolina": "SCAR",
+        "Grand-Canyon": "GCU",
+        "George-Mason": "GMU",
+        "South-Carolina": "SCAR",
         "Missouri": "MIZZ",
-        "New Mexico": "NMX",
-        "Boston College": "BC",
+        "New-Mexico": "NMX",
+        "Boston-College": "BC",
         "Tennessee": "TENN",
         "Minnesota": "MINN",
         "Washington": "WASH",
@@ -85,17 +87,17 @@ better_team_abbrs = {
         "Villanova": "VILL",
         "Marquette": "MARQ",
         "Clemson": "CLEM",
-        "West Virginia": "WVU",
+        "West-Virginia": "WVU",
         "UCLA": "UCLA",
         "UNLV": "UNLV",
-        "North Texas": "NTX",
+        "North-Texas": "NTX",
         "Maryland": "MARY",
         "Michigan": "MICH",
-        "James Madison": "JMU",
-        "Middle Tennessee": "MTSU",
-        "South Dakota State": "SDKS",
-        "Ball State": "BALL",
-        "South Florida": "USF"
+        "James-Madison": "JMU",
+        "Middle-Tennessee": "MTSU",
+        "South-Dakota-State": "SDKS",
+        "Ball-State": "BALL",
+        "South-Florida": "USF"
         }
 
 #class to turn the Team and Game objects into jsonifyable strings
@@ -110,7 +112,6 @@ class ComplexEncoder(json.JSONEncoder):
 
 #class to scrape and store data about college basketball teams
 class Scraper:
-
     def __init__(self):
         self.teams = dict()
         return
@@ -227,7 +228,7 @@ class Scraper:
                     team_obj = json.loads(f.read())
                 games = set()
                 for game_obj in team_obj["games"]:
-                    games.add(Game(game_obj["opponent"], game_obj["location"], game_obj["opp_NET"], \
+                    games.add(Game(game_obj["opponent"], game_obj["location"], \
                         game_obj["team_score"], game_obj["opp_score"], game_obj["date"]))
                 curr_team = Team()
                 curr_team.fill_data(team_obj["conference"], team_obj["NET"], team_obj["KenPom"], team_obj["BPI"],
@@ -247,9 +248,6 @@ class Scraper:
         team_url = TEAM_NITTY_URL_START + team
         self.teams[team] = Team()
         self.teams[team].scrape_data(team, team_url, self.year)
-        f = open(self.datadir + team + ".json", "w+")
-        f.write(json.dumps(self.teams[team], cls=ComplexEncoder))
-        f.close()
         reverse_team_dict[self.teams[team].team_out] = team
 
     #scrape college basketball data from the web
@@ -280,10 +278,117 @@ class Scraper:
         reverse_team_dict["West Georgia"] = "West-Georgia"
         reverse_team_dict["Mercyhurst"] = "Mercyhurst"
         reverse_team_dict["IU Indianapolis"] = "IU-Indianapolis"
+        
+        for team in self.teams:
+            #go back through and back-translate
+            for game in self.teams[team].games:
+                game.opponent = reverse_team_dict[game.opponent]
+            f = open(self.datadir + team + ".json", "w+")
+            f.write(json.dumps(self.teams[team], cls=ComplexEncoder))
+            f.close()
 
         f = open(self.datadir + SCRAPE_DATE_FILE, "w+")
         f.write(today_date)
         f.close()
+
+    def load_schedule_data(self, should_scrape, force_scrape):
+        if self.mens:
+            schedule_datadir = "data/men/" + self.year + "/schedules/"
+        else:
+            schedule_datadir = "data/women/" + self.year + "/schedules/"
+        if not os.path.exists(schedule_datadir):
+            print("creating schedules dir")
+            os.makedirs(schedule_datadir)
+        if not os.path.exists(schedule_datadir + SCRAPE_DATE_FILE):
+            f = open(schedule_datadir + SCRAPE_DATE_FILE, "x")
+            f.close()
+        f = open(schedule_datadir + SCRAPE_DATE_FILE, "r+")
+        today_date = date.today().strftime("%m-%d")    #format: mm-dd
+        saved_date = f.read().strip()
+        f.close()
+        if force_scrape or (should_scrape and today_date != saved_date):
+            self.do_schedule_scrape(schedule_datadir, today_date)
+        else:
+            self.do_schedule_load(schedule_datadir)
+
+    def do_schedule_scrape(self, schedule_datadir, today_date):
+        month_translations = {"JAN": "01", "FEB": "02", "MAR": "03", "APR": "04", "MAY": "05", "JUN": "06", \
+                "JUL": "07", "AUG": "08", "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12"}
+        for team in self.teams:
+            if self.mens:
+                schedule_url = TEAM_MEN_URL_START + team
+            else:
+                schedule_url = TEAM_WOMEN_URL_START + team
+            schedule_page = requests.get(schedule_url)
+            
+            table_start = False
+            schedule_games = list()
+            found_game = False
+            found_result = False
+            found_location = False
+            for line in schedule_page.text.split("\n"):
+                if not table_start:
+                    if 'team-schedule' in line:
+                        table_start = True
+                    continue
+                if "team-schedule__game-date--month" in line:
+                    game = dict()
+                    month = line[line.find("month")+7:line.find("</span>")]
+                    game["date"] = month_translations[month]
+                elif "team-schedule__game-date--day" in line:
+                    game["date"] += "-" + line[line.find("day")+5:line.find("</span>")]
+                elif "team-schedule__location" in line:
+                    found_location = True
+                elif found_location:
+                    if "VS" in line:
+                        game["location"] = "N"
+                    elif "AT" in line:
+                        game["location"] = "A"
+                    else:
+                        game["location"] = "H"
+                    found_location = False
+                elif "images" in line and "TBD" not in line and "conf-logo" not in line and "NA3" not in line:
+                    found_game = True
+                    opp_name = line[line.find("80x80")+6:line.find(".png")]
+                    game["opponent"] = opp_name
+                elif "team-schedule__info-tv" in line:
+                    if "TV: " in line:
+                        game["channel"] = line[line.find("TV: ")+4:line.find("</span>")]
+                    else:
+                        game["channel"] = ""
+                elif found_game:
+                    if found_result:
+                        if "team-schedule__result" not in line:     # game is in the future
+                            game["time"] = line[line.find('>')+1:line.find("</span>")]
+                            if ":" in game["time"]:
+                                game["time"] = str(int(game["time"].split(":")[0])-1) + ":" + game["time"].split(":")[1]
+                                if game["time"][0] == "0":
+                                    game["time"] = "12" + game["time"][1:]
+                                if game["time"][:2] == "11" and "PM" in game["time"]:
+                                    game["time"] = game["time"].replace("PM", "AM")
+                            else:   #game time TBA
+                                game["time"] = "0:00"
+                            schedule_games.append(game)
+                        found_result = False
+                        found_game = False
+                    elif "team-schedule__result" in line:           # game is in the past
+                        found_result = True
+                        continue
+            f = open(schedule_datadir + team + ".json", "w+")
+            f.write(json.dumps(schedule_games))
+            f.close()
+            print("scraped", team, "schedule!")
+            self.teams[team].future_games = schedule_games
+        f = open(schedule_datadir + SCRAPE_DATE_FILE, "w+")
+        f.write(today_date)
+        f.close()
+
+    def do_schedule_load(self, schedule_datadir):
+        for team in self.teams:
+            filename = team + ".json"
+            f = open(schedule_datadir + filename, "r")
+            sched_obj = json.loads(f.read())
+            self.teams[team].future_games = sched_obj
 
     #translate warrennolan.com's representation of a game's location to mine for outputting to resume
     def get_location_prefix(self, game):
@@ -305,11 +410,11 @@ class Scraper:
             else:
                 team_abbr = game.opponent[:3].upper()
             if game.win and (game.quadrant == 1 or \
-                    (hasattr(builder.teams[reverse_team_dict[game.opponent]], "seed") and \
-                    builder.teams[reverse_team_dict[game.opponent]].seed in quality_seeds)):
-                good_wins.append({"team": self.get_location_prefix(game) + team_abbr, "NET": game.opp_NET})
+                    (hasattr(builder.teams[game.opponent], "seed") and \
+                    builder.teams[game.opponent].seed in quality_seeds)):
+                good_wins.append({"team": self.get_location_prefix(game) + team_abbr, "NET": self.teams[game.opponent].NET})
             elif not game.win and game.quadrant >= 2:
-                bad_losses.append({"team": self.get_location_prefix(game) + game.opponent, "NET": game.opp_NET})
+                bad_losses.append({"team": self.get_location_prefix(game) + game.opponent, "NET": self.teams[game.opponent].NET})
         win_string = ''
         loss_string = ''
         for game in sorted(good_wins, key=lambda x: x["NET"]):
@@ -611,8 +716,7 @@ def reverse_location(location):
 def simulate_one_tournament_game(team1, team2, team_kenpoms, scorer):
     if "/" in team2:
         team2 = simulate_one_tournament_game(team2.split("/")[0], team2.split("/")[1], team_kenpoms, scorer)
-    team_spread = scorer.get_spread(team_kenpoms[team1]["rating"], team_kenpoms[team2]["rating"], 'N')
-    win_prob = scorer.get_win_prob(team_spread)
+    win_prob = scorer.get_win_prob(team_kenpoms[team1]["rating"], team_kenpoms[team2]["rating"], 'N')
     #print(round(win_prob*100, 2), end="% ")
     win_result = random.random()
     kenpom_change = random.random()
@@ -641,6 +745,20 @@ def simulate_tournament(builder, team_kenpoms, scorer):
         #print(winners[-1])
         index += 2
     return winners
+
+def top_wins(tied_champs, team):
+    wins_vs_champs = 0
+    losses_vs_champs = 0
+    for game in team.games:
+        if game.opponent in tied_champs:
+            if game.win:
+                wins_vs_champs += 1
+            else:
+                losses_vs_champs += 1
+    try:
+        return wins_vs_champs/(wins_vs_champs + losses_vs_champs)
+    except ZeroDivisionError:
+        return 0
 
 def simulate_conference_tournaments(scorer, builder, team_kenpoms):
     conference_teams = dict()
@@ -693,8 +811,13 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms):
                 bracket = list(matchups) + bracket
 
         #SET UP BRACKET WITH TEAMS
+        #TODO make sure this is working. Add NET as tiebreaker
         seeds = []
-        for team in sorted(conference_teams[conference], key=lambda x: x["conference_wins"], reverse=True):
+        top_seed_wins = max([x["conference_wins"] for x in conference_teams[conference]])
+        tied_champs = list(filter(lambda x: x["conference_wins"] == top_seed_wins, conference_teams[conference]))
+        tied_champs = [x["name"] for x in tied_champs]
+        for team in sorted(conference_teams[conference],
+                    key=lambda x: (x["conference_wins"], top_wins(tied_champs, scorer.teams[x["name"]]), team), reverse=True):
             seeds.append(team["name"])
             if len(seeds) == num_teams:
                 break
@@ -719,8 +842,7 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms):
                 higher_seed += 1
                 lower_seed -= 1
             for matchup in matchups:
-                team_spread = scorer.get_spread(team_kenpoms[matchup[0]]["rating"], team_kenpoms[matchup[1]]["rating"], round_location)
-                win_prob = scorer.get_win_prob(team_spread)
+                win_prob = scorer.get_win_prob(team_kenpoms[matchup[0]]["rating"], team_kenpoms[matchup[1]]["rating"], round_location)
                 win_result = random.random()
                 if reseed:
                     if win_result < win_prob:
@@ -754,7 +876,12 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms):
     return conf_reg_winners
 
 #run one simulation of the rest of the college basketball season
-def simulate_games(scorer, builder, weightfile, team_kenpoms):
+def simulate_games(scorer, builder, weights, team_kenpoms):
+    #TODO: all the games are using the present day's NET. Hmm.
+    # probably should divorce the NET from a team's opponents
+    # 1 - scrape pages for results and games
+    # 2 - generate NET ranks. if present, present NET, if future, build estimate
+    # 3 - build scores
     results = {'tournament': list(), 'final_four': list(), 'champion': list(), 'conference': dict()}
     for conference in builder.conference_winners:
         results['conference'][conference] = list()
@@ -765,7 +892,7 @@ def simulate_games(scorer, builder, weightfile, team_kenpoms):
         for game in scorer.teams[team].games:
             if game.date == "10-10":   #previously simulated game
                 continue
-            opponent = reverse_team_dict[game.opponent]
+            opponent = game.opponent
             if scorer.teams[team].conference == scorer.teams[opponent].conference:
                 if game.win:
                     scorer.teams[team].conference_wins += 1
@@ -785,10 +912,9 @@ def simulate_games(scorer, builder, weightfile, team_kenpoms):
             opponent = game['opponent']
             conference_game = scorer.teams[team].conference == scorer.teams[opponent].conference
             opp_kenpom = team_kenpoms[opponent]
-            team_spread = scorer.get_spread(team_kenpom['rating'], opp_kenpom['rating'], game['location'])
-            win_prob = scorer.get_win_prob(team_spread)
-            new_game = Game(scorer.teams[opponent].team_out, game['location'], game['NET'], 75, 0, '10-10')
-            opp_game = Game(scorer.teams[team].team_out, reverse_location(game['location']), scorer.teams[team].NET, 0, 75, '10-10')
+            win_prob = scorer.get_win_prob(team_kenpom['rating'], opp_kenpom['rating'], game['location'])
+            new_game = Game(opponent, game['location'], 75, 0, '10-10')
+            opp_game = Game(team, reverse_location(game['location']), 0, 75, '10-10')
             win_result = random.random()
             if win_result < win_prob:
                 new_game.opp_score = 70
@@ -817,8 +943,7 @@ def simulate_games(scorer, builder, weightfile, team_kenpoms):
     if builder.mens:
         conf_reg_winners = simulate_conference_tournaments(scorer, builder, team_kenpoms)
     #print_Illinois(scorer, team_kenpoms)
-    weights = scorer.get_weights(weightfile)
-    scorer.build_scores(weights, team_kenpoms)
+    scorer.build_scores(weights)
     builder.select_seed_and_print_field()
     builder.build_bracket()
     for team in scorer.teams:
@@ -839,7 +964,7 @@ def print_Illinois(scorer, team_kenpoms):
     conf_losses = 0
     for game in scorer.teams["Illinois"].games:
         print("W" if game.team_score > game.opp_score else "L", end=' ')
-        print(game.opponent.ljust(25), game.location, game.team_score, game.opp_score, game.opp_NET)
+        print(game.opponent.ljust(25), game.location, game.team_score, game.opp_score)
         if game.win:
             wins += 1
             try:
@@ -1039,12 +1164,11 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     final_conference_winners = dict()
     for conference in builder.conference_winners:
         final_conference_winners[conference] = dict()
-    print(final_conference_winners)
     first_weekend_sites = list(builder.first_weekend_sites)
     conference_winners = dict(builder.conference_winners)
-    team_kenpoms = scrape_initial_kenpom(builder.year, scorer)
+    scorer.team_kenpoms = scrape_initial_kenpom(builder.year, scorer)
+    base_weights = scorer.get_weights(weightfile)
     for team in scorer.teams:
-        scorer.load_schedule(team, team_kenpoms)
         scorer.teams[team].saved_games = set(scorer.teams[team].games)
         scorer.teams[team].saved_future_games = list([dict(x) for x in scorer.teams[team].future_games])
     successful_runs = 0
@@ -1060,15 +1184,19 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
             scorer.teams[team].seed = -1
             scorer.teams[team].conference_wins = 0
             scorer.teams[team].conference_losses = 0
-            simmed_kenpoms[team] = {"rating": rng.normal(team_kenpoms[team]["rating"], 5.8639*days_left/season_days)}
+            simmed_kenpoms[team] = {"rating": rng.normal(scorer.team_kenpoms[team]["rating"], 5.8639*days_left/season_days)}
         rank_counter = 1
         for team in sorted(simmed_kenpoms, key=lambda x: simmed_kenpoms[x]["rating"], reverse=True):
             simmed_kenpoms[team]["rank"] = rank_counter
             rank_counter += 1
         builder.first_weekend_sites = list(first_weekend_sites)
         builder.conference_winners = dict(conference_winners)
+        weights = dict()
+        # vary weights a little bit
+        for weight in base_weights:
+            weights[weight] = random.uniform(0.9, 1.1)*base_weights[weight]
         try:
-            results = simulate_games(scorer, builder, weightfile, simmed_kenpoms)
+            results = simulate_games(scorer, builder, weights, simmed_kenpoms)
         except Exception as e:
             print(e)
             print("big ol failure, bummer boy")
@@ -1157,7 +1285,6 @@ def main():
         counter = 0
         summed_weights = [0]*16
         for weights in sorted(tracker.weight_results, key=lambda x: tracker.weight_results[x]):
-            #print([str(x).rjust(3) for x in weights], tracker.weight_results[weights])
             counter += 1
             for index, weight in enumerate(weights):
                 summed_weights[index] += weight
@@ -1165,11 +1292,16 @@ def main():
             if (scraper.mens and counter > 50) or (not scraper.mens and counter > 100):
                 break
         print([str(round(x/51, 3)).ljust(5) for x in summed_weights])
+        return
     elif monte_carlo:
+        scraper.load_schedule_data(should_scrape, force_scrape)
         run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile)
     else:
+        if future:
+            scraper.load_schedule_data(should_scrape, force_scrape)
+            scorer.team_kenpoms = scrape_initial_kenpom(builder.year, scorer)
         weights = scorer.get_weights(weightfile)
-        scorer.build_scores(weights, scrape_initial_kenpom(builder.year, scorer))
+        scorer.build_scores(weights)
         builder.select_seed_and_print_field()
         builder.build_bracket()
         if scraper.outputfile:

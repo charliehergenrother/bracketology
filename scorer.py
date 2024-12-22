@@ -655,7 +655,7 @@ class Scorer:
                     if opp_NET > 225:
                         awful_losses += 1
                     elif opp_NET > 175:
-                        awful_losses += (game.opp_NET - 175)/50
+                        awful_losses += (opp_NET - 175)/50
             for game in team_obj.future_games:
                 opp_NET = self.get_NET_estimate(self.teams[game['opponent']].NET, self.team_kenpoms[team]["rank"])
                 win_prob = self.get_win_prob(self.team_kenpoms[team]["rating"], self.team_kenpoms[game['opponent']]["rating"], game['location'])

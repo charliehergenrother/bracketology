@@ -828,7 +828,7 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms):
         tied_champs = list(filter(lambda x: x["conference_wins"] == top_seed_wins, conference_teams[conference]))
         tied_champs = [x["name"] for x in tied_champs]
         for team in sorted(conference_teams[conference],
-                    key=lambda x: (x["conference_wins"], top_wins(tied_champs, scorer.teams[x["name"]]), team), reverse=True):
+                    key=lambda x: (x["conference_wins"], top_wins(tied_champs, scorer.teams[x["name"]]), scorer.get_NET_estimate(scorer.teams[x["name"]].NET, team_kenpoms[x["name"]]["rank"])), reverse=True):
             seeds.append(team["name"])
             if len(seeds) == num_teams:
                 break

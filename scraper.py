@@ -414,7 +414,7 @@ class Scraper:
                     builder.teams[game.opponent].seed in quality_seeds)):
                 good_wins.append({"team": self.get_location_prefix(game) + team_abbr, "NET": self.teams[game.opponent].NET})
             elif not game.win and scorer.get_quadrant(self.teams[game.opponent].NET, game.location) >= 2:
-                bad_losses.append({"team": self.get_location_prefix(game) + game.opponent, "NET": self.teams[game.opponent].NET})
+                bad_losses.append({"team": self.get_location_prefix(game) + self.teams[game.opponent].team_out, "NET": self.teams[game.opponent].NET})
         win_string = ''
         loss_string = ''
         for game in sorted(good_wins, key=lambda x: x["NET"]):

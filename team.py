@@ -187,7 +187,7 @@ class Team:
                 game_line = 0
                 continue
             if game_line == 1:
-                curr_game = Game("", "", 0, 0, 0, "")
+                curr_game = Game("", "", 0, 0, "")
                 game_line += 1
                 continue
             if game_line == 2:

@@ -145,6 +145,7 @@ class Scorer:
         return self.calculate_results_based_score(team, team_obj)
 
     def calculate_results_based_score(self, team, team_obj):
+        #TODO: downweight this for monte carlo
         if self.future:
             season_days, days_left = self.get_season_progress()
             # estimated RES begins as all KenPom and builds more actual RES in as the season progresses until 30 days, all becomes RES

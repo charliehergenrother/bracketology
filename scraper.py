@@ -483,7 +483,7 @@ class Scraper:
                 f.write('      <tr class="gray_row resume_row">')
             else:
                 f.write('      <tr class="resume_row">')
-            f.write('<td>' + scorer.teams[team].team_out + '</td>')
+            f.write('<td><a href="https://www.warrennolan.com/basketball/2025/team-net-sheet?team=' + team + '">' + scorer.teams[team].team_out + '</a></td>')
             f.write('<td>' + scorer.teams[team].record + '</td>')
             f.write('<td>' + str(scorer.teams[team].NET) + '</td>')
             if self.mens:
@@ -600,9 +600,11 @@ class Scraper:
                             f.write(' gray_row')
                         f.write('"><td>' + away_seed)
                         f.write('<img class="team_logo" src=assets/' + away_team + '.png></img>')
-                        f.write(scorer.teams[away_team].team_out + ' ' + location + ' ' + home_seed)
+                        f.write('<a href="https://www.warrennolan.com/basketball/2025/team-clubhouse?team=' + away_team + '">')
+                        f.write(scorer.teams[away_team].team_out + '</a> ' + location + ' ' + home_seed)
                         f.write('<img class="team_logo" src=assets/' + home_team + '.png></img>')
-                        f.write(scorer.teams[home_team].team_out + '</td>')
+                        f.write('<a href="https://www.warrennolan.com/basketball/2025/team-clubhouse?team=' + home_team + '">')
+                        f.write(scorer.teams[home_team].team_out + '</a></td>')
                         f.write('<td>' + game[3] + '</td><td>' + game[4] + '</td>')
                         f.write('</tr>\n')
                         gray = not gray

@@ -473,11 +473,13 @@ class Scraper:
         if self.mens:   #power & strength of schedule columns, no data for women
             f.write('<col class="rankcol"><col class="rankcol">')
         f.write('<col class="recordcol"><col class="recordcol"><col class="recordcol"><col class="wincol"><col class="losscol"></colgroup>\n')
-        f.write('    <tbody>\n')
-        f.write('      <tr class="header_row"><td>Team</td><td>Record</td><td>NET</td>')
+        f.write('    <thead>\n')
+        f.write('      <tr class="header_row"><th>Team</th><th>Record</th><th>NET</th>')
         if self.mens:
-            f.write('<td>Power</td><td>RES</td>')
-        f.write('<td>Q1</td><td>Q2</td><td>Q3/4</td><td>Quality Wins</td><td>Q2+ losses</td></tr>\n')
+            f.write('<th>Power</th><th>RES</th>')
+        f.write('<th>Q1</th><th>Q2</th><th>Q3/4</th><th>Quality Wins</th><th>Q2+ losses</th></tr>\n')
+        f.write('    </thead>\n')
+        f.write('    <tbody>\n')
         for index, team in enumerate(sorted(scorer.teams, key=lambda x: scorer.teams[x].score, reverse=True)):
             if not index % 2:
                 f.write('      <tr class="gray_row resume_row">')

@@ -23,6 +23,10 @@ reverse_team_dict = dict()
 
 #for use when outputting resumes in "Q1 Wins" column
 better_team_abbrs = {
+        "Fairfield": "FFLD",
+        "Southern-Indiana": "SOIN",
+        "Northern-Iowa": "UNI",
+        "UC-San-Diego": "UCSD",
         "UC-Irvine": "UCI",
         "San-Diego-State": "SDSU", 
         "Kansas-State": "KSU",
@@ -485,7 +489,10 @@ class Scraper:
                 f.write('      <tr class="gray_row resume_row">')
             else:
                 f.write('      <tr class="resume_row">')
-            f.write('<td><a href="https://www.warrennolan.com/basketball/2025/team-net-sheet?team=' + team + '">' + scorer.teams[team].team_out + '</a></td>')
+            if self.mens:
+                f.write('<td><a href="https://www.warrennolan.com/basketball/2025/team-net-sheet?team=' + team + '">' + scorer.teams[team].team_out + '</a></td>')
+            else:
+                f.write('<td><a href="https://www.warrennolan.com/basketballw/2025/team-net-sheet?team=' + team + '">' + scorer.teams[team].team_out + '</a></td>')
             f.write('<td>' + scorer.teams[team].record + '</td>')
             f.write('<td>' + str(scorer.teams[team].NET) + '</td>')
             if self.mens:
@@ -602,10 +609,16 @@ class Scraper:
                             f.write(' gray_row')
                         f.write('"><td>' + away_seed)
                         f.write('<img class="team_logo" src=assets/' + away_team + '.png></img>')
-                        f.write('<a href="https://www.warrennolan.com/basketball/2025/team-clubhouse?team=' + away_team + '">')
+                        if self.mens:
+                            f.write('<a href="https://www.warrennolan.com/basketball/2025/team-clubhouse?team=' + away_team + '">')
+                        else:
+                            f.write('<a href="https://www.warrennolan.com/basketballw/2025/team-clubhouse?team=' + away_team + '">')
                         f.write(scorer.teams[away_team].team_out + '</a> ' + location + ' ' + home_seed)
                         f.write('<img class="team_logo" src=assets/' + home_team + '.png></img>')
-                        f.write('<a href="https://www.warrennolan.com/basketball/2025/team-clubhouse?team=' + home_team + '">')
+                        if self.mens:
+                            f.write('<a href="https://www.warrennolan.com/basketball/2025/team-clubhouse?team=' + home_team + '">')
+                        else:
+                            f.write('<a href="https://www.warrennolan.com/basketballw/2025/team-clubhouse?team=' + home_team + '">')
                         f.write(scorer.teams[home_team].team_out + '</a></td>')
                         f.write('<td>' + game[3] + '</td><td>' + game[4] + '</td>')
                         f.write('</tr>\n')

@@ -228,3 +228,16 @@ body {
     padding-bottom: 3px;
     padding-top: 5px;
 }
+
+.title_row_team {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial;
+    margin-top: 10px;
+}
+
+.team_page_logo {
+    height: inherit;
+}

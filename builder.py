@@ -949,20 +949,20 @@ class Builder:
             return "Projected Selection Sunday Bracket"
         return "Projected Bracket (if the season ended today)"
 
-    def output_meta(self, f):
+    def output_meta(self, f, styling_path=""):
         f.write('<!DOCTYPE html>\n\n')
         f.write('<html>\n')
         f.write('<head>\n')
-        f.write('  <link rel="icon" type="image/x-icon" href="assets/chergieball.ico">\n')
-        f.write('  <link rel="stylesheet" href="styling.css">\n')
+        f.write('  <link rel="icon" type="image/x-icon" href="' + styling_path + 'assets/chergieball.ico">\n')
+        f.write('  <link rel="stylesheet" href="' + styling_path + 'styling.css">\n')
         f.write('</head>\n\n')
  
-    def output_link_row(self, f):
+    def output_link_row(self, f, styling_path=""):
         f.write('<div class="link_row">\n')
         f.write('  <nav>\n')
         f.write('    <ul class="link_list">\n')
         f.write('      <li>\n')
-        f.write('        <img src=assets/chergieball.ico height="50px" style="padding-top: 5px;"></img>\n')
+        f.write('        <img src=' + styling_path + 'assets/chergieball.ico height="50px" style="padding-top: 5px;"></img>\n')
         f.write('      </li>\n')
         f.write('      <li class="non_image_element">\n')
         f.write('        <b style="font-size: 20px;">Charlie Hergenrother\'s Bracketology</b>\n')

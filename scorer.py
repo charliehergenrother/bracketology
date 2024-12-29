@@ -774,22 +774,22 @@ class Scorer:
         with open(self.outputfile, "w") as f:
             f.write("Team," + \
                     "Losses(" + str(round(WEIGHTS["LOSS_WEIGHT"], 5)) + \
-                    "), NET(" + str(round(WEIGHTS["NET_WEIGHT"], 5)) + \
-                    "), Power(" + str(round(WEIGHTS["POWER_WEIGHT"], 5)) + \
-                    "), Q1(" + str(round(WEIGHTS["Q1_WEIGHT"], 5)) + \
-                    "), Q2(" + str(round(WEIGHTS["Q2_WEIGHT"], 5)) + \
-                    "), Results(" + str(round(WEIGHTS["RESULTS_BASED_WEIGHT"], 5)) + \
-                    #"), Q3(" + str(round(WEIGHTS["Q3_WEIGHT"], 5)) + \
-                    "), Q4(" + str(round(WEIGHTS["Q4_WEIGHT"], 5)) + \
-                    "), Road(" + str(round(WEIGHTS["ROAD_WEIGHT"], 5)) + \
-                    "), Neutral(" + str(round(WEIGHTS["NEUTRAL_WEIGHT"], 5)) + \
-                    "), Top 10(" + str(round(WEIGHTS["TOP_10_WEIGHT"], 5)) + \
-                    "), Top 25(" + str(round(WEIGHTS["TOP_25_WEIGHT"], 5)) + \
-                    "), SOS(" + str(round(WEIGHTS["SOS_WEIGHT"], 5)) + \
-                    "), Noncon SOS(" + str(round(WEIGHTS["NONCON_SOS_WEIGHT"], 5)) + \
-                    "), Awful losses(" + str(round(WEIGHTS["AWFUL_LOSS_WEIGHT"], 5)) + \
-                    "), Bad losses(" + str(round(WEIGHTS["BAD_LOSS_WEIGHT"], 5)) + \
-                    "), Total Score\n")
+                    "),NET(" + str(round(WEIGHTS["NET_WEIGHT"], 5)) + \
+                    "),Power(" + str(round(WEIGHTS["POWER_WEIGHT"], 5)) + \
+                    "),Q1(" + str(round(WEIGHTS["Q1_WEIGHT"], 5)) + \
+                    "),Q2(" + str(round(WEIGHTS["Q2_WEIGHT"], 5)) + \
+                    "),Results(" + str(round(WEIGHTS["RESULTS_BASED_WEIGHT"], 5)) + \
+                    #"),Q3(" + str(round(WEIGHTS["Q3_WEIGHT"], 5)) + \
+                    "),Q4(" + str(round(WEIGHTS["Q4_WEIGHT"], 5)) + \
+                    "),Road(" + str(round(WEIGHTS["ROAD_WEIGHT"], 5)) + \
+                    "),Neutral(" + str(round(WEIGHTS["NEUTRAL_WEIGHT"], 5)) + \
+                    "),Top 10(" + str(round(WEIGHTS["TOP_10_WEIGHT"], 5)) + \
+                    "),Top 25(" + str(round(WEIGHTS["TOP_25_WEIGHT"], 5)) + \
+                    "),SOS(" + str(round(WEIGHTS["SOS_WEIGHT"], 5)) + \
+                    "),Noncon SOS(" + str(round(WEIGHTS["NONCON_SOS_WEIGHT"], 5)) + \
+                    "),Awful losses(" + str(round(WEIGHTS["AWFUL_LOSS_WEIGHT"], 5)) + \
+                    "),Bad losses(" + str(round(WEIGHTS["BAD_LOSS_WEIGHT"], 5)) + \
+                    "),Total Score\n")
             for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
                 line = self.teams[team].team_out + "," + \
                         str(round(self.teams[team].loss_score, 5)) + "," + \

@@ -741,9 +741,10 @@ def reverse_location(location):
         return "A"
     return "N"
 
-def simulate_one_tournament_game(team1, team2, team_kenpoms, scorer):
+def simulate_one_tournament_game(team1, team2, team_kenpoms, scorer, results):
     if "/" in team2:
-        team2 = simulate_one_tournament_game(team2.split("/")[0], team2.split("/")[1], team_kenpoms, scorer)
+        team2 = simulate_one_tournament_game(team2.split("/")[0], team2.split("/")[1], team_kenpoms, scorer, results)
+        results['teams'][team2]['ncaa_round'] = 1
     win_prob = scorer.get_win_prob(team_kenpoms[team1]["rating"], team_kenpoms[team2]["rating"], 'N')
     #print(round(win_prob*100, 2), end="% ")
     win_result = random.random()
@@ -756,20 +757,41 @@ def simulate_one_tournament_game(team1, team2, team_kenpoms, scorer):
         #print(team2, "over", team1)
     return winner
 
-def simulate_tournament(builder, team_kenpoms, scorer):
+def simulate_tournament(builder, team_kenpoms, scorer, results):
     winners = list()
     for region_num in [0, 3, 1, 2]:
         for seed in [1, 8, 5, 4, 6, 3, 7, 2]:
             team_1 = builder.regions[region_num][seed]
             team_2 = builder.regions[region_num][17 - seed]
+            results['teams'][team_1]['ncaa_seed'] = seed
+            results['teams'][team_1]['ncaa_round'] = 1
+            try:
+                results['teams'][team_2]['ncaa_seed'] = 17 - seed
+                results['teams'][team_2]['ncaa_round'] = 1
+            except KeyError:    # play in game
+                results['teams'][team_2.split("/")[0]]['ncaa_seed'] = 17 - seed
+                results['teams'][team_2.split("/")[1]]['ncaa_seed'] = 17 - seed
+                results['teams'][team_2.split("/")[0]]['ncaa_round'] = 0
+                results['teams'][team_2.split("/")[1]]['ncaa_round'] = 0
             #if "/" not in team_1 and "/" not in team_2:
                 #print(seed, team_1, team_kenpoms[team_1], 'vs.', 17-seed, team_2, team_kenpoms[team_2], end=": ")
-            winners.append(simulate_one_tournament_game(team_1, team_2, team_kenpoms, scorer))
+            winners.append(simulate_one_tournament_game(team_1, team_2, team_kenpoms, scorer, results))
+            results['teams'][winners[-1]]['ncaa_round'] = 2
             #print(winners[-1])
     index = 0
     while index + 1 < len(winners):
         #print(winners[index], team_kenpoms[winners[index]], 'vs.', winners[index + 1], team_kenpoms[winners[index + 1]], end=": ")
-        winners.append(simulate_one_tournament_game(winners[index], winners[index + 1], team_kenpoms, scorer))
+        winners.append(simulate_one_tournament_game(winners[index], winners[index + 1], team_kenpoms, scorer, results))
+        if len(winners) == 63:
+            results['teams'][winners[-1]]['ncaa_round'] = 7
+        elif len(winners) >= 61:
+            results['teams'][winners[-1]]['ncaa_round'] = 6
+        elif len(winners) >= 57:
+            results['teams'][winners[-1]]['ncaa_round'] = 5
+        elif len(winners) >= 49:
+            results['teams'][winners[-1]]['ncaa_round'] = 4
+        else:
+            results['teams'][winners[-1]]['ncaa_round'] = 3
         #print(winners[-1])
         index += 2
     return winners
@@ -788,7 +810,7 @@ def top_wins(tied_champs, team):
     except ZeroDivisionError:
         return 0
 
-def simulate_conference_tournaments(scorer, builder, team_kenpoms):
+def simulate_conference_tournaments(scorer, builder, team_kenpoms, results):
     conference_teams = dict()
     with open("lib/ctourn_formats.json", "r") as f:
         formats = json.loads(f.read())
@@ -839,16 +861,21 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms):
                 bracket = list(matchups) + bracket
 
         #SET UP BRACKET WITH TEAMS
-        #TODO make sure this is working. Add NET as tiebreaker
         seeds = []
         top_seed_wins = max([x["conference_wins"] for x in conference_teams[conference]])
         tied_champs = list(filter(lambda x: x["conference_wins"] == top_seed_wins, conference_teams[conference]))
         tied_champs = [x["name"] for x in tied_champs]
-        for team in sorted(conference_teams[conference],
-                    key=lambda x: (x["conference_wins"], top_wins(tied_champs, scorer.teams[x["name"]]), scorer.get_NET_estimate(scorer.teams[x["name"]].NET, team_kenpoms[x["name"]]["rank"])), reverse=True):
-            seeds.append(team["name"])
-            if len(seeds) == num_teams:
-                break
+        for index, team in enumerate(sorted(conference_teams[conference],
+                    key=lambda x: (x["conference_wins"],
+                                   top_wins(tied_champs, scorer.teams[x["name"]]),
+                                   scorer.get_NET_estimate(scorer.teams[x["name"]].NET, team_kenpoms[x["name"]]["rank"])),
+                    reverse=True)):
+            
+            results['teams'][team["name"]]["conference_seed"] = index + 1
+            results['teams'][team["name"]]["conference_wins"] = team["conference_wins"]
+            results['teams'][team["name"]]["conference_losses"] = team["conference_losses"]
+            if len(seeds) < num_teams:
+                seeds.append(team["name"])
         conf_reg_winners[conference] = seeds[0]
         seed_to_team = dict()
         for index, team in enumerate(seeds):
@@ -901,6 +928,7 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms):
                 while seeds[index] in ineligible_teams:
                     index += 1
                 builder.conference_winners[conference] = seeds[index]
+        results['teams'][builder.conference_winners[conference]]["ctourn_winner"] = True
     return conf_reg_winners
 
 #run one simulation of the rest of the college basketball season
@@ -910,7 +938,7 @@ def simulate_games(scorer, builder, weights, team_kenpoms):
     # 1 - scrape pages for results and games
     # 2 - generate NET ranks. if present, present NET, if future, build estimate
     # 3 - build scores
-    results = {'tournament': list(), 'final_four': list(), 'champion': list(), 'conference': dict()}
+    results = {'tournament': list(), 'final_four': list(), 'champion': list(), 'conference': dict(), 'teams': dict()}
     for conference in builder.conference_winners:
         results['conference'][conference] = list()
     teams = list(scorer.teams.keys())
@@ -921,6 +949,7 @@ def simulate_games(scorer, builder, weights, team_kenpoms):
             if game.date == "10-10":   #previously simulated game
                 continue
             opponent = game.opponent
+            #TODO: oof, St. Joe's and La Salle play a nonconference game. probably a couple other examples like that. argh.
             if scorer.teams[team].conference == scorer.teams[opponent].conference:
                 if game.win:
                     scorer.teams[team].conference_wins += 1
@@ -967,9 +996,19 @@ def simulate_games(scorer, builder, weights, team_kenpoms):
             except IndexError:
                 scorer.teams[opponent].future_games = scorer.teams[opponent].future_games[:index]
         team_kenpoms[team] = team_kenpom
+        results['teams'][team] = {
+                "wins": len(list(filter(lambda x: x.win, scorer.teams[team].games))),
+                "losses": len(list(filter(lambda x: not x.win, scorer.teams[team].games))),
+                "conference_wins": 0,
+                "conference_losses": 0,
+                "conference_seed": 0,
+                "ctourn_win": False,
+                "ncaa_seed": -1,
+                "ncaa_round": -1
+            }
    
     if builder.mens:
-        conf_reg_winners = simulate_conference_tournaments(scorer, builder, team_kenpoms)
+        conf_reg_winners = simulate_conference_tournaments(scorer, builder, team_kenpoms, results)
     #print_Illinois(scorer, team_kenpoms)
     scorer.build_scores(weights)
     builder.select_seed_and_print_field()
@@ -977,7 +1016,7 @@ def simulate_games(scorer, builder, weights, team_kenpoms):
     for team in scorer.teams:
         if scorer.teams[team].auto_bid or scorer.teams[team].at_large_bid:
             results['tournament'].append([team, scorer.teams[team].seed])
-    winners = simulate_tournament(builder, team_kenpoms, scorer)
+    winners = simulate_tournament(builder, team_kenpoms, scorer, results)
     results['final_four'] += winners[-7:-3]
     results['champion'].append(winners[-1])
     if builder.mens:
@@ -1173,6 +1212,48 @@ def scrape_initial_kenpom(year, scorer):
                         break
     return team_kenpoms
 
+def output_team_html(team, team_out, team_results, builder):
+    if not os.path.exists("./team_pages/"):
+        os.makedirs("./team_pages/")
+    f = open("./team_pages/" + team + ".html", "w")
+    builder.output_meta(f, "../")
+    builder.output_link_row(f, "../")
+    f.write('<div class="title_row_team">\n')
+    f.write('  <img class="team_page_logo" src=../assets/' + team + '.png></img><h1>' + team_out + '</h1>\n')
+    f.write('</div>\n')
+    team_table_output(f, 'wins', 'losses', team_results)
+    team_table_output(f, 'conference_wins', 'conference_losses', team_results)
+
+def team_table_output(f, win_string, loss_string, team_results):
+    f.write('<div>\n')
+    f.write('  <table class="record_table">\n')
+    f.write('    <thead>\n')
+    f.write('      <tr><th>Record</th><th>% chance</th>')
+    for x in range(1, 17):
+        f.write('<th>' + str(x) + '</th>')
+    f.write('<th>Miss</th>')
+    f.write('</tr>\n')
+    f.write('    </thead>\n')
+    f.write('    <tbody>\n')
+    total_runs = len(team_results)
+    total_games = team_results[0][win_string] + team_results[0][loss_string]
+    win_totals = [x[win_string] for x in team_results]
+    for win_total in sorted(set(win_totals), reverse=True):
+        relevant_runs = list(filter(lambda x: x[win_string] == win_total, team_results))
+        relevant_seeds = [x['ncaa_seed'] for x in relevant_runs]
+        win_total_count = win_totals.count(win_total)
+        win_total_pct = round(100*win_total_count / total_runs, 2)
+
+        f.write('    <tr><td>' + str(win_total) + "-" + str(total_games - win_total) + '</td>')
+        f.write('<td>' + str(win_total_pct) + '%</td>')
+        for seed in range(1, 17):
+            f.write('<td>' + str(round(100*relevant_seeds.count(seed)/len(relevant_runs), 2)) + '%</td>')
+        f.write('<td>' + str(round(100*relevant_seeds.count(-1)/len(relevant_runs), 2)) + '%</td>')
+        f.write('</tr>\n')
+    f.write('    </tbody>\n')
+    f.write('  </table>\n')
+    f.write('</div>\n')    
+
 #run a monte carlo simulation of the remaining college basketball season
 def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     rng = numpy.random.default_rng()
@@ -1190,6 +1271,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     national_champion = dict()
     team_seeds = dict()
     final_conference_winners = dict()
+    team_results = dict()
     for conference in builder.conference_winners:
         final_conference_winners[conference] = dict()
     first_weekend_sites = list(builder.first_weekend_sites)
@@ -1199,6 +1281,19 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     for team in scorer.teams:
         scorer.teams[team].saved_games = set(scorer.teams[team].games)
         scorer.teams[team].saved_future_games = list([dict(x) for x in scorer.teams[team].future_games])
+
+        #each object in list:
+        #{
+        #   wins: X
+        #   losses: X
+        #   conference_wins: X
+        #   conference_losses: X
+        #   conference_seed: X
+        #   ctourn_win: T/F
+        #   ncaa_seed: X/-1
+        #   ncaa_round: -1/0/1/2/3/4/5/6/7
+        #}
+        team_results[team] = list()
     successful_runs = 0
     for i in range(simulations):
         print("Running sim", i)
@@ -1239,6 +1334,8 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
             add_or_increment_key(team, final_fours)
         for team in results['champion']:
             add_or_increment_key(team, national_champion)
+        for team in results['teams']:
+            team_results[team].append(results['teams'][team])
         if builder.mens:
             for conference in results['conference']:
                 add_or_increment_key(results['conference'][conference][0], final_conference_winners[conference])
@@ -1298,6 +1395,8 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
         print(team.ljust(20), national_champion[team], "+" + str(int((100/(national_champion[team]/successful_runs))-100)))
         if mc_outputfile:
             f.write(team + "," + odds + "\n")
+    for team in team_results:
+        output_team_html(team, scorer.teams[team].team_out, team_results[team], builder)
 
 def main():
     scraper = Scraper()
@@ -1324,6 +1423,11 @@ def main():
     elif monte_carlo:
         scraper.load_schedule_data(should_scrape, force_scrape)
         run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile)
+        if scraper.outputfile:
+            scorer.outputfile = scraper.outputfile
+            scorer.output_scores()
+        if scraper.resumefile:
+            scraper.output_resume(scorer, builder)
     else:
         if future:
             scraper.load_schedule_data(should_scrape, force_scrape)

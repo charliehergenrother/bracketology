@@ -23,6 +23,7 @@ reverse_team_dict = dict()
 
 #for use when outputting resumes in "Q1 Wins" column
 better_team_abbrs = {
+        "Arkansas-State": "ARST",
         "Fairfield": "FFLD",
         "Southern-Indiana": "SOIN",
         "Northern-Iowa": "UNI",

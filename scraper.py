@@ -1207,7 +1207,7 @@ def scrape_initial_kenpom(year, scorer):
                     team = line[4:32].strip().title()
                     team = translate_team_sonny(team)
                     rank = int(line[:3].strip())
-                    rating = float(line[55:])
+                    rating = float(line[54:].strip())
                     team_kenpoms[team] = {"rating": rating, "rank": rank}
                     if rank == 362:     #TODO ? How many teams are there?
                         break

@@ -1319,7 +1319,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
         weights = dict()
         # vary weights a little bit
         for weight in base_weights:
-            weights[weight] = random.uniform(0.9, 1.1)*base_weights[weight]
+            weights[weight] = random.uniform(0.8, 1.2)*base_weights[weight]
         try:
             results = simulate_games(scorer, builder, weights, simmed_kenpoms)
         except Exception as e:

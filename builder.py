@@ -819,8 +819,8 @@ class Builder:
                     seed_count += play_in_count // 2
                 else:
                     seed_count += (play_in_count + 1) // 2
-            print(team, seed_num, at_large_count, auto_count)
-            print(self.regions)
+            #print(team, seed_num, at_large_count, auto_count)
+            #print(self.regions)
 
             if seed_num > 1:
                 region_order = self.get_region_order(team, seed_num)

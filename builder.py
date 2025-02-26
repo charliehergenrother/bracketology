@@ -225,13 +225,15 @@ class Builder:
             #The team object doesn't have that information.
             if (not self.future) or game_count >= 1:     #sweet 16 matchup
                 for seed_set in [[1, 16, 8, 9], [5, 12, 4, 13], [6, 11, 3, 14], [7, 10, 2, 15]]:
-                    if self.teams[test_team].seed in seed_set and seed_num in seed_set and not for_play_in:
+                    if self.teams[test_team].seed in seed_set and seed_num in seed_set and not for_play_in \
+                            and self.teams[test_team].seed != seed_num:
                         if self.verbose:
                             print("teams are meeting tooo early in this region", region_num, team, test_team)
                         return False
             if game_count >= 3:     #elite 8 matchup
                 for seed_set in [[1, 16, 8, 9, 5, 12, 4, 13], [6, 11, 3, 14, 7, 10, 2, 15]]:
-                    if self.teams[test_team].seed in seed_set and seed_num in seed_set and not for_play_in:
+                    if self.teams[test_team].seed in seed_set and seed_num in seed_set and not for_play_in \
+                            and self.teams[test_team].seed != seed_num:
                         if self.verbose:
                             print("teams are meeting toooo early in this region", region_num, team, test_team)
                         return False
@@ -308,6 +310,8 @@ class Builder:
             if not team:
                 if seed_num in self.first_weekend_num_to_name[region_num]:
                     del self.first_weekend_num_to_name[region_num][seed_num]
+                if seed_num in self.regions[region_num]:
+                    del self.regions[region_num][seed_num]
                 continue
             self.regions[region_num][seed_num] = team
             if "/" in team:
@@ -815,8 +819,8 @@ class Builder:
                     seed_count += play_in_count // 2
                 else:
                     seed_count += (play_in_count + 1) // 2
-            #print(team, seed_num, at_large_count, auto_count)
-            #print(self.regions)
+            print(team, seed_num, at_large_count, auto_count)
+            print(self.regions)
 
             if seed_num > 1:
                 region_order = self.get_region_order(team, seed_num)

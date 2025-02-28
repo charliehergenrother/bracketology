@@ -867,10 +867,11 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms, results):
         top_seed_wins = max([x["conference_wins"] for x in conference_teams[conference]])
         tied_champs = list(filter(lambda x: x["conference_wins"] == top_seed_wins, conference_teams[conference]))
         tied_champs = [x["name"] for x in tied_champs]
+        #TODO: either manually enter brackets or fix tiebreakers here. gotta be going down the seed list.
         for index, team in enumerate(sorted(conference_teams[conference],
                     key=lambda x: (x["conference_wins"],
                                    top_wins(tied_champs, scorer.teams[x["name"]]),
-                                   scorer.get_NET_estimate(scorer.teams[x["name"]].NET, team_kenpoms[x["name"]]["rank"])),
+                                   -scorer.get_NET_estimate(scorer.teams[x["name"]].NET, team_kenpoms[x["name"]]["rank"])),
                     reverse=True)):
             
             results['teams'][team["name"]]["conference_seed"] = index + 1
@@ -899,8 +900,16 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms, results):
                 higher_seed += 1
                 lower_seed -= 1
             for matchup in matchups:
+                #if conference == "ASUN":
+                #    print(seeds_to_use)
+                #    print(seed_to_team)
+                #    print(matchup)
                 win_prob = scorer.get_win_prob(team_kenpoms[matchup[0]]["rating"], team_kenpoms[matchup[1]]["rating"], round_location)
+                #if conference == "ASUN":
+                #    print(win_prob)
                 win_result = random.random()
+                #if conference == "ASUN":
+                #    print(win_result)
                 if reseed:
                     if win_result < win_prob:
                         seeds_to_use.remove(matchup[1])

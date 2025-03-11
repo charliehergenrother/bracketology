@@ -1,5 +1,5 @@
 {
-    "eliminated_teams": [],
+    "eliminated_teams": ["UTSA"],
     "conference_winners": {
         "America East": "",
         "American Athletic": "",
@@ -7,7 +7,7 @@
         "ACC": "Duke",
         "ASUN": "",
         "Big 12": "TCU",
-        "Big East": "",
+        "Big East": "Connecticut",
         "Big Sky": "",
         "Big South": "High-Point",
         "Big Ten": "UCLA",
@@ -29,7 +29,7 @@
         "Southland": "",
         "SWAC": "",
         "The Summit League": "South-Dakota-State",
-        "Sun Belt": "",
+        "Sun Belt": "Arkansas-State",
         "Western Athletic": "",
         "West Coast": ""
     },

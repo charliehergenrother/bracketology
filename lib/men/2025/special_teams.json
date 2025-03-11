@@ -1,5 +1,5 @@
 {
-    "eliminated_teams": ["North-Dakota-State", "South-Dakota-State", "Bucknell", "Chattanooga", "Samford"],
+    "eliminated_teams": ["North-Dakota-State", "South-Dakota-State", "Bucknell", "Chattanooga", "Samford", "Charleston"],
     "conference_winners": {
         "America East": "",
         "American Athletic": "",
@@ -25,11 +25,11 @@
         "Ohio Valley": "SIUE",
         "Patriot League": "",
         "SEC": "",
-        "Southern": "",
+        "Southern": "Wofford",
         "Southland": "",
         "SWAC": "",
         "The Summit League": "Omaha",
-        "Sun Belt": "",
+        "Sun Belt": "Troy",
         "Western Athletic": "",
         "West Coast": ""
     },

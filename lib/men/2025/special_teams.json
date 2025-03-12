@@ -12,16 +12,16 @@
         "Big South": "High-Point",
         "Big Ten": "",
         "Big West": "",
-        "Coastal Athletic": "",
+        "Coastal Athletic": "UNCW",
         "Conference USA": "",
-        "Horizon League": "",
+        "Horizon League": "Robert-Morris",
         "Ivy League": "",
         "MAAC": "",
         "Mid-American": "",
         "MEAC": "",
         "Missouri Valley": "Drake",
         "Mountain West": "",
-        "Northeast": "",
+        "Northeast": "Saint-Francis-PA",
         "Ohio Valley": "SIUE",
         "Patriot League": "",
         "SEC": "",
@@ -31,7 +31,7 @@
         "The Summit League": "Omaha",
         "Sun Belt": "Troy",
         "Western Athletic": "",
-        "West Coast": ""
+        "West Coast": "Gonzaga"
     },
     "ineligible_teams": ["Le-Moyne", "Lindenwood", "Mercyhurst", "Queens", "Saint-Thomas", "Stonehill", "Texas-AM-Commerce", "West-Georgia"],
     "ineligible_sites": {

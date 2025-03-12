@@ -1,5 +1,5 @@
 {
-    "eliminated_teams": ["UTSA"],
+    "eliminated_teams": ["UTSA", "UNLV"],
     "conference_winners": {
         "America East": "",
         "American Athletic": "",
@@ -31,7 +31,7 @@
         "The Summit League": "South-Dakota-State",
         "Sun Belt": "Arkansas-State",
         "Western Athletic": "",
-        "West Coast": ""
+        "West Coast": "Oregon-State"
     },
     "ineligible_teams": ["Le-Moyne", "Lindenwood", "Mercyhurst", "Queens", "Saint-Thomas", "Stonehill", "Texas-AM-Commerce", "West-Georgia"]
 }

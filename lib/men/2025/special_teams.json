@@ -1,5 +1,5 @@
 {
-    "eliminated_teams": ["North-Dakota-State", "South-Dakota-State", "Bucknell", "Chattanooga", "Samford", "Charleston"],
+    "eliminated_teams": ["North-Dakota-State", "South-Dakota-State", "Bucknell", "Chattanooga", "Samford", "Charleston", "Southern"],
     "conference_winners": {
         "America East": "",
         "American Athletic": "",
@@ -8,7 +8,7 @@
         "ASUN": "Lipscomb",
         "Big 12": "",
         "Big East": "",
-        "Big Sky": "",
+        "Big Sky": "Montana",
         "Big South": "High-Point",
         "Big Ten": "",
         "Big West": "",
@@ -23,10 +23,10 @@
         "Mountain West": "",
         "Northeast": "Saint-Francis-PA",
         "Ohio Valley": "SIUE",
-        "Patriot League": "",
+        "Patriot League": "American",
         "SEC": "",
         "Southern": "Wofford",
-        "Southland": "",
+        "Southland": "McNeese",
         "SWAC": "",
         "The Summit League": "Omaha",
         "Sun Belt": "Troy",

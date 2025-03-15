@@ -1,7 +1,7 @@
 {
-    "eliminated_teams": ["UTSA", "UNLV"],
+    "eliminated_teams": ["UTSA", "UNLV", "Hawaii", "UC-Irvine"],
     "conference_winners": {
-        "America East": "",
+        "America East": "Vermont",
         "American Athletic": "South-Florida",
         "Atlantic 10": "George-Mason",
         "ACC": "Duke",

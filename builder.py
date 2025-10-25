@@ -4,7 +4,7 @@ from itertools import permutations
 from datetime import date
 import math
 
-AUTO_MAXES = {"2020": 32, "2021": 31, "2022": 32, "2023": 32, "2024": 32, "2025": 31}
+AUTO_MAXES = {"2020": 32, "2021": 31, "2022": 32, "2023": 32, "2024": 32, "2025": 31, "2026": 31}
 TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 
 #class to build a bracket from resume ratings of college basketball teams
@@ -42,6 +42,8 @@ class Builder:
         AT_LARGE_MAX = 68 - AUTO_MAX
         
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
+            if team == "New-Haven":
+                continue
             at_large_bid = False
             if team in self.ineligible_teams:
                 continue
@@ -177,6 +179,7 @@ class Builder:
             for site in [first_weekend_site, region_site]:
                 #if site == region_site and team == "BYU":   #TODO: this was making me mad so. fix later, I guess
                 #    continue
+                #TODO I don't think women can play at their regional site either...
                 if team in self.ineligible_sites[site]:
                     if self.verbose:
                         print(team, "can't play in", site, "you silly goose")

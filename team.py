@@ -5,7 +5,7 @@ import requests
 import sys
 import os
 
-SELECTION_SUNDAY_DATES = {"2025": 16, "2024": 17, "2023": 12, "2022": 13, "2021": 14}
+SELECTION_SUNDAY_DATES = {"2026": 15, "2025": 16, "2024": 17, "2023": 12, "2022": 13, "2021": 14}
 
 #class representing one college basketball team
 class Team:
@@ -69,15 +69,15 @@ class Team:
             if "team-menu__name\"" in line:
                 self.team_out = line[line.find(">")+1:line.find(" <span")]
                 #TODO see below
-                manual_teams = {"IU-Indianapolis": "IU Indianapolis", "Mercyhurst": "Mercyhurst", "West-Georgia": "West Georgia"}
-                if team in manual_teams:
-                    self.team_out = manual_teams[team]
+                # manual_teams = {"IU-Indianapolis": "IU Indianapolis", "Mercyhurst": "Mercyhurst", "West-Georgia": "West Georgia"}
+                # if team in manual_teams:
+                #     self.team_out = manual_teams[team]
             if "team-menu__conference" in line:
                 self.conference = line[line.find('">', line.find("/conference/"))+2:line.find("</a>")]
                 #TODO see below
-                conf_manual_teams = {"IU-Indianapolis": "Horizon League", "Mercyhurst": "Northeast", "West-Georgia": "ASUN"}
-                if team in conf_manual_teams:
-                    self.conference = conf_manual_teams[team]
+                # conf_manual_teams = {"IU-Indianapolis": "Horizon League", "Mercyhurst": "Northeast", "West-Georgia": "ASUN"}
+                # if team in conf_manual_teams:
+                #     self.conference = conf_manual_teams[team]
                 continue
             if "font-weight: bold; font-size: 16px;" in line:
                 try:

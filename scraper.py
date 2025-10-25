@@ -16,8 +16,8 @@ import subprocess
 import numpy
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
-TEAM_MEN_URL_START = "https://www.warrennolan.com/basketball/2025/team-clubhouse?team="
-TEAM_WOMEN_URL_START = "https://www.warrennolan.com/basketballw/2025/team-clubhouse?team="
+TEAM_MEN_URL_START = "https://www.warrennolan.com/basketball/2026/team-clubhouse?team="
+TEAM_WOMEN_URL_START = "https://www.warrennolan.com/basketballw/2026/team-clubhouse?team="
 
 reverse_team_dict = dict()
 
@@ -279,12 +279,16 @@ class Scraper:
                 team = line[team_start_index:line.find('">', team_start_index)]
                 self.scrape_team_data(team)
                 print("scraped", team + "!")
-        
+        #TODO New Haven not on NET yet
+        self.scrape_team_data("New-Haven")
+        print("scraped New-Haven!")
+
         #TODO women's pages not working yet
         reverse_team_dict["West Georgia"] = "West-Georgia"
         reverse_team_dict["Mercyhurst"] = "Mercyhurst"
         reverse_team_dict["IU Indianapolis"] = "IU-Indianapolis"
-        
+        reverse_team_dict["New Haven"] = "New-Haven"
+
         for team in self.teams:
             #go back through and back-translate
             for game in self.teams[team].games:
@@ -492,9 +496,9 @@ class Scraper:
             else:
                 f.write('      <tr class="resume_row">')
             if self.mens:
-                f.write('<td><a href="https://www.warrennolan.com/basketball/2025/team-net-sheet?team=' + team + '">' + scorer.teams[team].team_out + '</a></td>')
+                f.write('<td><a href="https://www.warrennolan.com/basketball/2026/team-net-sheet?team=' + team + '">' + scorer.teams[team].team_out + '</a></td>')
             else:
-                f.write('<td><a href="https://www.warrennolan.com/basketballw/2025/team-net-sheet?team=' + team + '">' + scorer.teams[team].team_out + '</a></td>')
+                f.write('<td><a href="https://www.warrennolan.com/basketballw/2026/team-net-sheet?team=' + team + '">' + scorer.teams[team].team_out + '</a></td>')
             f.write('<td>' + scorer.teams[team].record + '</td>')
             f.write('<td>' + str(scorer.teams[team].NET) + '</td>')
             if self.mens:
@@ -550,6 +554,8 @@ class Scraper:
                         game_score = team_seed + 13
                     if scorer.teams[game["opponent"]].seed == "NFO":
                         game_score = team_seed + 14
+                except KeyError: # New Haven
+                    game_score = team_seed + 20
                 if game["date"] in future_games and (game["opponent"], team, reverse_location(game["location"]), \
                         game["time"], game["channel"], game_score) not in future_games[game["date"]]:
                     future_games[game["date"]].append((team, game["opponent"], game["location"], \
@@ -574,6 +580,8 @@ class Scraper:
                             try:
                                 away_seed = "(" + str(scorer.teams[game[1]].seed) + ") "
                             except AttributeError:
+                                away_seed = ""
+                            except KeyError: # New Haven
                                 away_seed = ""
                             away_team = game[1]
                             location = '@'
@@ -612,15 +620,18 @@ class Scraper:
                         f.write('"><td>' + away_seed)
                         f.write('<img class="team_logo" src=assets/' + away_team + '.png></img>')
                         if self.mens:
-                            f.write('<a href="https://www.warrennolan.com/basketball/2025/team-clubhouse?team=' + away_team + '">')
+                            f.write('<a href="https://www.warrennolan.com/basketball/2026/team-clubhouse?team=' + away_team + '">')
                         else:
-                            f.write('<a href="https://www.warrennolan.com/basketballw/2025/team-clubhouse?team=' + away_team + '">')
-                        f.write(scorer.teams[away_team].team_out + '</a> ' + location + ' ' + home_seed)
+                            f.write('<a href="https://www.warrennolan.com/basketballw/2026/team-clubhouse?team=' + away_team + '">')
+                        try:
+                            f.write(scorer.teams[away_team].team_out + '</a> ' + location + ' ' + home_seed)
+                        except KeyError: # New Haven
+                            f.write("New Haven" + '</a > ' + location + ' ' + home_seed)
                         f.write('<img class="team_logo" src=assets/' + home_team + '.png></img>')
                         if self.mens:
-                            f.write('<a href="https://www.warrennolan.com/basketball/2025/team-clubhouse?team=' + home_team + '">')
+                            f.write('<a href="https://www.warrennolan.com/basketball/2026/team-clubhouse?team=' + home_team + '">')
                         else:
-                            f.write('<a href="https://www.warrennolan.com/basketballw/2025/team-clubhouse?team=' + home_team + '">')
+                            f.write('<a href="https://www.warrennolan.com/basketballw/2026/team-clubhouse?team=' + home_team + '">')
                         f.write(scorer.teams[home_team].team_out + '</a></td>')
                         f.write('<td>' + game[3] + '</td><td>' + game[4] + '</td>')
                         f.write('</tr>\n')
@@ -632,7 +643,7 @@ class Scraper:
 
 #accept command line arguments
 def process_args():
-    year = "2025"
+    year = "2026"
     argindex = 1
     outputfile = ""
     resumefile = ""
@@ -813,6 +824,7 @@ def top_wins(tied_champs, team):
         return 0
 
 def simulate_conference_tournaments(scorer, builder, team_kenpoms, results):
+    #TODO: check on new formats
     conference_teams = dict()
     with open("lib/ctourn_formats.json", "r") as f:
         formats = json.loads(f.read())
@@ -943,7 +955,7 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms, results):
     return conf_reg_winners
 
 #run one simulation of the rest of the college basketball season
-def simulate_games(scorer, builder, weights, team_kenpoms):
+def simulate_games(scorer, builder, weights, simmed_kenpoms):
     #TODO: all the games are using the present day's NET. Hmm.
     # probably should divorce the NET from a team's opponents
     # 1 - scrape pages for results and games
@@ -955,7 +967,7 @@ def simulate_games(scorer, builder, weights, team_kenpoms):
     teams = list(scorer.teams.keys())
     random.shuffle(teams)
     for team in teams:
-        team_kenpom = team_kenpoms[team]
+        team_kenpom = simmed_kenpoms[team]
         for game in scorer.teams[team].games:
             if game.date == "10-10":   #previously simulated game
                 continue
@@ -979,7 +991,7 @@ def simulate_games(scorer, builder, weights, team_kenpoms):
                 continue
             opponent = game['opponent']
             conference_game = scorer.teams[team].conference == scorer.teams[opponent].conference
-            opp_kenpom = team_kenpoms[opponent]
+            opp_kenpom = simmed_kenpoms[opponent]
             win_prob = scorer.get_win_prob(team_kenpom['rating'], opp_kenpom['rating'], game['location'])
             new_game = Game(opponent, game['location'], 75, 0, '10-10')
             opp_game = Game(team, reverse_location(game['location']), 0, 75, '10-10')
@@ -1006,7 +1018,7 @@ def simulate_games(scorer, builder, weights, team_kenpoms):
                     scorer.teams[opponent].future_games[index+1:]
             except IndexError:
                 scorer.teams[opponent].future_games = scorer.teams[opponent].future_games[:index]
-        team_kenpoms[team] = team_kenpom
+        simmed_kenpoms[team] = team_kenpom
         results['teams'][team] = {
                 "wins": len(list(filter(lambda x: x.win, scorer.teams[team].games))),
                 "losses": len(list(filter(lambda x: not x.win, scorer.teams[team].games))),
@@ -1019,15 +1031,15 @@ def simulate_games(scorer, builder, weights, team_kenpoms):
             }
    
     if builder.mens:
-        conf_reg_winners = simulate_conference_tournaments(scorer, builder, team_kenpoms, results)
-    #print_Illinois(scorer, team_kenpoms)
-    scorer.build_scores(weights)
+        conf_reg_winners = simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results)
+    #print_Illinois(scorer, simmed_kenpoms)
+    scorer.build_scores(weights, simmed_kenpoms)
     builder.select_seed_and_print_field()
     builder.build_bracket()
     for team in scorer.teams:
         if scorer.teams[team].auto_bid or scorer.teams[team].at_large_bid:
             results['tournament'].append([team, scorer.teams[team].seed])
-    winners = simulate_tournament(builder, team_kenpoms, scorer, results)
+    winners = simulate_tournament(builder, simmed_kenpoms, scorer, results)
     results['final_four'] += winners[-7:-3]
     results['champion'].append(winners[-1])
     if builder.mens:
@@ -1269,8 +1281,8 @@ def team_table_output(f, win_string, loss_string, team_results):
 def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     rng = numpy.random.default_rng()
     today_date = date.today()
-    selection_sunday = date(2025, 3, 16)
-    season_start = date(2024, 11, 4)
+    selection_sunday = date(2026, 3, 15)
+    season_start = date(2025, 11, 3)
     season_days = (selection_sunday - season_start).days
     if season_start > today_date:
         days_left = season_days

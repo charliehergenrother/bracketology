@@ -525,8 +525,6 @@ class Scorer:
         return self.calculate_top10_score(team, team_obj, simmed_kenpoms)
 
     def calculate_top10_score(self, team, team_obj, simmed_kenpoms):
-        # TODO yooo this is super wrong for monte carlo lol. are all the scores wrong? yikes.
-        # Need to at least make sure this is against the simmed top 10.
         top_10_wins = 0
         if self.future and not self.monte_carlo:
             for game in team_obj.games:

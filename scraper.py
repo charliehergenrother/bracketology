@@ -336,6 +336,7 @@ class Scraper:
             found_game = False
             found_result = False
             found_location = False
+            conf_game_line_tracker = 0
             for line in schedule_page.text.split("\n"):
                 if not table_start:
                     if 'team-schedule' in line:
@@ -361,6 +362,17 @@ class Scraper:
                     found_game = True
                     opp_name = line[line.find("80x80")+6:line.find(".png")]
                     game["opponent"] = opp_name
+                #problem: this only applies to future games. the data about which games are conference games isn't on the NET page.
+                #elif " <div class=\"team-schedule__conf-logo\">" in line:
+                #    conf_game_line_tracker = 1
+                #elif conf_game_line_tracker == 1:
+                #    conf_game_line_tracker += 1
+                #elif conf_game_line_tracker == 2:
+                #    if "team-schedule__conf-logo" in line:
+                #        game["conference_game"] = True
+                #    else:
+                #        game["conference_game"] = False
+                #    conf_game_line_tracker = 0
                 elif "team-schedule__info-tv" in line:
                     if "TV: " in line:
                         game["channel"] = line[line.find("TV: ")+4:line.find("</span>")]
@@ -809,21 +821,79 @@ def simulate_tournament(builder, team_kenpoms, scorer, results):
         index += 2
     return winners
 
-def top_wins(tied_champs, team):
-    wins_vs_champs = 0
-    losses_vs_champs = 0
+def record_vs_range(team, group):
+    wins = 0
+    losses = 0
     for game in team.games:
-        if game.opponent in tied_champs:
+        if game.opponent in group:
             if game.win:
-                wins_vs_champs += 1
+                wins += 1
             else:
-                losses_vs_champs += 1
+                losses += 1
     try:
-        return wins_vs_champs/(wins_vs_champs + losses_vs_champs)
-    except ZeroDivisionError:
+        return wins/(wins + losses)
+    except ZeroDivisionError: # shouldn't happen, but need it while data isn't perfect
         return 0
 
-def simulate_conference_tournaments(scorer, builder, team_kenpoms, results):
+def break_tie(teams, win_dict, scorer, simmed_kenpoms):
+    return_order = list()
+
+    tied_teams = [x["name"] for x in teams]
+    for team in teams:
+        win_pct = record_vs_range(scorer.teams[team["name"]], [x["name"] for x in teams])
+        team["tiebreaker_record"] = win_pct
+    win_pcts = sorted([team["tiebreaker_record"] for team in teams], reverse=True)
+    sorted_teams = sorted(teams, key = lambda x: x["tiebreaker_record"], reverse=True)
+    while len(win_pcts) > 1 and win_pcts[0] != win_pcts[1]:
+        return_order.append(sorted_teams.pop(0))
+        win_pcts.pop(0)
+    if len(win_pcts) == 1:
+        return_order.append(sorted_teams[0])
+    elif len(win_pcts) != len(teams):
+        return_order += break_tie(sorted_teams, win_dict, scorer, simmed_kenpoms)
+    else:
+        teams_needing_tiebreak = sorted_teams
+        for win_amount in sorted(win_dict.keys(), reverse=True):
+            for team in sorted_teams:
+                win_pct = record_vs_range(scorer.teams[team["name"]], [x["name"] for x in win_dict[win_amount]])
+                team["tiebreaker_record"] = win_pct
+                
+            win_pcts = sorted([team["tiebreaker_record"] for team in sorted_teams], reverse=True)
+            sorted_teams = sorted(sorted_teams, key = lambda x: x["tiebreaker_record"], reverse=True)
+            while len(win_pcts) > 1 and win_pcts[0] != win_pcts[1]:
+                return_order.append(sorted_teams.pop(0))
+                win_pcts.pop(0)
+            if len(win_pcts) == 1:
+                return_order.append(sorted_teams[0])
+                break
+            elif len(win_pcts) != len(teams_needing_tiebreak):
+                return_order += break_tie(sorted_teams, win_dict, scorer, simmed_kenpoms)
+                break
+            else:
+                continue
+    if len(sorted_teams) > 1: #recursed all the way down the seed list, no way to break tie
+        sorted_teams.sort(key=lambda x: scorer.get_NET_estimate(scorer.teams[x["name"]].NET, simmed_kenpoms[x["name"]]["rank"]), reverse=True)
+        return_order += sorted_teams
+    return return_order
+
+def get_seeds(teams, scorer, simmed_kenpoms):
+    seed_list = list()
+    win_dict = dict()
+    for team in teams:
+        if team["conference_wins"] in win_dict:
+            win_dict[team["conference_wins"]].append(team)
+        else:
+            win_dict[team["conference_wins"]] = [team]
+    for win_amount in reversed(sorted(win_dict.keys())):
+        if len(win_dict[win_amount]) == 1:
+            seed_list.append(win_dict[win_amount][0])
+        else:
+            broken_tie_order = break_tie(win_dict[win_amount], win_dict, scorer, simmed_kenpoms)
+            for team in broken_tie_order:
+                seed_list.append(team)
+    return seed_list
+
+def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
     #TODO: check on new formats
     conference_teams = dict()
     with open("lib/ctourn_formats.json", "r") as f:
@@ -876,16 +946,9 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms, results):
 
         #SET UP BRACKET WITH TEAMS
         seeds = []
-        top_seed_wins = max([x["conference_wins"] for x in conference_teams[conference]])
-        tied_champs = list(filter(lambda x: x["conference_wins"] == top_seed_wins, conference_teams[conference]))
-        tied_champs = [x["name"] for x in tied_champs]
-        #TODO: either manually enter brackets or fix tiebreakers here. gotta be going down the seed list.
-        for index, team in enumerate(sorted(conference_teams[conference],
-                    key=lambda x: (x["conference_wins"],
-                                   top_wins(tied_champs, scorer.teams[x["name"]]),
-                                   -scorer.get_NET_estimate(scorer.teams[x["name"]].NET, team_kenpoms[x["name"]]["rank"])),
-                    reverse=True)):
-            
+        
+        seeded_teams = get_seeds(conference_teams[conference], scorer, simmed_kenpoms)
+        for index, team in enumerate(seeded_teams):
             results['teams'][team["name"]]["conference_seed"] = index + 1
             results['teams'][team["name"]]["conference_wins"] = team["conference_wins"]
             results['teams'][team["name"]]["conference_losses"] = team["conference_losses"]
@@ -912,16 +975,8 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms, results):
                 higher_seed += 1
                 lower_seed -= 1
             for matchup in matchups:
-                #if conference == "ASUN":
-                #    print(seeds_to_use)
-                #    print(seed_to_team)
-                #    print(matchup)
-                win_prob = scorer.get_win_prob(team_kenpoms[matchup[0]]["rating"], team_kenpoms[matchup[1]]["rating"], round_location)
-                #if conference == "ASUN":
-                #    print(win_prob)
+                win_prob = scorer.get_win_prob(simmed_kenpoms[matchup[0]]["rating"], simmed_kenpoms[matchup[1]]["rating"], round_location)
                 win_result = random.random()
-                #if conference == "ASUN":
-                #    print(win_result)
                 if reseed:
                     if win_result < win_prob:
                         seeds_to_use.remove(matchup[1])
@@ -956,11 +1011,6 @@ def simulate_conference_tournaments(scorer, builder, team_kenpoms, results):
 
 #run one simulation of the rest of the college basketball season
 def simulate_games(scorer, builder, weights, simmed_kenpoms):
-    #TODO: all the games are using the present day's NET. Hmm.
-    # probably should divorce the NET from a team's opponents
-    # 1 - scrape pages for results and games
-    # 2 - generate NET ranks. if present, present NET, if future, build estimate
-    # 3 - build scores
     results = {'tournament': list(), 'final_four': list(), 'champion': list(), 'conference': dict(), 'teams': dict()}
     for conference in builder.conference_winners:
         results['conference'][conference] = list()
@@ -973,6 +1023,8 @@ def simulate_games(scorer, builder, weights, simmed_kenpoms):
                 continue
             opponent = game.opponent
             #TODO: oof, St. Joe's and La Salle play a nonconference game. probably a couple other examples like that. argh.
+            #fix needs to be a total restructuring. Need to cross-reference NET page with schedule page
+            #because the info about which games are conference games is only on the schedule page
             if scorer.teams[team].conference == scorer.teams[opponent].conference:
                 if game.win:
                     scorer.teams[team].conference_wins += 1
@@ -1231,8 +1283,6 @@ def scrape_initial_kenpom(year, scorer):
                     rank = int(line[:3].strip())
                     rating = float(line[54:].strip())
                     team_kenpoms[team] = {"rating": rating, "rank": rank}
-                    if rank == 362:     #TODO ? How many teams are there?
-                        break
     return team_kenpoms
 
 def output_team_html(team, team_out, team_results, builder):
@@ -1391,8 +1441,8 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     print()
     print("TOURNAMENT CHANCES")
     for team in sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x]):
-        print(team.ljust(20), made_tournament[team], round(sum(team_seeds[team])/made_tournament[team], 2), \
-                min(team_seeds[team]), max(team_seeds[team]))
+        print(team.ljust(20), str(made_tournament[team]).rjust(4), str(round(sum(team_seeds[team])/made_tournament[team], 2)).rjust(5), \
+                str(min(team_seeds[team])).rjust(2), str(max(team_seeds[team])).rjust(2))
         if mc_outputfile:
             f.write(team + "," + str(made_tournament[team]/successful_runs) + "\n")
     

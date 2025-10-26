@@ -1,9 +1,9 @@
 {
         "America East": {"format": "R8H4H2H", "ineligible_winners": []},
-        "American": {"format": "2N8N8N4N2N", "ineligible_winners": []},
+        "American": {"format": "4N4N4N4N2N", "ineligible_winners": []},
         "Atlantic 10": {"format": "4N8N8N4N2N", "ineligible_winners": []},
         "ACC": {"format": "6N8N8N4N2N", "ineligible_winners": []},
-        "ASUN": {"format": "4H8H4H2H", "ineligible_winners": ["Queens", "West-Georgia"]},
+        "ASUN": {"format": "4H8N4N2N", "ineligible_winners": ["Queens", "West-Georgia"]},
         "Big 12": {"format": "8N8N8N4N2N", "ineligible_winners": []},
         "Big East": {"format": "6N8N4N2N", "ineligible_winners": []},
         "Big Sky": {"format": "4N8N4N2N", "ineligible_winners": []},

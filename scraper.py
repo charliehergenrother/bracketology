@@ -839,6 +839,8 @@ def break_tie(teams, win_dict, scorer, simmed_kenpoms):
     return_order = list()
 
     tied_teams = [x["name"] for x in teams]
+
+    #try head-to-head tiebreaker first
     for team in teams:
         win_pct = record_vs_range(scorer.teams[team["name"]], [x["name"] for x in teams])
         team["tiebreaker_record"] = win_pct
@@ -851,6 +853,7 @@ def break_tie(teams, win_dict, scorer, simmed_kenpoms):
         return_order.append(sorted_teams[0])
     elif len(win_pcts) != len(teams):
         return_order += break_tie(sorted_teams, win_dict, scorer, simmed_kenpoms)
+        sorted_teams = list()
     else:
         teams_needing_tiebreak = sorted_teams
         for win_amount in sorted(win_dict.keys(), reverse=True):
@@ -868,6 +871,7 @@ def break_tie(teams, win_dict, scorer, simmed_kenpoms):
                 break
             elif len(win_pcts) != len(teams_needing_tiebreak):
                 return_order += break_tie(sorted_teams, win_dict, scorer, simmed_kenpoms)
+                sorted_teams = list()
                 break
             else:
                 continue
@@ -948,12 +952,16 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
         seeds = []
         
         seeded_teams = get_seeds(conference_teams[conference], scorer, simmed_kenpoms)
+        # Uncomment below to test for missing/extra games, etc
+        #print(conference)
         for index, team in enumerate(seeded_teams):
             results['teams'][team["name"]]["conference_seed"] = index + 1
             results['teams'][team["name"]]["conference_wins"] = team["conference_wins"]
             results['teams'][team["name"]]["conference_losses"] = team["conference_losses"]
             if len(seeds) < num_teams:
                 seeds.append(team["name"])
+            #print(team["name"], "(" + str(team["conference_wins"]) + "-" + str(team["conference_losses"]) + ")")
+        #print()
         conf_reg_winners[conference] = seeds[0]
         seed_to_team = dict()
         for index, team in enumerate(seeds):

@@ -145,19 +145,16 @@ class Scorer:
         return self.calculate_results_based_score(team, team_obj)
 
     def calculate_results_based_score(self, team, team_obj):
+        season_days, days_left = self.get_season_progress()
+        RES_weight = min(1, (season_days - days_left)/(season_days - 30))
         if self.monte_carlo:    # let other categories be a higher weight than resume score
-            team_obj.results_based_score = (-math.log(team_obj.results_based + 19, 2)/2 + 3.16)
-            season_days, days_left = self.get_season_progress()
-            RES_weight = min(1, (season_days - days_left)/(season_days - 30))
-            team_obj.results_based_score *= RES_weight
+            team_obj.results_based_score = RES_WEIGHT*(-math.log(team_obj.results_based + 19, 2)/2 + 3.16)
         elif self.future:
-            season_days, days_left = self.get_season_progress()
             # estimated RES begins as all KenPom and builds more actual RES in as the season progresses until 30 days, all becomes RES
-            RES_weight = min(1, (season_days - days_left)/(season_days - 30))
             RES_estimate = (RES_weight*team_obj.results_based) + (1 - RES_weight)*self.team_kenpoms[team]["rank"]
             team_obj.results_based_score = (-math.log(RES_estimate + 19, 2)/2 + 3.16)
         else:
-            team_obj.results_based_score = (-math.log(team_obj.results_based + 19, 2)/2 + 3.16)
+            team_obj.results_based_score = RES_weight*(-math.log(team_obj.results_based + 19, 2)/2 + 3.16)
         return team_obj.results_based_score
 
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)

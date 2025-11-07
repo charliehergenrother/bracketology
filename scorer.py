@@ -148,7 +148,7 @@ class Scorer:
         season_days, days_left = self.get_season_progress()
         RES_weight = min(1, (season_days - days_left)/(season_days - 30))
         if self.monte_carlo:    # let other categories be a higher weight than resume score
-            team_obj.results_based_score = RES_WEIGHT*(-math.log(team_obj.results_based + 19, 2)/2 + 3.16)
+            team_obj.results_based_score = RES_weight*(-math.log(team_obj.results_based + 19, 2)/2 + 3.16)
         elif self.future:
             # estimated RES begins as all KenPom and builds more actual RES in as the season progresses until 30 days, all becomes RES
             RES_estimate = (RES_weight*team_obj.results_based) + (1 - RES_weight)*self.team_kenpoms[team]["rank"]

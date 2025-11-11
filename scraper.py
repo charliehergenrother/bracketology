@@ -110,7 +110,6 @@ MY_BETS = {
     'conference': {
         'Clemson': 2200,
         'Georgia-Tech': 18000,
-        'Wake-Forest': 8000,
         'UTSA': 7500,
         'East-Carolina': 7500,
         'Baylor': 2200,
@@ -126,6 +125,8 @@ MY_BETS = {
         'Dayton': 550,
         'Virginia-Tech': 20000,
         'VMI': 5000,
+        'Oklahoma-State': 17500,
+        'Colorado-State': 1700,
     },
     'final_four': {
         'Vanderbilt': 3000,
@@ -134,7 +135,6 @@ MY_BETS = {
         'Clemson': 6500,
         'Cincinnati': 8000,
         'Georgia': 10000,
-        'Texas-AM': 4500,
         'Nebraska': 10000,
     },
     'championship': {
@@ -1516,7 +1516,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     print("CONFERENCES")
     if mc_outputfile:
         try:
-            f = open(mc_outputfile, "w")
+            f = open(mc_outputfile, "w+")
         except PermissionError:
             print("You dumb dumb!")
             print("opening backup")

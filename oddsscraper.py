@@ -297,6 +297,9 @@ def main():
             dk_odds + "," + dk_plus_odds + "," + \
             best_odds + "\n")
     f.write("\n")
+    print()
+    print("Successfully wrote odds!")
+    print()
 
 
 if __name__ == "__main__":

@@ -1327,6 +1327,8 @@ def scrape_initial_kenpom(year, scorer):
                     table_start = True
                     continue
                 if table_start:
+                    if line.strip() == "<BR>":
+                        break
                     team = line[4:32].strip().title()
                     team = translate_team_sonny(team)
                     rank = int(line[:3].strip())
@@ -1518,11 +1520,11 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     print("CONFERENCES")
     if mc_outputfile:
         try:
-            f = open(mc_outputfile, "w+")
+            f = open(mc_outputfile, "w")
         except PermissionError:
             print("You dumb dumb!")
             print("opening backup")
-            f = open("./data/montecarlooutput.csv")
+            f = open("./data/montecarlooutput.csv", "w")
         current_odds = get_current_odds(final_conference_winners)
         f.write("successes:," + str(successful_runs) + "\n")
         f.write("WIN CONFERENCE\n")

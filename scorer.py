@@ -834,7 +834,8 @@ class Scorer:
     #write all team scores for each category to specified file
     def output_scores(self):
         with open(self.outputfile, "w") as f:
-            f.write("Team," + \
+            if self.mens:
+                f.write("Team," + \
                     "Losses(" + str(round(WEIGHTS["LOSS_WEIGHT"], 5)) + \
                     "),NET(" + str(round(WEIGHTS["NET_WEIGHT"], 5)) + \
                     "),Power(" + str(round(WEIGHTS["POWER_WEIGHT"], 5)) + \
@@ -852,8 +853,24 @@ class Scorer:
                     "),Awful losses(" + str(round(WEIGHTS["AWFUL_LOSS_WEIGHT"], 5)) + \
                     "),Bad losses(" + str(round(WEIGHTS["BAD_LOSS_WEIGHT"], 5)) + \
                     "),Total Score\n")
+            else:
+                f.write("Team," + \
+                    "Losses(" + str(round(WEIGHTS["LOSS_WEIGHT"], 5)) + \
+                    "),NET(" + str(round(WEIGHTS["NET_WEIGHT"], 5)) + \
+                    "),Power(" + str(round(WEIGHTS["POWER_WEIGHT"], 5)) + \
+                    "),Q1(" + str(round(WEIGHTS["Q1_WEIGHT"], 5)) + \
+                    "),Q2(" + str(round(WEIGHTS["Q2_WEIGHT"], 5)) + \
+                    "),Q3(" + str(round(WEIGHTS["Q3_WEIGHT"], 5)) + \
+                    "),Road(" + str(round(WEIGHTS["ROAD_WEIGHT"], 5)) + \
+                    "),Neutral(" + str(round(WEIGHTS["NEUTRAL_WEIGHT"], 5)) + \
+                    "),Top 10(" + str(round(WEIGHTS["TOP_10_WEIGHT"], 5)) + \
+                    "),Top 25(" + str(round(WEIGHTS["TOP_25_WEIGHT"], 5)) + \
+                    "),Awful losses(" + str(round(WEIGHTS["AWFUL_LOSS_WEIGHT"], 5)) + \
+                    "),Bad losses(" + str(round(WEIGHTS["BAD_LOSS_WEIGHT"], 5)) + \
+                    "),Total Score\n")
             for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
-                line = self.teams[team].team_out + "," + \
+                if self.mens:
+                    line = self.teams[team].team_out + "," + \
                         str(round(self.teams[team].loss_score, 5)) + "," + \
                         str(round(self.teams[team].NET_score, 5)) + "," + \
                         str(round(self.teams[team].power_score, 5)) + "," + \
@@ -867,6 +884,21 @@ class Scorer:
                         str(round(self.teams[team].top25_score, 5)) + "," + \
                         str(round(self.teams[team].SOS_score, 5)) + "," + \
                         str(round(self.teams[team].NCSOS_score, 5)) + "," + \
+                        str(round(self.teams[team].awful_loss_score, 5)) + "," + \
+                        str(round(self.teams[team].bad_loss_score, 5)) + "," + \
+                        str(round(self.teams[team].score, 5)) + "\n"
+                else:
+                    line = self.teams[team].team_out + "," + \
+                        str(round(self.teams[team].loss_score, 5)) + "," + \
+                        str(round(self.teams[team].NET_score, 5)) + "," + \
+                        str(round(self.teams[team].power_score, 5)) + "," + \
+                        str(round(self.teams[team].Q1_score, 5)) + "," + \
+                        str(round(self.teams[team].Q2_score, 5)) + "," + \
+                        str(round(self.teams[team].Q3_score, 5)) + "," + \
+                        str(round(self.teams[team].road_score, 5)) + "," + \
+                        str(round(self.teams[team].neutral_score, 5)) + "," + \
+                        str(round(self.teams[team].top10_score, 5)) + "," + \
+                        str(round(self.teams[team].top25_score, 5)) + "," + \
                         str(round(self.teams[team].awful_loss_score, 5)) + "," + \
                         str(round(self.teams[team].bad_loss_score, 5)) + "," + \
                         str(round(self.teams[team].score, 5)) + "\n"

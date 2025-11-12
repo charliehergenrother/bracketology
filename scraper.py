@@ -127,6 +127,8 @@ MY_BETS = {
         'VMI': 5000,
         'Oklahoma-State': 17500,
         'Colorado-State': 1700,
+        'Iowa-State': 850,
+        'Florida-State': 17500,
     },
     'final_four': {
         'Vanderbilt': 3000,

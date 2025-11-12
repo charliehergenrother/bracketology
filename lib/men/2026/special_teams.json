@@ -33,7 +33,7 @@
         "Western Athletic": "",
         "West Coast": ""
     },
-    "ineligible_teams": ["Le-Moyne", "Lindenwood", "Mercyhurst", "New-Haven", "Queens", "Stonehill", "East-Texas-AM", "West-Georgia"],
+    "ineligible_teams": ["Le-Moyne", "Mercyhurst", "New-Haven", "West-Georgia"],
     "ineligible_sites": {
         "Buffalo": [""],
         "Greenville": ["Furman"],

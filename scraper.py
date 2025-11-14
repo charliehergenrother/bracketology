@@ -129,6 +129,8 @@ MY_BETS = {
         'Colorado-State': 1700,
         'Iowa-State': 850,
         'Florida-State': 17500,
+        'Temple': 2500,
+        'LSU': 10000
     },
     'final_four': {
         'Vanderbilt': 3000,
@@ -144,6 +146,7 @@ MY_BETS = {
         'Vanderbilt': 15000,
         'Clemson': 20000,
         'Georgia': 30000,
+        'Iowa-State': 4500
     }
 }
 

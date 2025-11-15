@@ -130,7 +130,8 @@ MY_BETS = {
         'Iowa-State': 850,
         'Florida-State': 17500,
         'Temple': 2500,
-        'LSU': 10000
+        'LSU': 10000,
+        'Wichita-State': 2000
     },
     'final_four': {
         'Vanderbilt': 3000,
@@ -140,6 +141,7 @@ MY_BETS = {
         'Cincinnati': 8000,
         'Georgia': 10000,
         'Nebraska': 10000,
+        'Saint-Marys-College': 6500,
     },
     'championship': {
         'Gonzaga': 4500,
@@ -1077,6 +1079,7 @@ def simulate_games(scorer, builder, weights, simmed_kenpoms):
             #TODO: oof, St. Joe's and La Salle play a nonconference game. probably a couple other examples like that. argh.
             #fix needs to be a total restructuring. Need to cross-reference NET page with schedule page
             #because the info about which games are conference games is only on the schedule page
+            #alternatively, just check it manually via monte carlo
             if scorer.teams[team].conference == scorer.teams[opponent].conference:
                 if game.win:
                     scorer.teams[team].conference_wins += 1
@@ -1579,7 +1582,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     print()
     print("TOURNAMENT CHANCES")
     for team in sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x]):
-        print(team.ljust(20), str(made_tournament[team]).rjust(4), str(round(sum(team_seeds[team])/made_tournament[team], 2)).rjust(5), \
+        print(team.ljust(20), str(made_tournament[team]).rjust(len(str(successful_runs))), str(round(sum(team_seeds[team])/made_tournament[team], 2)).rjust(5), \
                 str(min(team_seeds[team])).rjust(2), str(max(team_seeds[team])).rjust(2))
         if mc_outputfile:
             f.write(team + "," + str(made_tournament[team]/successful_runs) + "\n")

@@ -132,7 +132,8 @@ MY_BETS = {
         'LSU': 10000,
         'Villanova': 3000,
         'Butler': 8000,
-        'Wichita-State': 2000
+        'Wichita-State': 2000,
+        'Rhode-Island': 2000
     },
     'final_four': {
         'Vanderbilt': 3000,

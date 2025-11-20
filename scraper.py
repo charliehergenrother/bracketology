@@ -122,7 +122,6 @@ MY_BETS = {
         'Mercer': 5000,
         'Georgia': 7500,
         'Vanderbilt': 3000,
-        'Virginia-Tech': 20000,
         'VMI': 5000,
         'Oklahoma-State': 17500,
         'Colorado-State': 1700,

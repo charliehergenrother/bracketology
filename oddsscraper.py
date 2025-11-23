@@ -202,9 +202,7 @@ def combine_results(fd, dk):
     for team in dk['final_four']:
         fixed_team = translate_team_name(team)
         if fixed_team not in results['final_four']:
-            print(team)
-            print(results['final_four'])
-            raise Exception
+            results['final_four'][fixed_team] = dict()
         results['final_four'][fixed_team]['DK'] = dk['final_four'][team]
     
     for team in fd['championship']:
@@ -213,9 +211,7 @@ def combine_results(fd, dk):
     for team in dk['championship']:
         fixed_team = translate_team_name(team)
         if fixed_team not in results['championship']:
-            print(team)
-            print(results['championship'])
-            raise Exception
+            results['championship'][fixed_team] = dict()
         results['championship'][fixed_team]['DK'] = dk['championship'][team]
  
 

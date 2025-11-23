@@ -123,7 +123,6 @@ MY_BETS = {
         'Georgia': 7500,
         'Vanderbilt': 3000,
         'Oklahoma-State': 17500,
-        'Colorado-State': 1700,
         'Florida-State': 17500,
         'Temple': 2500,
         'LSU': 10000,

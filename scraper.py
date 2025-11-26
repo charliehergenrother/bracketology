@@ -118,26 +118,28 @@ MY_BETS = {
         'Bowling-Green': 2700,
         'Nevada': 4000,
         'Western-Carolina': 10000,
-        'The-Citadel': 100000,
         'Mercer': 5000,
         'Georgia': 7500,
         'Vanderbilt': 3000,
         'Oklahoma-State': 17500,
         'Florida-State': 17500,
-        'Temple': 2500,
         'LSU': 10000,
         'Villanova': 3000,
         'Butler': 8000,
         'Wichita-State': 2000,
         'Rhode-Island': 4000,
         'Sam-Houston-State': 6000,
+        'FAU': 2500,
+        'Seton-Hall': 20000,
+        'Utah-State': 320,
+        'Tulsa': 1600,
+        'New-Mexico-State': 1200,
     },
     'final_four': {
         'Vanderbilt': 3000,
         'Ole-Miss': 3500,
         'Utah-State': 7500,
         'Clemson': 6500,
-        'Cincinnati': 8000,
         'Georgia': 10000,
         'Nebraska': 10000,
         'Saint-Marys-College': 6500,
@@ -149,6 +151,7 @@ MY_BETS = {
         'Georgia': 30000,
         'Iowa-State': 4500,
         'Saint-Marys-College': 25000,
+        'Utah-State': 30000,
     }
 }
 
@@ -1418,6 +1421,7 @@ def get_current_odds(conferences):
             team_line = line.split(",")
             team = team_line[0]
             results['championship'][team] = {"FD": team_line[2], "DK": team_line[4]}
+    print(results)
     return results
 
 def get_plus_odds(odds):

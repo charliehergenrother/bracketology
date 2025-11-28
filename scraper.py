@@ -121,7 +121,6 @@ MY_BETS = {
         'Mercer': 5000,
         'Georgia': 7500,
         'Vanderbilt': 3000,
-        'Oklahoma-State': 17500,
         'Florida-State': 17500,
         'LSU': 10000,
         'Villanova': 3000,
@@ -134,6 +133,7 @@ MY_BETS = {
         'Utah-State': 320,
         'Tulsa': 1600,
         'New-Mexico-State': 1200,
+        'Wyoming': 20000,
     },
     'final_four': {
         'Vanderbilt': 3000,
@@ -147,8 +147,6 @@ MY_BETS = {
     'championship': {
         'Gonzaga': 4500,
         'Vanderbilt': 15000,
-        'Clemson': 20000,
-        'Georgia': 30000,
         'Iowa-State': 4500,
         'Saint-Marys-College': 25000,
         'Utah-State': 30000,

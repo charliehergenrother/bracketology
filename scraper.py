@@ -1419,7 +1419,6 @@ def get_current_odds(conferences):
             team_line = line.split(",")
             team = team_line[0]
             results['championship'][team] = {"FD": team_line[2], "DK": team_line[4]}
-    print(results)
     return results
 
 def get_plus_odds(odds):

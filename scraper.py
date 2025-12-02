@@ -114,14 +114,11 @@ MY_BETS = {
         'East-Carolina': 7500,
         'Baylor': 2200,
         'Eastern-Michigan': 30000,
-        'Western-Michigan': 100000,
-        'Bowling-Green': 2700,
         'Nevada': 4000,
         'Western-Carolina': 10000,
         'Mercer': 5000,
         'Georgia': 7500,
         'Vanderbilt': 3000,
-        'Florida-State': 17500,
         'LSU': 10000,
         'Villanova': 3000,
         'Butler': 8000,
@@ -134,6 +131,7 @@ MY_BETS = {
         'Tulsa': 1600,
         'New-Mexico-State': 1200,
         'Wyoming': 20000,
+        'California': 20000,
     },
     'final_four': {
         'Vanderbilt': 3000,
@@ -143,13 +141,12 @@ MY_BETS = {
         'Georgia': 10000,
         'Nebraska': 10000,
         'Saint-Marys-College': 6500,
+        'LSU': 6500,
     },
     'championship': {
         'Gonzaga': 4500,
         'Vanderbilt': 15000,
         'Iowa-State': 4500,
-        'Saint-Marys-College': 25000,
-        'Utah-State': 30000,
     }
 }
 

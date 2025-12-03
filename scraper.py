@@ -103,7 +103,14 @@ better_team_abbrs = {
         "Middle-Tennessee": "MTSU",
         "South-Dakota-State": "SDKS",
         "Ball-State": "BALL",
-        "South-Florida": "USF"
+        "South-Florida": "USF",
+        "Saint-Louis": "SLU",
+        "Bowling-Green": "BG",
+        "Tulsa": "TULS",
+        "UC-Santa-Barbara": "UCSB",
+        "North-Dakota-State": "NDSU",
+        "Troy": "TROY",
+        "Rhode-Island": "URI",
         }
 
 MY_BETS = {

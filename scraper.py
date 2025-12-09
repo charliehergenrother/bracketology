@@ -122,7 +122,6 @@ MY_BETS = {
         'Baylor': 2200,
         'Eastern-Michigan': 30000,
         'Nevada': 4000,
-        'Western-Carolina': 10000,
         'Mercer': 5000,
         'Georgia': 7500,
         'Vanderbilt': 3000,
@@ -130,7 +129,6 @@ MY_BETS = {
         'Villanova': 3000,
         'Butler': 8000,
         'Wichita-State': 2000,
-        'Rhode-Island': 4000,
         'Sam-Houston-State': 6000,
         'FAU': 2500,
         'Seton-Hall': 20000,
@@ -139,6 +137,8 @@ MY_BETS = {
         'New-Mexico-State': 1200,
         'Wyoming': 20000,
         'California': 20000,
+        'Iowa-State': 250,
+        'Gonzaga': -300,
     },
     'final_four': {
         'Vanderbilt': 3000,
@@ -148,7 +148,6 @@ MY_BETS = {
         'Georgia': 10000,
         'Nebraska': 10000,
         'Saint-Marys-College': 6500,
-        'LSU': 6500,
     },
     'championship': {
         'Gonzaga': 4500,

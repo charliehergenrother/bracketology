@@ -1571,7 +1571,10 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
                     else:
                         f.write(str(float(best_odds)/float(odds)) + ",")
                     if team in MY_BETS['conference']:
-                        f.write("Yes: +" + str(MY_BETS['conference'][team]))
+                        if MY_BETS['conference'][team] > 0:
+                            f.write("Yes: +" + str(MY_BETS['conference'][team]))
+                        else:
+                            f.write("Yes: " + str(MY_BETS['conference'][team]))
                 
                 except KeyError:
                     f.write(",")

@@ -186,15 +186,13 @@ def combine_results(fd, dk):
             results['conference'][conf_name][fixed_team] = {"FD": fd['conference'][conference][team]}
     for conference in dk['conference']:
         if conference not in results['conference']:
-            print(conference)
-            raise Exception
+            results['conference'][conference] = dict()
         for team in dk['conference'][conference]:
             fixed_team = translate_team_name(team)
             if fixed_team not in results['conference'][conference]:
-                print(team)
-                print(results['conference'][conference])
-                raise Exception
-            results['conference'][conference][fixed_team]["DK"] = dk['conference'][conference][team]
+                results['conference'][conference][fixed_team] = {"DK": dk['conference'][conference][team]}
+            else:
+                results['conference'][conference][fixed_team]["DK"] = dk['conference'][conference][team]
     
     for team in fd['final_four']:
         fixed_team = translate_team_name(team)
@@ -224,6 +222,13 @@ def get_best_odds(fd, dk):
         return fd
     return str(max(float(fd), float(dk)))
 
+def get_max_odds(fd, dk):
+    if fd == "":
+        return dk
+    if dk == "":
+        return fd
+    return max(fd, dk)
+
 def main():
     output = "./currentodds.csv"
     f = open(output, "w")
@@ -234,20 +239,22 @@ def main():
         f.write(conference + "\n")
         f.write("Team,Odds,FanDuel,FanDuel+,DraftKings,DK+,best odds\n")
         for team in sorted(results['conference'][conference]):
-            fd_odds = get_string_odds(results['conference'][conference][team]["FD"])
-            fd_plus_odds = get_plus_odds(fd_odds)
+            if "FD" in results['conference'][conference][team]:
+                fd_odds = get_string_odds(results['conference'][conference][team]["FD"])
+                fd_plus_odds = float(get_plus_odds(fd_odds))
+            else:
+                fd_odds = ""
+                fd_plus_odds = ""
             if "DK" in results['conference'][conference][team]:
                 dk_odds = get_string_odds(results['conference'][conference][team]["DK"])
-                dk_plus_odds = get_plus_odds(dk_odds)
-                f.write(team + ",," + \
-                    fd_odds + "," + fd_plus_odds + "," + \
-                    dk_odds + "," + dk_plus_odds + "," + \
-                    str(max(float(fd_plus_odds), float(dk_plus_odds))) + "\n")
+                dk_plus_odds = float(get_plus_odds(dk_odds))
             else:
-                f.write(team + ",," + \
-                    fd_odds + "," + fd_plus_odds + "," + \
-                    "," + "," + \
-                    fd_plus_odds + "\n")
+                dk_odds = ""
+                dk_plus_odds = ""
+            f.write(team + ",," + \
+                fd_odds + "," + str(fd_plus_odds) + "," + \
+                dk_odds + "," + str(dk_plus_odds) + "," + \
+                str(get_max_odds(fd_plus_odds, dk_plus_odds)) + "\n")
         f.write("\n")
 
     f.write("FINAL FOUR\n")

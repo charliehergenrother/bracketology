@@ -135,7 +135,6 @@ MY_BETS = {
         'Tulsa': 1600,
         'New-Mexico-State': 1200,
         'Wyoming': 20000,
-        'California': 20000,
         'Iowa-State': 250,
         'Gonzaga': -300,
         'FIU': 5500,
@@ -148,6 +147,7 @@ MY_BETS = {
         'Georgia': 10000,
         'Nebraska': 10000,
         'Saint-Marys-College': 6500,
+        'BYU': 850,
     },
     'championship': {
         'Gonzaga': 4500,

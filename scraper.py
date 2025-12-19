@@ -120,7 +120,6 @@ MY_BETS = {
         'UTSA': 7500,
         'East-Carolina': 7500,
         'Baylor': 2200,
-        'Eastern-Michigan': 30000,
         'Nevada': 4000,
         'Mercer': 5000,
         'Georgia': 7500,

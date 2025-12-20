@@ -126,7 +126,6 @@ MY_BETS = {
         'Vanderbilt': 3000,
         'LSU': 10000,
         'Villanova': 3000,
-        'Butler': 8000,
         'Wichita-State': 2000,
         'Sam-Houston-State': 6000,
         'FAU': 2500,

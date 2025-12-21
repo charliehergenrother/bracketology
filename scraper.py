@@ -146,6 +146,7 @@ MY_BETS = {
         'Nebraska': 10000,
         'Saint-Marys-College': 6500,
         'BYU': 850,
+        'Villanova': 8000,
     },
     'championship': {
         'Gonzaga': 4500,

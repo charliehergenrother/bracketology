@@ -130,12 +130,12 @@ MY_BETS = {
         'Sam-Houston-State': 6000,
         'FAU': 2500,
         'Seton-Hall': 20000,
-        'Tulsa': 1600,
         'Iowa-State': 250,
         'Gonzaga': -300,
         'FIU': 5500,
         'Creighton': 5000,
         'Utah-State': 175,
+        'Richmond': 6000,
     },
     'final_four': {
         'Vanderbilt': 3000,

@@ -1398,7 +1398,7 @@ def get_current_odds(conferences):
             conference = line
             results['conference'][conference] = dict()
             continue
-        if "Team,Odds" in line:
+        if "Team," in line:
             continue
         if "FINAL FOUR" in line:
             final_four = True
@@ -1412,15 +1412,15 @@ def get_current_odds(conferences):
             if line[:line.find(",")] in conferences[conference]:
                 team_line = line.split(",")
                 team = team_line[0]
-                results['conference'][conference][team] = {"FD": team_line[2], "DK": team_line[4]}
+                results['conference'][conference][team] = {"FD": team_line[1], "DK": team_line[3], "CS": team_line[5], "BM": team_line[7], "best": team_line[9]}
         elif final_four and len(line) > 2:
             team_line = line.split(",")
             team = team_line[0]
-            results['final_four'][team] = {"FD": team_line[2], "DK": team_line[4]}
+            results['final_four'][team] = {"FD": team_line[1], "DK": team_line[3], "CS": team_line[5], "BM": team_line[7], "best": team_line[9]}
         elif championship and len(line) > 2:
             team_line = line.split(",")
             team = team_line[0]
-            results['championship'][team] = {"FD": team_line[2], "DK": team_line[4]}
+            results['championship'][team] = {"FD": team_line[1], "DK": team_line[3], "CS": team_line[5], "BM": team_line[7], "best": team_line[9]}
     return results
 
 def get_plus_odds(odds):
@@ -1429,13 +1429,6 @@ def get_plus_odds(odds):
     if float(odds) < 0:
         return str((100/(float(odds)/(float(odds) - 100))) - 100)
     return odds
-
-def get_best_odds(team):
-    if 'FD' not in team or team['FD'] == "":
-        return get_plus_odds(team['DK'])
-    if 'DK' not in team or team['DK'] == "":
-        return get_plus_odds(team['FD'])
-    return get_plus_odds(str(max(float(team['FD']), float(team['DK']))))
 
 #run a monte carlo simulation of the remaining college basketball season
 def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
@@ -1543,7 +1536,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
         print(conference)
         if mc_outputfile:
             f.write(conference + "\n")
-            f.write("Team,Odds,FanDuel,FanDuel+,DraftKings,DK+,best odds,Good bet?,Already bet?\n")
+            f.write("Team,Odds,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,best odds,Good bet?,Already bet?\n")
         for team in sorted(final_conference_winners[conference], key = lambda x: final_conference_winners[conference][x], reverse=True):
             odds = str(int((100/(final_conference_winners[conference][team]/successful_runs))-100))
             print(team.ljust(20), final_conference_winners[conference][team], "+" + odds)
@@ -1552,23 +1545,21 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
             for team in sorted(final_conference_winners[conference]):
                 odds = str(int((100/(final_conference_winners[conference][team]/successful_runs))-100))
                 f.write(team + "," + odds + ",")
+                for book in ["FD", "DK", "CS", "BM"]:
+                    try:
+                        write_book_odds(f, current_odds['conference'][conference][team], book)
+                    except KeyError:    # odds not posted anywhere for this team
+                        f.write(",,")
                 try:
-                    f.write(current_odds['conference'][conference][team]['FD'] + ',')
-                    f.write(get_plus_odds(current_odds['conference'][conference][team]['FD']) + ',')
-                except KeyError:
-                    f.write(",,")
-                try:
-                    f.write(current_odds['conference'][conference][team]['DK'] + ',')
-                    f.write(get_plus_odds(current_odds['conference'][conference][team]['DK']) + ',')
-                except KeyError:
-                    f.write(",,")
-                try:
-                    best_odds = get_best_odds(current_odds['conference'][conference][team])
+                    best_odds = current_odds['conference'][conference][team]["best"]
                     f.write(best_odds + ",")
                     if float(odds) > float(best_odds):
                         f.write("0,")
                     else:
-                        f.write(str(float(best_odds)/float(odds)) + ",")
+                        try:
+                            f.write(str(float(best_odds)/float(odds)) + ",")
+                        except ZeroDivisionError:   #team is 100% to win its conference
+                            f.write("XXXXX,")
                     if team in MY_BETS['conference']:
                         if MY_BETS['conference'][team] > 0:
                             f.write("Yes: +" + str(MY_BETS['conference'][team]))
@@ -1596,7 +1587,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
     if mc_outputfile:
         f.write("\n")
         f.write("FINAL FOURS\n")
-        f.write("Team,Odds,FanDuel,FanDuel+,DraftKings,DK+,best odds,Good bet?,Already bet?\n")
+        f.write("Team,Odds,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,best odds,Good bet?,Already bet?\n")
     print()
     print("FINAL FOURS")
     for team in sorted(final_fours, key=lambda x: final_fours[x], reverse=True):
@@ -1606,35 +1597,19 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
         for team in sorted(final_fours):
             odds = str(int((100/(final_fours[team]/successful_runs))-100))
             f.write(team + "," + odds + ",")
-            try:
-                f.write(current_odds['final_four'][team]['FD'] + ',')
-                f.write(get_plus_odds(current_odds['final_four'][team]['FD']) + ',')
-            except KeyError:
-                f.write(",,")
-            try:
-                f.write(current_odds['final_four'][team]['DK'] + ',')
-                f.write(get_plus_odds(current_odds['final_four'][team]['DK']) + ',')
-            except KeyError:
-                f.write(",,")
-            try:
-                best_odds = get_best_odds(current_odds['final_four'][team])
-                f.write(best_odds + ",")
-                if float(odds) > float(best_odds):
-                    f.write("0,")
-                else:
-                    f.write(str(float(best_odds)/float(odds)) + ",")
-                if team in MY_BETS['final_four']:
-                    f.write("Yes: +" + str(MY_BETS['final_four'][team]))
-            except KeyError:
-                pass
-            f.write("\n")
+            for book in ["FD", "DK", "CS", "BM"]:
+                try:
+                    write_book_odds(f, current_odds['final_four'][team], book)
+                except KeyError:    # odds not posted anywhere for this team
+                    f.write(",,")
+            write_odds_margin(f, team, odds, current_odds, 'final_four')
 
     print()
     print("NATIONAL CHAMPIONS")
     if mc_outputfile:
         f.write("\n")
         f.write("NATIONAL CHAMPIONS\n")
-        f.write("Team,Odds,FanDuel,FanDuel+,DraftKings,DK+,best odds,Good bet?,Already bet?\n")
+        f.write("Team,Odds,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,best odds,Good bet?,Already bet?\n")
     for team in sorted(national_champion, key=lambda x: national_champion[x], reverse=True):
         odds = str(int((100/(national_champion[team]/successful_runs))-100))
         print(team.ljust(20), national_champion[team], "+" + str(int((100/(national_champion[team]/successful_runs))-100)))
@@ -1642,31 +1617,33 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
         for team in sorted(national_champion):
             odds = str(int((100/(national_champion[team]/successful_runs))-100))
             f.write(team + "," + odds + ",")
-            try:
-                f.write(current_odds['championship'][team]['FD'] + ',')
-                f.write(get_plus_odds(current_odds['championship'][team]['FD']) + ',')
-            except KeyError:
-                f.write(",,")
-            try:
-                f.write(current_odds['championship'][team]['DK'] + ',')
-                f.write(get_plus_odds(current_odds['championship'][team]['DK']) + ',')
-            except KeyError:
-                f.write(",,")
-            try:
-                best_odds = get_best_odds(current_odds['championship'][team])
-                f.write(best_odds + ",")
-                if float(odds) > float(best_odds):
-                    f.write("0,")
-                else:
-                    f.write(str(float(best_odds)/float(odds)) + ",")
-                if team in MY_BETS['championship']:
-                    f.write("Yes: +" + str(MY_BETS['championship'][team]))
-            except KeyError:
-                pass
-            f.write("\n")
+            for book in ["FD", "DK", "CS", "BM"]:
+                try:
+                    write_book_odds(f, current_odds['championship'][team], book)
+                except KeyError:    # odds not posted anywhere for this team
+                    f.write(",,")
+            write_odds_margin(f, team, odds, current_odds, 'championship')
 
     for team in team_results:
         output_team_html(team, scorer.teams[team].team_out, team_results[team], builder)
+
+def write_book_odds(f, current_odds, book):
+    f.write(current_odds[book] + ",")
+    f.write(get_plus_odds(current_odds[book]) + ",")
+
+def write_odds_margin(f, team, team_odds, current_odds, bet_type):
+    try:
+        best_odds = current_odds[bet_type][team]['best']
+        f.write(best_odds + ",")
+        if float(team_odds) > float(best_odds):
+            f.write("0,")
+        else:
+            f.write(str(float(best_odds)/float(team_odds)) + ",")
+        if team in MY_BETS[bet_type]:
+            f.write("Yes: +" + str(MY_BETS['championship'][team]))
+    except KeyError:
+        pass
+    f.write("\n")
 
 def main():
     scraper = Scraper()

@@ -720,6 +720,7 @@ def process_args():
     future = False
     monte_carlo = False
     mc_outputfile = ""
+    mc_output_html = ""
     simulations = 0
 
     while argindex < len(sys.argv):
@@ -735,6 +736,7 @@ def process_args():
             print("     -g: set an html filename where the upcoming schedule will live")
             print("     -c: Monte Carlo simulation. run <sims> number of simulation and report on how often a team made the tournament/got to final four/won championship")
             print("     -d: set a csv filename where the monte carlo output will live")
+            print("     -p: set an html directory where the monte carlo output will live")
             print("     -i: use weights located in given file")
             print("     -o: set a csv filename where the final ranking will live")
             print("     -r: set a csv filename where the final readable resume will live")
@@ -782,6 +784,9 @@ def process_args():
         elif sys.argv[argindex] == '-d':
             mc_outputfile = sys.argv[argindex + 1]
             argindex += 1
+        elif sys.argv[argindex] == '-p':
+            mc_output_html = sys.argv[argindex + 1]
+            argindex += 1
         elif sys.argv[argindex] == '-y':
             if int(sys.argv[argindex + 1]) < 2021:
                 print("year not supported, sorry. Try 2021-present.")
@@ -800,7 +805,7 @@ def process_args():
             weightfile = "lib/women/weights.txt"
     return year, mens, outputfile, resumefile, webfile, resumewebfile, upcomingschedulefile, \
             datadir, should_scrape, force_scrape, verbose, tracker, weightfile, future, \
-            monte_carlo, mc_outputfile, simulations
+            monte_carlo, mc_outputfile, simulations, mc_output_html
 
 def add_or_increment_key(key, dictionary):
     try:
@@ -1344,8 +1349,24 @@ def scrape_initial_kenpom(year, scorer):
                     rating = float(line[54:].strip())
                     team_kenpoms[team] = {"rating": rating, "rank": rank}
     return team_kenpoms
-
+#{
+        #   wins: X
+        #   losses: X
+        #   conference_wins: X
+        #   conference_losses: X
+        #   conference_seed: X
+        #   ctourn_win: T/F
+        #   ncaa_seed: X/-1
+        #   ncaa_round: -1/0/1/2/3/4/5/6/7
+        #}
 def output_team_html(team, team_out, team_results, builder):
+    total_runs = len(team_results)
+    win_conference = len(list(filter(lambda x: x['conference_seed'] == 1, team_results)))
+    make_tournament = len(list(filter(lambda x: x['ncaa_seed'] > 0, team_results)))
+    auto_bid = len(list(filter(lambda x: x['ctourn_win'], team_results)))
+    final_four = len(list(filter(lambda x: x['ncaa_round'] >= 5, team_results)))
+    national_championship = len(list(filter(lambda x: x['ncaa_round'] == 7, team_results)))
+
     if not os.path.exists("./team_pages/"):
         os.makedirs("./team_pages/")
     f = open("./team_pages/" + team + ".html", "w")
@@ -1353,6 +1374,48 @@ def output_team_html(team, team_out, team_results, builder):
     builder.output_link_row(f, "../")
     f.write('<div class="title_row_team">\n')
     f.write('  <img class="team_page_logo" src=../assets/' + team + '.png></img><h1>' + team_out + '</h1>\n')
+    f.write('</div>\n')
+    f.write('<div class="oddsbox_row>\n')
+    f.write('  <div class="oddsbox"\n')
+    f.write('    <div class="oddsbox_title">\n')
+    f.write('      <span>Win conference:</span>\n')
+    f.write('    </div>\n')
+    f.write('    <div class="oddsbox_number">\n')
+    f.write('      <span>' + str(round(100*win_conference/total_runs, 2)) + '%</span>\n')
+    f.write('    </div>\n')
+    f.write('  </div>\n')
+    f.write('  <div class="oddsbox"\n')
+    f.write('    <div class="oddsbox_title">\n')
+    f.write('      <span>Make tournament:</span>\n')
+    f.write('    </div>\n')
+    f.write('    <div class="oddsbox_number">\n')
+    f.write('      <span>' + str(round(100*make_tournament/total_runs, 2)) + '%</span>\n')
+    f.write('    </div>\n')
+    f.write('  </div>\n')
+    f.write('  <div class="oddsbox"\n')
+    f.write('    <div class="oddsbox_title">\n')
+    f.write('      <span>Auto bid:</span>\n')
+    f.write('    </div>\n')
+    f.write('    <div class="oddsbox_number">\n')
+    f.write('      <span>' + str(round(100*auto_bid/total_runs, 2)) + '%</span>\n')
+    f.write('    </div>\n')
+    f.write('  </div>\n')
+    f.write('  <div class="oddsbox"\n')
+    f.write('    <div class="oddsbox_title">\n')
+    f.write('      <span>Final Four:</span>\n')
+    f.write('    </div>\n')
+    f.write('    <div class="oddsbox_number">\n')
+    f.write('      <span>' + str(round(100*final_four/total_runs, 2)) + '%</span>\n')
+    f.write('    </div>\n')
+    f.write('  </div>\n')
+    f.write('  <div class="oddsbox"\n')
+    f.write('    <div class="oddsbox_title">\n')
+    f.write('      <span>Win championship:</span>\n')
+    f.write('    </div>\n')
+    f.write('    <div class="oddsbox_number">\n')
+    f.write('      <span>' + str(round(100*national_championship/total_runs, 2)) + '%</span>\n')
+    f.write('    </div>\n')
+    f.write('  </div>\n')
     f.write('</div>\n')
     team_table_output(f, 'wins', 'losses', team_results)
     team_table_output(f, 'conference_wins', 'conference_losses', team_results)
@@ -1372,7 +1435,7 @@ def team_table_output(f, win_string, loss_string, team_results):
     total_games = team_results[0][win_string] + team_results[0][loss_string]
     win_totals = [x[win_string] for x in team_results]
     for win_total in sorted(set(win_totals), reverse=True):
-        relevant_runs = list(filter(lambda x: x[win_string] == win_total, team_results))
+        relevant_runs = list(list(filter(lambda x: x[win_string] == win_total, team_results)))
         relevant_seeds = [x['ncaa_seed'] for x in relevant_runs]
         win_total_count = win_totals.count(win_total)
         win_total_pct = round(100*win_total_count / total_runs, 2)
@@ -1431,7 +1494,7 @@ def get_plus_odds(odds):
     return odds
 
 #run a monte carlo simulation of the remaining college basketball season
-def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile):
+def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_output_html):
     rng = numpy.random.default_rng()
     today_date = date.today()
     selection_sunday = date(2026, 3, 15)
@@ -1640,7 +1703,7 @@ def write_odds_margin(f, team, team_odds, current_odds, bet_type):
         else:
             f.write(str(float(best_odds)/float(team_odds)) + ",")
         if team in MY_BETS[bet_type]:
-            f.write("Yes: +" + str(MY_BETS['championship'][team]))
+            f.write("Yes: +" + str(MY_BETS[bet_type][team]))
     except KeyError:
         pass
     f.write("\n")
@@ -1649,7 +1712,7 @@ def main():
     scraper = Scraper()
     scraper.year, scraper.mens, scraper.outputfile, scraper.resumefile, scraper.webfile, resumewebfile, \
             upcomingschedulefile, scraper.datadir, should_scrape, force_scrape, scraper.verbose, \
-            scraper.tracker, weightfile, future, monte_carlo, mc_outputfile, simulations = process_args()
+            scraper.tracker, weightfile, future, monte_carlo, mc_outputfile, simulations, mc_output_html = process_args()
     builder = scraper.load_data(should_scrape, force_scrape, future, monte_carlo)
     scorer = Scorer(builder, future, scraper.mens, scraper.tracker, monte_carlo)
     if scraper.tracker:
@@ -1669,7 +1732,7 @@ def main():
         return
     elif monte_carlo:
         scraper.load_schedule_data(should_scrape, force_scrape)
-        run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile)
+        run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_output_html)
         if scraper.outputfile:
             scorer.outputfile = scraper.outputfile
             scorer.output_scores()

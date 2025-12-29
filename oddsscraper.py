@@ -157,7 +157,7 @@ def scrape_caesars_main_list(oddsfile):
     return results
 
 def scrape_caesars_conference():
-    oddsfile = ODDS_PATH + "c conf"
+    oddsfile = ODDS_PATH + "cs conf"
     f = open(oddsfile, "r")
     for line in f.read().split("\n"):
         if "Conference Winner" in line:
@@ -190,7 +190,7 @@ def scrape_caesars_conference():
 
 def scrape_caesars():
     results = dict()
-    results['championship'] = scrape_caesars_main_list(ODDS_PATH + "c champ")
+    results['championship'] = scrape_caesars_main_list(ODDS_PATH + "cs champ")
     results['conference'] = scrape_caesars_conference()
     return results
 
@@ -267,6 +267,72 @@ def scrape_betmgm():
     results = dict()
     results['championship'] = scrape_betmgm_main_list(ODDS_PATH + "bm all")
     results['conference'] = scrape_betmgm_conference()
+    return results
+
+def scrape_bet365_main_list(oddsfile):
+    f = open(oddsfile, "r")
+    for line in f.read().split("\n"):
+        if "NCAA Championship 2025" in line:
+            break
+    odds_tables = line.replace(">", ">\n")
+    results = dict()
+    found_team = False
+    found_odds = False
+    for line in odds_tables.split("\n"):
+        if 'ParticipantBorderless_Name">' in line:
+            found_team = True
+            continue
+        if found_team:
+            team = line[:line.find("</span>")].rstrip()
+            found_team = False
+            continue
+        if 'ParticipantBorderless_Odds">' in line:
+            found_odds = True
+            continue
+        if found_odds:
+            odds = int(line[:line.find("</span>")])
+            results[team] = odds
+            found_odds = False
+            continue
+    return results
+
+def scrape_bet365_conference():
+    oddsfile = ODDS_PATH + "bt conf.html"
+    f = open(oddsfile, "r")
+    for line in f.read().split("\n"):
+        if "Regular Season 2025" in line:
+            break
+    odds_tables = line.replace(">", ">\n")
+    results = dict()
+    found_team = False
+    found_odds = False
+    for line in odds_tables.split("\n"):
+        if "Regular Season 2025" in line:
+            conference = line[:line.find(" Regular Season 2025")]
+            results[conference] = dict()
+            continue
+        if 'ParticipantBorderless_Name">' in line:
+            found_team = True
+            continue
+        if found_team:
+            team = line[:line.find("</span>")].rstrip()
+            found_team = False
+            continue
+        if 'ParticipantBorderless_Odds">' in line:
+            found_odds = True
+            continue
+        if found_odds:
+            odds = int(line[:line.find("</span>")])
+            results[conference][team] = odds
+            found_odds = False
+            continue
+    return results
+
+def scrape_bet365():
+    results = dict()
+    results['championship'] = scrape_bet365_main_list(ODDS_PATH + "bt champ.html")
+    results['final_four'] = scrape_bet365_main_list(ODDS_PATH + "bt ff.html")
+    results['conference'] = scrape_bet365_conference()
     return results
 
 def get_string_odds(odds):
@@ -374,6 +440,8 @@ def translate_team_name(team):
         "St. Mary's": "Saint-Marys-College",
         "Western KY": "Western-Kentucky",
         "W Carolina": "Western-Carolina",
+
+        "Miami Florida": "Miami-FL",
     }
     if team in ad_hoc_dict:
         return ad_hoc_dict[team]
@@ -403,7 +471,7 @@ def run_combine(book_results, book_abbreviation, full_results):
             full_results[fixed_team] = dict()
         full_results[fixed_team][book_abbreviation] = book_results[team]
 
-def combine_results(fd, dk, cs, bm):
+def combine_results(fd, dk, cs, bm, bt):
     results = {'conference': dict(), 'final_four': dict(), 'championship': dict()}
     conference_lookup = {
         "ACC Conference": "ACC",
@@ -429,6 +497,7 @@ def combine_results(fd, dk, cs, bm):
         "Big South Conference": "Big South",
         "Big West Conference": "Big West",
         "Sun Belt Conference": "Sun Belt",
+        "American Athletic": "American",
     }
     for conference in fd['conference']:
         conf_name = conference_lookup[conference]
@@ -440,13 +509,13 @@ def combine_results(fd, dk, cs, bm):
         if conference not in results['conference']:
             results['conference'][conference] = dict()
         run_combine(dk['conference'][conference], 'DK', results['conference'][conference])
-    for conference in cs['conference']:
-        conf_name = conference
-        if conference in conference_lookup:
-            conf_name = conference_lookup[conference]
-        if conf_name not in results['conference']:
-            results['conference'][conf_name] = dict()
-        run_combine(cs['conference'][conference], 'CS', results['conference'][conf_name])
+    #for conference in cs['conference']:
+    #    conf_name = conference
+    #    if conference in conference_lookup:
+    #        conf_name = conference_lookup[conference]
+    #    if conf_name not in results['conference']:
+    #        results['conference'][conf_name] = dict()
+    #    run_combine(cs['conference'][conference], 'CS', results['conference'][conf_name])
     for conference in bm['conference']:
         conf_name = conference
         if conference in conference_lookup:
@@ -454,11 +523,19 @@ def combine_results(fd, dk, cs, bm):
         if conf_name not in results['conference']:
             results['conference'][conf_name] = dict()
         run_combine(bm['conference'][conference], 'BM', results['conference'][conf_name])
+    for conference in bt['conference']:
+        conf_name = conference
+        if conference in conference_lookup:
+            conf_name = conference_lookup[conference]
+        if conf_name not in results['conference']:
+            results['conference'][conf_name] = dict()
+        run_combine(bt['conference'][conference], 'BT', results['conference'][conf_name])
     
     for team in fd['final_four']:
         fixed_team = translate_team_name(team)
         results['final_four'][fixed_team] = {'FD': fd['final_four'][team]}
     run_combine(dk['final_four'], 'DK', results['final_four'])
+    run_combine(bt['final_four'], 'BT', results['final_four'])
     
     for team in fd['championship']:
         fixed_team = translate_team_name(team)
@@ -466,6 +543,7 @@ def combine_results(fd, dk, cs, bm):
     run_combine(dk['championship'], 'DK', results['championship'])
     run_combine(cs['championship'], 'CS', results['championship'])
     run_combine(bm['championship'], 'BM', results['championship'])
+    run_combine(bt['championship'], 'BT', results['championship'])
 
     return results
 
@@ -500,24 +578,25 @@ def main():
     dk_results = scrape_draftkings()
     cs_results = scrape_caesars()
     bm_results = scrape_betmgm()
-    results = combine_results(fd_results, dk_results, cs_results, bm_results)
+    bt_results = scrape_bet365()
+    results = combine_results(fd_results, dk_results, cs_results, bm_results, bt_results)
     for conference in results['conference']:
         f.write(conference + "\n")
-        f.write("Team,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,best odds\n")
+        f.write("Team,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds\n")
         for team in sorted(results['conference'][conference]):
-            write_book_odds(f, team, results['conference'][conference][team], ["FD", "DK", "CS", "BM"])
+            write_book_odds(f, team, results['conference'][conference][team], ["FD", "DK", "CS", "BM", "BT"])
         f.write("\n")
 
     f.write("FINAL FOUR\n")
-    f.write("Team,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,best odds\n")
+    f.write("Team,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds\n")
     for team in sorted(results['final_four']):
-        write_book_odds(f, team, results['final_four'][team], ["FD", "DK", "CS", "BM"])
+        write_book_odds(f, team, results['final_four'][team], ["FD", "DK", "CS", "BM", "BT"])
     f.write("\n")
 
     f.write('CHAMPIONSHIP\n')
-    f.write("Team,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,best odds\n")
+    f.write("Team,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds\n")
     for team in sorted(results['championship']):
-        write_book_odds(f, team, results['championship'][team], ["FD", "DK", "CS", "BM"])
+        write_book_odds(f, team, results['championship'][team], ["FD", "DK", "CS", "BM", "BT"])
     f.write("\n")
     print()
     print("Successfully wrote odds!")

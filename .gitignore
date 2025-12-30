@@ -8,7 +8,6 @@ lib/actual_results_2023.txt
 lib/assets
 lib/oldweights.txt
 lib/special_teams_base.json
-team_pages/
 testweights.txt
 tracker_runner.sh
 currentodds.csv

@@ -115,7 +115,6 @@ better_team_abbrs = {
 
 MY_BETS = {
     'conference': {
-        'Clemson': 2200,
         'Georgia-Tech': 18000,
         'UTSA': 7500,
         'East-Carolina': 7500,
@@ -132,7 +131,6 @@ MY_BETS = {
         'Seton-Hall': 20000,
         'Iowa-State': 250,
         'Gonzaga': -300,
-        'FIU': 5500,
         'Creighton': 5000,
         'Utah-State': 175,
         'Bellarmine': 6650,
@@ -1142,7 +1140,7 @@ def simulate_games(scorer, builder, weights, simmed_kenpoms):
                 "conference_wins": 0,
                 "conference_losses": 0,
                 "conference_seed": 0,
-                "ctourn_win": False,
+                "ctourn_winner": False,
                 "ncaa_seed": -1,
                 "ncaa_round": -1
             }
@@ -1357,7 +1355,7 @@ def scrape_initial_kenpom(year, scorer):
         #   conference_wins: X
         #   conference_losses: X
         #   conference_seed: X
-        #   ctourn_win: T/F
+        #   ctourn_winner: T/F
         #   ncaa_seed: X/-1
         #   ncaa_round: -1/0/1/2/3/4/5/6/7
         #}
@@ -1365,7 +1363,7 @@ def output_team_html(team, team_out, team_results, builder):
     total_runs = len(team_results)
     win_conference = len(list(filter(lambda x: x['conference_seed'] == 1, team_results)))
     make_tournament = len(list(filter(lambda x: x['ncaa_seed'] > 0, team_results)))
-    auto_bid = len(list(filter(lambda x: x['ctourn_win'], team_results)))
+    auto_bid = len(list(filter(lambda x: x['ctourn_winner'], team_results)))
     final_four = len(list(filter(lambda x: x['ncaa_round'] >= 5, team_results)))
     national_championship = len(list(filter(lambda x: x['ncaa_round'] == 7, team_results)))
 
@@ -1377,45 +1375,45 @@ def output_team_html(team, team_out, team_results, builder):
     f.write('<div class="title_row_team">\n')
     f.write('  <img class="team_page_logo" src=../assets/' + team + '.png></img><h1>' + team_out + '</h1>\n')
     f.write('</div>\n')
-    f.write('<div class="oddsbox_row>\n')
-    f.write('  <div class="oddsbox"\n')
+    f.write('<div class="oddsbox_row">\n')
+    f.write('  <div class="oddsbox">\n')
     f.write('    <div class="oddsbox_title">\n')
-    f.write('      <span>Win conference:</span>\n')
+    f.write('      <h3 class="metric_title">Win conference:</h3>\n')
     f.write('    </div>\n')
     f.write('    <div class="oddsbox_number">\n')
-    f.write('      <span>' + str(round(100*win_conference/total_runs, 2)) + '%</span>\n')
+    f.write('      <h4 class="metric_number">' + str(round(100*win_conference/total_runs, 2)) + '%</h4>\n')
     f.write('    </div>\n')
     f.write('  </div>\n')
-    f.write('  <div class="oddsbox"\n')
+    f.write('  <div class="oddsbox">\n')
     f.write('    <div class="oddsbox_title">\n')
-    f.write('      <span>Make tournament:</span>\n')
+    f.write('      <h3 class="metric_title">Make tournament:</h3>\n')
     f.write('    </div>\n')
     f.write('    <div class="oddsbox_number">\n')
-    f.write('      <span>' + str(round(100*make_tournament/total_runs, 2)) + '%</span>\n')
+    f.write('      <h4 class="metric_number">' + str(round(100*make_tournament/total_runs, 2)) + '%</h4>\n')
     f.write('    </div>\n')
     f.write('  </div>\n')
-    f.write('  <div class="oddsbox"\n')
+    f.write('  <div class="oddsbox">\n')
     f.write('    <div class="oddsbox_title">\n')
-    f.write('      <span>Auto bid:</span>\n')
+    f.write('      <h3 class="metric_title">Auto bid:</h3>\n')
     f.write('    </div>\n')
     f.write('    <div class="oddsbox_number">\n')
-    f.write('      <span>' + str(round(100*auto_bid/total_runs, 2)) + '%</span>\n')
+    f.write('      <h4 class="metric_number">' + str(round(100*auto_bid/total_runs, 2)) + '%</h4>\n')
     f.write('    </div>\n')
     f.write('  </div>\n')
-    f.write('  <div class="oddsbox"\n')
+    f.write('  <div class="oddsbox">\n')
     f.write('    <div class="oddsbox_title">\n')
-    f.write('      <span>Final Four:</span>\n')
+    f.write('      <h3 class="metric_title">Final Four:</h3>\n')
     f.write('    </div>\n')
     f.write('    <div class="oddsbox_number">\n')
-    f.write('      <span>' + str(round(100*final_four/total_runs, 2)) + '%</span>\n')
+    f.write('      <h4 class="metric_number">' + str(round(100*final_four/total_runs, 2)) + '%</h4>\n')
     f.write('    </div>\n')
     f.write('  </div>\n')
-    f.write('  <div class="oddsbox"\n')
+    f.write('  <div class="oddsbox">\n')
     f.write('    <div class="oddsbox_title">\n')
-    f.write('      <span>Win championship:</span>\n')
+    f.write('      <h3 class="metric_title">Win championship:</h3>\n')
     f.write('    </div>\n')
     f.write('    <div class="oddsbox_number">\n')
-    f.write('      <span>' + str(round(100*national_championship/total_runs, 2)) + '%</span>\n')
+    f.write('      <h4 class="metric_number">' + str(round(100*national_championship/total_runs, 2)) + '%</h4>\n')
     f.write('    </div>\n')
     f.write('  </div>\n')
     f.write('</div>\n')
@@ -1445,8 +1443,10 @@ def team_table_output(f, win_string, loss_string, team_results):
         f.write('    <tr><td>' + str(win_total) + "-" + str(total_games - win_total) + '</td>')
         f.write('<td>' + str(win_total_pct) + '%</td>')
         for seed in range(1, 17):
-            f.write('<td>' + str(round(100*relevant_seeds.count(seed)/len(relevant_runs), 2)) + '%</td>')
-        f.write('<td>' + str(round(100*relevant_seeds.count(-1)/len(relevant_runs), 2)) + '%</td>')
+            outcome_percentage = round(100*relevant_seeds.count(seed)/total_runs, 2)
+            color_percentage = str(-outcome_percentage / 2 + 100)
+            f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
+        f.write('<td>' + str(round(100*relevant_seeds.count(-1)/total_runs, 2)) + '%</td>')
         f.write('</tr>\n')
     f.write('    </tbody>\n')
     f.write('  </table>\n')
@@ -1530,7 +1530,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_
         #   conference_wins: X
         #   conference_losses: X
         #   conference_seed: X
-        #   ctourn_win: T/F
+        #   ctourn_winner: T/F
         #   ncaa_seed: X/-1
         #   ncaa_round: -1/0/1/2/3/4/5/6/7
         #}

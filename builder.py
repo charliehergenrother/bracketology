@@ -1037,7 +1037,7 @@ class Builder:
                 f.write('<td>(' + str(seed_num) + ')</td>')
                 
                 if "/" not in team:
-                    f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td>' + self.get_team_out(team))
+                    f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="team_pages/' + team + '.html">' + self.get_team_out(team) + '</a>')
                     if self.teams[team].auto_bid:
                         f.write("*")
                     f.write(" (" + self.teams[team].record + ")</td>")
@@ -1045,11 +1045,12 @@ class Builder:
                     team1 = team.split("/")[0]
                     team2 = team.split("/")[1]
                     f.write('<td><img class="tiny_logo" src=assets/' + team1 + '.png></img>' + \
-                            '<img class="tiny_logo" src=assets/' + team2 + '.png></img></td><td>' + \
-                        self.get_team_out(team1))
+                            '<img class="tiny_logo" src=assets/' + team2 + '.png></img></td><td><a href="team_pages/' + \
+                        team + '.html">' + self.get_team_out(team1) + '</a>')
                     if self.teams[team1].auto_bid:
                         f.write("*")
-                    f.write(" (" + self.teams[team1].record + ")/" + self.get_team_out(team2))
+                    f.write(" (" + self.teams[team1].record + ')/<a href="team_pages/' + \
+                            team + '.html">' + self.get_team_out(team2) + '</a>')
                     if self.teams[team2].auto_bid:
                         f.write("*")
                     f.write(" (" + self.teams[team2].record + ")</td>")

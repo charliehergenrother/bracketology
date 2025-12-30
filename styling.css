@@ -240,4 +240,25 @@ body {
 
 .team_page_logo {
     height: inherit;
+    margin-right: 20px;
+}
+
+.oddsbox_row {
+    margin-top: 20px;
+    overflow: auto;
+    font-family: Arial;
+}
+
+.oddsbox {
+    float: left;
+    width: 17%;
+    border: black;
+    border-width: 2px;
+    border-style: solid;
+    margin-right: 2%;
+    text-align: center;
+}
+
+.record_table {
+    margin-top: 20px;
 }

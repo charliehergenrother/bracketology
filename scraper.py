@@ -135,7 +135,9 @@ MY_BETS = {
         'FIU': 5500,
         'Creighton': 5000,
         'Utah-State': 175,
-        'Richmond': 6000,
+        'Bellarmine': 6650,
+        'Holy-Cross': 25000,
+        'Army': 25000,
     },
     'final_four': {
         'Vanderbilt': 3000,

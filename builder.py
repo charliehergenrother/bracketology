@@ -848,7 +848,7 @@ class Builder:
                 if team_conference not in self.conferences:
                     self.conferences[team_conference] = list()
                 self.conferences[team_conference].append(team)
-                self.seed_list.append(self.teams[team].team_out)
+                self.seed_list.append((team, self.teams[team].team_out))
             if self.verbose:
                 print("placing", team, seed_num)
             
@@ -975,19 +975,19 @@ class Builder:
         f.write('      <li class="non_image_element dropdown_element">\n')
         f.write('        <button class="dropdown_button">Men\'s Bracketology</button>\n')
         f.write('        <div class="dropdown_content">\n')
-        f.write('          <a href="men.html">Men\'s Bracket</a>\n')
-        f.write('          <a href="menfuture.html">Men\'s Future Bracket</a>\n')
-        f.write('          <a href="menresumes.html">Men\'s Resumes</a>\n')
-        f.write('          <a href="menschedule.html">Men\'s Schedule</a>\n')
+        f.write('          <a href="' + styling_path + 'men.html">Men\'s Bracket</a>\n')
+        f.write('          <a href="' + styling_path + 'menfuture.html">Men\'s Future Bracket</a>\n')
+        f.write('          <a href="' + styling_path + 'menresumes.html">Men\'s Resumes</a>\n')
+        f.write('          <a href="' + styling_path + 'menschedule.html">Men\'s Schedule</a>\n')
         f.write('        </div>\n')
         f.write('      </li>\n')
         f.write('      <li class="non_image_element dropdown_element">\n')
         f.write('        <button class="dropdown_button">Women\'s Bracketology</button>\n')
         f.write('        <div class="dropdown_content">\n')
-        f.write('          <a href="women.html">Women\'s Bracket</a>\n')
-        f.write('          <a href="womenfuture.html">Women\'s Future Bracket</a>\n')
-        f.write('          <a href="womenresumes.html">Women\'s Resumes</a>\n')
-        f.write('          <a href="womenschedule.html">Women\'s Schedule</a>\n')
+        f.write('          <a href="' + styling_path + 'women.html">Women\'s Bracket</a>\n')
+        f.write('          <a href="' + styling_path + 'womenfuture.html">Women\'s Future Bracket</a>\n')
+        f.write('          <a href="' + styling_path + 'womenresumes.html">Women\'s Resumes</a>\n')
+        f.write('          <a href="' + styling_path + 'womenschedule.html">Women\'s Schedule</a>\n')
         f.write('        </div>\n')
         f.write('      </li>\n')
         f.write('      <li class="non_image_element link_element">\n')
@@ -1046,11 +1046,11 @@ class Builder:
                     team2 = team.split("/")[1]
                     f.write('<td><img class="tiny_logo" src=assets/' + team1 + '.png></img>' + \
                             '<img class="tiny_logo" src=assets/' + team2 + '.png></img></td><td><a href="team_pages/' + \
-                        team + '.html">' + self.get_team_out(team1) + '</a>')
+                        team1 + '.html">' + self.get_team_out(team1) + '</a>')
                     if self.teams[team1].auto_bid:
                         f.write("*")
                     f.write(" (" + self.teams[team1].record + ')/<a href="team_pages/' + \
-                            team + '.html">' + self.get_team_out(team2) + '</a>')
+                            team2 + '.html">' + self.get_team_out(team2) + '</a>')
                     if self.teams[team2].auto_bid:
                         f.write("*")
                     f.write(" (" + self.teams[team2].record + ")</td>")
@@ -1077,8 +1077,8 @@ class Builder:
             if self.teams[team].at_large_bid:
                 at_large_counter += 1
                 if at_large_counter > AT_LARGE_MAX - 8:
-                    f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td>' + \
-                        self.get_team_out(team) + ' (' + self.teams[team].record + ')</td>')
+                    f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="team_pages/' + \
+                        team + '.html">' + self.get_team_out(team) + '</a> (' + self.teams[team].record + ')</td>')
                     if at_large_counter == AT_LARGE_MAX - 4:
                         f.write('</tr>\n')
                         f.write('      <tr class="bubble_row"><td><h4>Last Four In</h4></td>')
@@ -1087,8 +1087,8 @@ class Builder:
                         f.write('      <tr class="gray_row bubble_row"><td><h4>First Four Out</h4></td>')
             elif not self.teams[team].auto_bid and team not in self.ineligible_teams:
                 bubble_counter += 1
-                f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td>' + \
-                        self.get_team_out(team) + ' (' + self.teams[team].record + ')</td>')
+                f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="team_pages/' + \
+                    team + '.html">' + self.get_team_out(team) + '</a> (' + self.teams[team].record + ')</td>')
                 if bubble_counter == 4:
                     f.write('</tr>\n')
                     f.write('      <tr class="bubble_row"><td><h4>Next Four Out</h4></td>')
@@ -1118,14 +1118,15 @@ class Builder:
                 f.write('    <tr>')
             for team in row:
                 if type(team) == tuple:
-                    f.write('<td>' + self.teams[team[0]].team_out + ' (' + str(team[1]) + ')</td>')
+                    f.write('<td><a href="team_pages/' + team[0] + '.html">' + \
+                            self.teams[team[0]].team_out + '</a> (' + str(team[1]) + ')</td>')
             f.write('</tr>\n')
         f.write('  </table>\n')
         f.write('</div>\n')
         f.write('<div class="seed_list_container">\n')
         f.write('  <ol>\n')
         for team in self.seed_list:
-            f.write('    <li>' + team + '</li>\n')
+            f.write('    <li><a href="team_pages/' + team[0] + '.html">' + team[1] + '</a></li>\n')
         f.write('  </ol>\n')
         f.write('</div>\n')
         f.write('</body>\n')

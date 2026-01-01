@@ -1359,7 +1359,7 @@ def scrape_initial_kenpom(year, scorer):
         #   ncaa_seed: X/-1
         #   ncaa_round: -1/0/1/2/3/4/5/6/7
         #}
-def output_team_html(team, team_out, team_results, builder):
+def output_team_html(team, team_out, record, team_results, builder):
     total_runs = len(team_results)
     win_conference = len(list(filter(lambda x: x['conference_seed'] == 1, team_results)))
     make_tournament = len(list(filter(lambda x: x['ncaa_seed'] > 0, team_results)))
@@ -1373,7 +1373,7 @@ def output_team_html(team, team_out, team_results, builder):
     builder.output_meta(f, "../")
     builder.output_link_row(f, "../")
     f.write('<div class="title_row_team">\n')
-    f.write('  <img class="team_page_logo" src=../assets/' + team + '.png></img><h1>' + team_out + '</h1>\n')
+    f.write('  <img class="team_page_logo" src=../assets/' + team + '.png></img><h1>' + team_out + ' (' + record + ')</h1>\n')
     f.write('</div>\n')
     f.write('<div class="oddsbox_row">\n')
     f.write('  <div class="oddsbox">\n')
@@ -1434,14 +1434,25 @@ def team_table_output(f, win_string, loss_string, team_results):
     total_runs = len(team_results)
     total_games = team_results[0][win_string] + team_results[0][loss_string]
     win_totals = [x[win_string] for x in team_results]
+    all_seeds = [x['ncaa_seed'] for x in team_results]
+    f.write('<tr><td/><td/>')
+    for seed in range(1, 17):
+        outcome_percentage = round(100*all_seeds.count(seed)/total_runs, 2)
+        color_percentage = str(-outcome_percentage / 2 + 100)
+        f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
+    outcome_percentage = round(100*all_seeds.count(-1)/total_runs, 2)
+    color_percentage = str(-outcome_percentage / 2 + 100)
+    f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
+    f.write('</tr>\n')
     for win_total in sorted(set(win_totals), reverse=True):
         relevant_runs = list(list(filter(lambda x: x[win_string] == win_total, team_results)))
         relevant_seeds = [x['ncaa_seed'] for x in relevant_runs]
         win_total_count = win_totals.count(win_total)
         win_total_pct = round(100*win_total_count / total_runs, 2)
+        color_percentage = str(-win_total_pct / 2 + 100)
 
         f.write('    <tr><td>' + str(win_total) + "-" + str(total_games - win_total) + '</td>')
-        f.write('<td>' + str(win_total_pct) + '%</td>')
+        f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(win_total_pct) + '%</td>')
         for seed in range(1, 17):
             outcome_percentage = round(100*relevant_seeds.count(seed)/total_runs, 2)
             color_percentage = str(-outcome_percentage / 2 + 100)
@@ -1581,7 +1592,10 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_
             for conference in results['conference']:
                 add_or_increment_key(results['conference'][conference][0], final_conference_winners[conference])
         successful_runs += 1
-    
+
+    for team in scorer.teams: #do this so that the output has the correct current record
+        scorer.teams[team].games = set(scorer.teams[team].saved_games)
+        scorer.teams[team].future_games = list(scorer.teams[team].saved_future_games)
 
     print("Successful runs:", successful_runs)
     print("CONFERENCES")
@@ -1690,7 +1704,7 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_
             write_odds_margin(f, team, odds, current_odds, 'championship')
 
     for team in team_results:
-        output_team_html(team, scorer.teams[team].team_out, team_results[team], builder)
+        output_team_html(team, scorer.teams[team].team_out, scorer.teams[team].record, team_results[team], builder)
 
 def write_book_odds(f, current_odds, book):
     f.write(current_odds[book] + ",")

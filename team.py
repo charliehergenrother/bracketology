@@ -57,9 +57,11 @@ class Team:
         header_line = True
         game_line = 0
         self.games = set()
+        non-di = False
         for line in team_page.text.split("\n"):
             if "Non-Division I Games" in line:
-                break
+                non-di = True
+                continue
             if "team-menu__image\"" in line and not os.path.exists("./assets/" + team + ".png"):
                 image_url = "http://www.warrennolan.com" + line[line.find("src=")+5:line.find(" />")-1]
                 team_image = requests.get(image_url, stream=True)
@@ -68,16 +70,8 @@ class Team:
                         f.write(chunk)
             if "team-menu__name\"" in line:
                 self.team_out = line[line.find(">")+1:line.find(" <span")]
-                #TODO see below
-                # manual_teams = {"IU-Indianapolis": "IU Indianapolis", "Mercyhurst": "Mercyhurst", "West-Georgia": "West Georgia"}
-                # if team in manual_teams:
-                #     self.team_out = manual_teams[team]
             if "team-menu__conference" in line:
                 self.conference = line[line.find('">', line.find("/conference/"))+2:line.find("</a>")]
-                #TODO see below
-                # conf_manual_teams = {"IU-Indianapolis": "Horizon League", "Mercyhurst": "Northeast", "West-Georgia": "ASUN"}
-                # if team in conf_manual_teams:
-                #     self.conference = conf_manual_teams[team]
                 continue
             if "font-weight: bold; font-size: 16px;" in line:
                 try:
@@ -210,7 +204,9 @@ class Team:
                 date = line[line.find(">")+1:line.find("</div>")]
                 curr_game.date = date
                 # cut out NCAA tournament games
-                if int(date[1]) != 4 and (int(date[1]) != 3 or int(date[3:]) <= SELECTION_SUNDAY_DATES[year]):
+                # only include non-DI losses. I think this is the closest thing to how the committee treats it
+                if (int(date[1]) != 4 and (int(date[1]) != 3 or int(date[3:]) <= SELECTION_SUNDAY_DATES[year])) and \
+                        (not non_di or curr_game.opp_score > curr_game.team_score):
                     self.games.add(curr_game)
                 game_line = 0
                 continue

@@ -141,7 +141,6 @@ MY_BETS = {
         'Vanderbilt': 3000,
         'Ole-Miss': 3500,
         'Utah-State': 7500,
-        'Clemson': 6500,
         'Georgia': 10000,
         'Nebraska': 10000,
         'Saint-Marys-College': 6500,
@@ -328,15 +327,6 @@ class Scraper:
                 team = line[team_start_index:line.find('">', team_start_index)]
                 self.scrape_team_data(team)
                 print("scraped", team + "!")
-        #TODO New Haven not on NET yet
-        self.scrape_team_data("New-Haven")
-        print("scraped New-Haven!")
-
-        #TODO women's pages not working yet
-        reverse_team_dict["West Georgia"] = "West-Georgia"
-        reverse_team_dict["Mercyhurst"] = "Mercyhurst"
-        reverse_team_dict["IU Indianapolis"] = "IU-Indianapolis"
-        reverse_team_dict["New Haven"] = "New-Haven"
 
         for team in self.teams:
             #go back through and back-translate
@@ -1457,7 +1447,9 @@ def team_table_output(f, win_string, loss_string, team_results):
             outcome_percentage = round(100*relevant_seeds.count(seed)/total_runs, 2)
             color_percentage = str(-outcome_percentage / 2 + 100)
             f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
-        f.write('<td>' + str(round(100*relevant_seeds.count(-1)/total_runs, 2)) + '%</td>')
+        outcome_percentage = round(100*relevant_seeds.count(-1)/total_runs, 2)
+        color_percentage = str(-outcome_percentage / 2 + 100)
+        f.write('<td> style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
         f.write('</tr>\n')
     f.write('    </tbody>\n')
     f.write('  </table>\n')

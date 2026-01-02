@@ -443,6 +443,7 @@ def translate_team_name(team):
 
         "Miami Florida": "Miami-FL",
         "Miami Ohio": "Miami-OH",
+        "Mississippi": "Ole-Miss",
     }
     if team in ad_hoc_dict:
         return ad_hoc_dict[team]

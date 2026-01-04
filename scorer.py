@@ -208,7 +208,10 @@ class Scorer:
             wins = 0
             losses = 0
             for game in team_obj.games:
-                opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
+                if "Non Div I" in game.opponent:
+                    opp_NET = 365
+                else:
+                    opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
                 game_quad = self.get_quadrant(opp_NET, game.location)
                 if game.win:
                     if game_quad == 1:
@@ -230,9 +233,15 @@ class Scorer:
             losses = 0
             for game in team_obj.games:
                 if self.monte_carlo:
-                    game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
+                    if "Non Div I" in game.opponent:
+                        game_quad = 4
+                    else:
+                        game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
                 else:
-                    game_quad = self.get_quadrant(self.teams[game.opponent].NET, game.location)
+                    if "Non Div I" in game.opponent:
+                        game_quad = 4
+                    else:
+                        game_quad = self.get_quadrant(self.teams[game.opponent].NET, game.location)
                 if game.win:
                     if game_quad == 1:
                         wins += 1
@@ -260,7 +269,10 @@ class Scorer:
             wins = 0
             losses = 0
             for game in team_obj.games:
-                opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
+                if "Non Div I" in game.opponent:
+                    opp_NET = 365
+                else:
+                    opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
                 game_quad = self.get_quadrant(opp_NET, game.location)
                 if game.win:
                     if game_quad <= 2:
@@ -284,9 +296,15 @@ class Scorer:
             losses = 0
             for game in team_obj.games:
                 if self.monte_carlo:
-                    game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
+                    if "Non Div I" in game.opponent:
+                        game_quad = 4
+                    else:
+                        game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
                 else:
-                    game_quad = self.get_quadrant(self.teams[game.opponent].NET, game.location)
+                    if "Non Div I" in game.opponent:
+                        game_quad = 4
+                    else:
+                        game_quad = self.get_quadrant(self.teams[game.opponent].NET, game.location)
                 if game.win:
                     if game_quad <= 2:
                         wins += 1
@@ -315,7 +333,10 @@ class Scorer:
             wins = 0
             losses = 0
             for game in team_obj.games:
-                opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
+                if "Non Div I" in game.opponent:
+                    opp_NET = 365
+                else:
+                    opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
                 game_quad = self.get_quadrant(opp_NET, game.location)
                 if game.win:
                     if game_quad <= 3:
@@ -339,9 +360,15 @@ class Scorer:
             losses = 0
             for game in team_obj.games:
                 if self.monte_carlo:
-                    game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
+                    if "Non Div I" in game.opponent:
+                        game_quad = 4
+                    else:
+                        game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
                 else:
-                    game_quad = self.get_quadrant(self.teams[game.opponent].NET, game.location)
+                    if "Non Div I" in game.opponent:
+                        game_quad = 4
+                    else:
+                        game_quad = self.get_quadrant(self.teams[game.opponent].NET, game.location)
                 if game.win:
                     if game_quad <= 3:
                         wins += 1
@@ -371,7 +398,10 @@ class Scorer:
             wins = 0
             losses = 0
             for game in team_obj.games:
-                opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
+                if "Non Div I" in game.opponent:
+                    opp_NET = 365
+                else:
+                    opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
                 game_quad = self.get_quadrant(opp_NET, game.location)
                 if game.win:
                     wins += 1
@@ -393,9 +423,15 @@ class Scorer:
             losses = 0
             for game in team_obj.games:
                 if self.monte_carlo:
-                    game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
+                    if "Non Div I" in game.opponent:
+                        game_quad = 4
+                    else:
+                        game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
                 else:
-                    game_quad = self.get_quadrant(self.teams[game.opponent].NET, game.location)
+                    if "Non Div I" in game.opponent:
+                        game_quad = 4
+                    else:
+                        game_quad = self.get_quadrant(self.teams[game.opponent].NET, game.location)
                 if game.win:
                     wins += 1
                 else:
@@ -428,7 +464,10 @@ class Scorer:
         if self.future and not self.monte_carlo:
             for game in team_obj.games:
                 if game.win and game.location == "A":
-                    opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
+                    if "Non Div I" in game.opponent:
+                        opp_NET = 365
+                    else:
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
                     if opp_NET <= 50:
                         good_road_wins += 1
                     elif opp_NET <= 100:
@@ -445,9 +484,15 @@ class Scorer:
             for game in team_obj.games:
                 if game.win and game.location == "A":
                     if self.monte_carlo:
-                        opp_NET = simmed_kenpoms[game.opponent]['rank']
+                        if "Non Div I" in game.opponent:
+                            opp_NET = 365
+                        else:
+                            opp_NET = simmed_kenpoms[game.opponent]['rank']
                     else:
-                        opp_NET = self.teams[game.opponent].NET
+                        if "Non Div I" in game.opponent:
+                            opp_NET = 365
+                        else:
+                            opp_NET = self.teams[game.opponent].NET
                     if opp_NET <= 50:
                         good_road_wins += 1
                     elif opp_NET <= 100:
@@ -477,7 +522,10 @@ class Scorer:
                     if date_month == 3:
                         if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
                             conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
-                    opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
+                    if "Non Div I" in game.opponent:
+                        opp_NET = 365
+                    else:
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
                     if opp_NET <= 50:
                         good_neutral_wins += conf_tourn_multiplier * 1
                     elif opp_NET <= 100:
@@ -499,9 +547,15 @@ class Scorer:
                         if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
                             conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
                     if self.monte_carlo:
-                        opp_NET = simmed_kenpoms[game.opponent]['rank']
+                        if "Non Div I" in game.opponent:
+                            opp_NET = 365
+                        else:
+                            opp_NET = simmed_kenpoms[game.opponent]['rank']
                     else:
-                        opp_NET = self.teams[game.opponent].NET
+                        if "Non Div I" in game.opponent:
+                            opp_NET = 365
+                        else:
+                            opp_NET = self.teams[game.opponent].NET
                     if opp_NET <= 50:
                         good_neutral_wins += conf_tourn_multiplier * 1
                     elif opp_NET <= 100:
@@ -531,7 +585,10 @@ class Scorer:
                     if date_month == 3:
                         if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
                             conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
-                    opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
+                    if "Non Div I" in game.opponent:
+                        opp_NET = 365
+                    else:
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
                     if opp_NET <= 5:
                         top_10_wins += conf_tourn_multiplier * 1
                     elif opp_NET <= 15:
@@ -555,9 +612,15 @@ class Scorer:
                         if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
                             conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
                     if self.monte_carlo:
-                        opp_NET = simmed_kenpoms[game.opponent]['rank']
+                        if "Non Div I" in game.opponent:
+                            opp_NET = 365
+                        else:
+                            opp_NET = simmed_kenpoms[game.opponent]['rank']
                     else:
-                        opp_NET = self.teams[game.opponent].NET
+                        if "Non Div I" in game.opponent:
+                            opp_NET = 365
+                        else:
+                            opp_NET = self.teams[game.opponent].NET
                     if opp_NET <= 5:
                         top_10_wins += conf_tourn_multiplier * 1
                     elif opp_NET <= 15:
@@ -583,7 +646,10 @@ class Scorer:
         if self.future and not self.monte_carlo:
             for game in team_obj.games:
                 if game.win > 0:
-                    opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
+                    if "Non Div I" in game.opponent:
+                        opp_NET = 365
+                    else:
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
                     conf_tourn_multiplier = 1
                     date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
                     if date_month == 3:
@@ -629,9 +695,15 @@ class Scorer:
             for game in team_obj.games:
                 if game.win > 0:
                     if self.monte_carlo:
-                        opp_NET = simmed_kenpoms[game.opponent]['rank']
+                        if "Non Div I" in game.opponent:
+                            opp_NET = 365
+                        else:
+                            opp_NET = simmed_kenpoms[game.opponent]['rank']
                     else:
-                        opp_NET = self.teams[game.opponent].NET
+                        if "Non Div I" in game.opponent:
+                            opp_NET = 365
+                        else:
+                            opp_NET = self.teams[game.opponent].NET
                     conf_tourn_multiplier = 1
                     date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
                     if date_month == 3:
@@ -696,7 +768,10 @@ class Scorer:
         awful_losses = 0
         if self.future and not self.monte_carlo:
             for game in team_obj.games:
-                opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
+                if "Non Div I" in game.opponent:
+                    opp_NET = 365
+                else:
+                    opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
                 if not game.win:
                     if opp_NET > 225:
                         awful_losses += 1
@@ -715,9 +790,15 @@ class Scorer:
         else:
             for game in team_obj.games:
                 if self.monte_carlo:
-                    opp_NET = simmed_kenpoms[game.opponent]['rank']
+                    if "Non Div I" in game.opponent:
+                        opp_NET = 365
+                    else:
+                        opp_NET = simmed_kenpoms[game.opponent]['rank']
                 else:
-                    opp_NET = self.teams[game.opponent].NET
+                    if "Non Div I" in game.opponent:
+                        opp_NET = 365
+                    else:
+                        opp_NET = self.teams[game.opponent].NET
                 if not game.win:
                     if opp_NET > 225:
                         awful_losses += 1
@@ -742,7 +823,10 @@ class Scorer:
         if self.future and not self.monte_carlo:
             for game in team_obj.games:
                 if not game.win:
-                    opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
+                    if "Non Div I" in game.opponent:
+                        opp_NET = 365
+                    else:
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, self.team_kenpoms[team]["rank"])
                     game_quad = self.get_quadrant(opp_NET, game.location)
                     if game_quad > 1:
                         bad_losses += 1
@@ -758,9 +842,15 @@ class Scorer:
         else:
             for game in team_obj.games:
                 if self.monte_carlo:
-                    opp_NET = simmed_kenpoms[game.opponent]['rank']
+                    if "Non Div I" in game.opponent:
+                        opp_NET = 365
+                    else:
+                        opp_NET = simmed_kenpoms[game.opponent]['rank']
                 else:
-                    opp_NET = self.teams[game.opponent].NET
+                    if "Non Div I" in game.opponent:
+                        opp_NET = 365
+                    else:
+                        opp_NET = self.teams[game.opponent].NET
                 if not game.win:
                     game_quad = self.get_quadrant(opp_NET, game.location)
                     if game_quad >= 2:

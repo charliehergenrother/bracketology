@@ -54,13 +54,14 @@ class Team:
         SOS_line = 0
         KPI_line = 0
         BPI_line = 0
-        header_line = True
+        header_line = False
+        non_di_header_line = False
         game_line = 0
         self.games = set()
-        non-di = False
+        non_di = False
         for line in team_page.text.split("\n"):
             if "Non-Division I Games" in line:
-                non-di = True
+                non_di = True
                 continue
             if "team-menu__image\"" in line and not os.path.exists("./assets/" + team + ".png"):
                 image_url = "http://www.warrennolan.com" + line[line.find("src=")+5:line.find(" />")-1]
@@ -180,10 +181,21 @@ class Team:
                 header_line = False
                 game_line = 0
                 continue
+            if game_line == 1 and ">S<" in line:
+                non_di_header_line = True
+                game_line += 1
+            if non_di_header_line and game_line < 5:
+                game_line += 1
+                continue
+            if non_di_header_line and game_line == 5:
+                non_di_header_line = False
+                game_line = 0
+                continue
             if game_line == 1:
                 curr_game = Game("", "", 0, 0, "")
                 game_line += 1
-                continue
+                if not non_di:
+                    continue
             if game_line == 2:
                 curr_game.location = line[line.find(">")+1]
                 game_line += 1

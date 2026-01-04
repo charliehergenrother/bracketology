@@ -262,3 +262,14 @@ body {
 .record_table {
     margin-top: 20px;
 }
+
+.outcomes_table {
+    th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: white;
+    }
+}
+
+

@@ -291,7 +291,7 @@ class Scraper:
                 self.teams[filename[:filename.find(".json")]] = curr_team
                 team = filename[:filename.find(".json")]
                 reverse_team_dict[curr_team.team_out] = team
-    
+
     #fetch one team's data from warrennolan.com
     #team: string indicating which team's data should be scraped
     def scrape_team_data(self, team):
@@ -331,7 +331,8 @@ class Scraper:
         for team in self.teams:
             #go back through and back-translate
             for game in self.teams[team].games:
-                game.opponent = reverse_team_dict[game.opponent]
+                if "Non Div I" not in game.opponent:
+                    game.opponent = reverse_team_dict[game.opponent]
             f = open(self.datadir + team + ".json", "w+")
             f.write(json.dumps(self.teams[team], cls=ComplexEncoder))
             f.close()
@@ -474,6 +475,8 @@ class Scraper:
                     (hasattr(builder.teams[game.opponent], "seed") and \
                     builder.teams[game.opponent].seed in quality_seeds)):
                 good_wins.append({"team": self.get_location_prefix(game) + team_abbr, "NET": self.teams[game.opponent].NET})
+            elif not game.win and "Non Div I" in game.opponent:
+                bad_losses.append({"team": self.get_location_prefix(game) + game.opponent, "NET": 365})
             elif not game.win and scorer.get_quadrant(self.teams[game.opponent].NET, game.location) >= 2:
                 bad_losses.append({"team": self.get_location_prefix(game) + self.teams[game.opponent].team_out, "NET": self.teams[game.opponent].NET})
         win_string = ''
@@ -493,7 +496,10 @@ class Scraper:
         wins = 0
         losses = 0
         for game in self.teams[team].games:
-            game_quad = scorer.get_quadrant(self.teams[game.opponent].NET, game.location)
+            if "Non Div I" in game.opponent:
+                game_quad = 4
+            else:
+                game_quad = scorer.get_quadrant(self.teams[game.opponent].NET, game.location)
             if game.win and game_quad <= quad_num:
                 wins += 1
             if not game.win and game_quad >= quad_num:
@@ -547,9 +553,9 @@ class Scraper:
             else:
                 f.write('      <tr class="resume_row">')
             if self.mens:
-                f.write('<td><a href="https://www.warrennolan.com/basketball/2026/team-net-sheet?team=' + team + '">' + scorer.teams[team].team_out + '</a></td>')
+                f.write('<td><a href="team_pages/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
             else:
-                f.write('<td><a href="https://www.warrennolan.com/basketballw/2026/team-net-sheet?team=' + team + '">' + scorer.teams[team].team_out + '</a></td>')
+                f.write('<td><a href="team_pagesw/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
             f.write('<td>' + scorer.teams[team].record + '</td>')
             f.write('<td>' + str(scorer.teams[team].NET) + '</td>')
             if self.mens:
@@ -671,18 +677,18 @@ class Scraper:
                         f.write('"><td>' + away_seed)
                         f.write('<img class="team_logo" src=assets/' + away_team + '.png></img>')
                         if self.mens:
-                            f.write('<a href="https://www.warrennolan.com/basketball/2026/team-clubhouse?team=' + away_team + '">')
+                            f.write('<a href="team_pages/' + away_team + '.html">')
                         else:
-                            f.write('<a href="https://www.warrennolan.com/basketballw/2026/team-clubhouse?team=' + away_team + '">')
+                            f.write('<a href="team_pagesw/' + away_team + '.html">')
                         try:
                             f.write(scorer.teams[away_team].team_out + '</a> ' + location + ' ' + home_seed)
                         except KeyError: # New Haven
                             f.write("New Haven" + '</a > ' + location + ' ' + home_seed)
                         f.write('<img class="team_logo" src=assets/' + home_team + '.png></img>')
                         if self.mens:
-                            f.write('<a href="https://www.warrennolan.com/basketball/2026/team-clubhouse?team=' + home_team + '">')
+                            f.write('<a href="team_pages/' + home_team + '.html">')
                         else:
-                            f.write('<a href="https://www.warrennolan.com/basketballw/2026/team-clubhouse?team=' + home_team + '">')
+                            f.write('<a href="team_pagesw/' + home_team + '.html">')
                         f.write(scorer.teams[home_team].team_out + '</a></td>')
                         f.write('<td>' + game[3] + '</td><td>' + game[4] + '</td>')
                         f.write('</tr>\n')
@@ -726,7 +732,7 @@ def process_args():
             print("     -g: set an html filename where the upcoming schedule will live")
             print("     -c: Monte Carlo simulation. run <sims> number of simulation and report on how often a team made the tournament/got to final four/won championship")
             print("     -d: set a csv filename where the monte carlo output will live")
-            print("     -p: set an html directory where the monte carlo output will live")
+            print("     -p: set an html filename where the monte carlo output will live")
             print("     -i: use weights located in given file")
             print("     -o: set a csv filename where the final ranking will live")
             print("     -r: set a csv filename where the final readable resume will live")
@@ -1078,7 +1084,7 @@ def simulate_games(scorer, builder, weights, simmed_kenpoms):
             #fix needs to be a total restructuring. Need to cross-reference NET page with schedule page
             #because the info about which games are conference games is only on the schedule page
             #alternatively, just check it manually via monte carlo
-            if scorer.teams[team].conference == scorer.teams[opponent].conference:
+            if "Non Div I" not in opponent and scorer.teams[team].conference == scorer.teams[opponent].conference:
                 if game.win:
                     scorer.teams[team].conference_wins += 1
                 else:
@@ -1134,7 +1140,7 @@ def simulate_games(scorer, builder, weights, simmed_kenpoms):
                 "ncaa_seed": -1,
                 "ncaa_round": -1
             }
-   
+    
     if builder.mens:
         conf_reg_winners = simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results)
     #print_Illinois(scorer, simmed_kenpoms)
@@ -1349,7 +1355,7 @@ def scrape_initial_kenpom(year, scorer):
         #   ncaa_seed: X/-1
         #   ncaa_round: -1/0/1/2/3/4/5/6/7
         #}
-def output_team_html(team, team_out, record, team_results, builder):
+def output_team_html(mens, team, team_out, record, team_results, builder):
     total_runs = len(team_results)
     win_conference = len(list(filter(lambda x: x['conference_seed'] == 1, team_results)))
     make_tournament = len(list(filter(lambda x: x['ncaa_seed'] > 0, team_results)))
@@ -1357,9 +1363,14 @@ def output_team_html(team, team_out, record, team_results, builder):
     final_four = len(list(filter(lambda x: x['ncaa_round'] >= 5, team_results)))
     national_championship = len(list(filter(lambda x: x['ncaa_round'] == 7, team_results)))
 
-    if not os.path.exists("./team_pages/"):
-        os.makedirs("./team_pages/")
-    f = open("./team_pages/" + team + ".html", "w")
+    if mens:
+        if not os.path.exists("./team_pages/"):
+            os.makedirs("./team_pages/")
+        f = open("./team_pages/" + team + ".html", "w")
+    else:
+        if not os.path.exists("./team_pagesw/"):
+            os.makedirs("./team_pagesw/")
+        f = open("./team_pagesw/" + team + ".html", "w")
     builder.output_meta(f, "../")
     builder.output_link_row(f, "../")
     f.write('<div class="title_row_team">\n')
@@ -1449,7 +1460,7 @@ def team_table_output(f, win_string, loss_string, team_results):
             f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
         outcome_percentage = round(100*relevant_seeds.count(-1)/total_runs, 2)
         color_percentage = str(-outcome_percentage / 2 + 100)
-        f.write('<td> style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
+        f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
         f.write('</tr>\n')
     f.write('    </tbody>\n')
     f.write('  </table>\n')
@@ -1499,7 +1510,7 @@ def get_plus_odds(odds):
     return odds
 
 #run a monte carlo simulation of the remaining college basketball season
-def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_output_html):
+def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfile, mc_output_html):
     rng = numpy.random.default_rng()
     today_date = date.today()
     selection_sunday = date(2026, 3, 15)
@@ -1589,6 +1600,9 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_
         scorer.teams[team].games = set(scorer.teams[team].saved_games)
         scorer.teams[team].future_games = list(scorer.teams[team].saved_future_games)
 
+    ## OUTPUT RESULTS ##
+    result_percents = dict()
+
     print("Successful runs:", successful_runs)
     print("CONFERENCES")
     if mc_outputfile:
@@ -1609,7 +1623,9 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_
             f.write(conference + "\n")
             f.write("Team,Odds,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds,Good bet?,Already bet?\n")
         for team in sorted(final_conference_winners[conference], key = lambda x: final_conference_winners[conference][x], reverse=True):
-            odds = str(int((100/(final_conference_winners[conference][team]/successful_runs))-100))
+            conf_pct = final_conference_winners[conference][team]/successful_runs
+            result_percents[team] = {'conference': conf_pct}
+            odds = str(int((100/conf_pct)-100))
             print(team.ljust(20), final_conference_winners[conference][team], "+" + odds)
             
         if mc_outputfile:
@@ -1652,8 +1668,13 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_
     for team in sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x]):
         print(team.ljust(20), str(made_tournament[team]).rjust(len(str(successful_runs))), str(round(sum(team_seeds[team])/made_tournament[team], 2)).rjust(5), \
                 str(min(team_seeds[team])).rjust(2), str(max(team_seeds[team])).rjust(2))
+        tourn_pct = made_tournament[team]/successful_runs
+        try:
+            result_percents[team]['tournament'] = tourn_pct
+        except KeyError: # team didn't win conference
+            result_percents[team] = {'conference': 0, 'tournament': tourn_pct}
         if mc_outputfile:
-            f.write(team + "," + str(made_tournament[team]/successful_runs) + "\n")
+            f.write(team + "," + str(tourn_pct) + "\n")
     
     if mc_outputfile:
         f.write("\n")
@@ -1662,7 +1683,9 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_
     print()
     print("FINAL FOURS")
     for team in sorted(final_fours, key=lambda x: final_fours[x], reverse=True):
-        odds = str(int((100/(final_fours[team]/successful_runs))-100))
+        ff_pct = final_fours[team]/successful_runs
+        odds = str(int((100/ff_pct)-100))
+        result_percents[team]['final_four'] = ff_pct
         print(team.ljust(20), final_fours[team], "+" + odds)
     if mc_outputfile:
         for team in sorted(final_fours):
@@ -1682,7 +1705,9 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_
         f.write("NATIONAL CHAMPIONS\n")
         f.write("Team,Odds,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds,Good bet?,Already bet?\n")
     for team in sorted(national_champion, key=lambda x: national_champion[x], reverse=True):
-        odds = str(int((100/(national_champion[team]/successful_runs))-100))
+        nc_pct = national_champion[team]/successful_runs
+        odds = str(int((100/nc_pct)-100))
+        result_percents[team]['championship'] = nc_pct
         print(team.ljust(20), national_champion[team], "+" + str(int((100/(national_champion[team]/successful_runs))-100)))
     if mc_outputfile:
         for team in sorted(national_champion):
@@ -1695,8 +1720,47 @@ def run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_
                     f.write(",,")
             write_odds_margin(f, team, odds, current_odds, 'championship')
 
+    for team in made_tournament:
+        result_percents[team]['auto_bid'] = len(list(filter(lambda x: x['ctourn_winner'], team_results[team])))/successful_runs
+        for tourney_round in [('second_round', 2), ('sweet_sixteen', 3), ('elite_eight', 4), ('ncg', 6)]:
+            result_percents[team][tourney_round[0]] = len(list(filter(lambda x: x['ncaa_round'] >= tourney_round[1], team_results[team])))/successful_runs
+
+    if mc_output_html:
+        f = open(mc_output_html, "w")
+        builder.output_meta(f)
+        builder.output_link_row(f, "")
+        f.write('<body>\n')
+        f.write('<div class="table_container">\n')
+        f.write('  <table class="outcomes_table">\n')
+        f.write('    <colgroup><col class="teamcol"><col class="confcol"><col class="autocol"><col class="tourncol">')
+        f.write('<col class="srcol"><col class="sscol"><col class="eecol">')
+        f.write('<col class="ffcol"><col class="ncgcol"><col class="nccol"></colgroup>\n')
+        f.write('    <thead>\n')
+        f.write('      <tr class="header_row"><th>Team</th><th>Avg. seed</th><th>Win conference</th>')
+        f.write('<th>Auto bid</th><th>Tournament</th>')
+        f.write('<th>2nd Round</th><th>Sweet 16</th><th>Elite 8</th><th>Final Four</th>')
+        f.write('<th>Championship game</th><th>Win championship</th>')
+        f.write('</tr>')
+        f.write('    </thead>\n')
+        f.write('    <tbody>\n')
+        for index, team in enumerate(sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x])):
+            f.write('    <tr><td><a href="team_pages/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
+            f.write('<td>' + str(round(sum(team_seeds[team])/made_tournament[team], 2)) + '</td>')
+            for outcome_string in ['conference', 'auto_bid', 'tournament', 'second_round', 'sweet_sixteen', 'elite_eight', 'final_four', 'ncg', 'championship']:
+                try:
+                    outcome_percentage = round(result_percents[team][outcome_string]*100, 2)
+                except KeyError:
+                    outcome_percentage = 0
+                color_percentage = str(-outcome_percentage / 2 + 100)
+                f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
+            f.write('</tr>\n')
+        f.write('    </tbody>')
+        f.write('  </table>\n')
+        f.write('</div>\n')
+        f.write('</body>\n')
+
     for team in team_results:
-        output_team_html(team, scorer.teams[team].team_out, scorer.teams[team].record, team_results[team], builder)
+        output_team_html(mens, team, scorer.teams[team].team_out, scorer.teams[team].record, team_results[team], builder)
 
 def write_book_odds(f, current_odds, book):
     f.write(current_odds[book] + ",")
@@ -1740,7 +1804,7 @@ def main():
         return
     elif monte_carlo:
         scraper.load_schedule_data(should_scrape, force_scrape)
-        run_monte_carlo(simulations, scorer, builder, weightfile, mc_outputfile, mc_output_html)
+        run_monte_carlo(simulations, scorer, builder, scraper.mens, weightfile, mc_outputfile, mc_output_html)
         if scraper.outputfile:
             scorer.outputfile = scraper.outputfile
             scorer.output_scores()

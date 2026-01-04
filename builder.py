@@ -979,6 +979,7 @@ class Builder:
         f.write('          <a href="' + styling_path + 'menfuture.html">Men\'s Future Bracket</a>\n')
         f.write('          <a href="' + styling_path + 'menresumes.html">Men\'s Resumes</a>\n')
         f.write('          <a href="' + styling_path + 'menschedule.html">Men\'s Schedule</a>\n')
+        f.write('          <a href="' + styling_path + 'menprojections.html">Men\'s Projections</a>\n')
         f.write('        </div>\n')
         f.write('      </li>\n')
         f.write('      <li class="non_image_element dropdown_element">\n')
@@ -988,6 +989,7 @@ class Builder:
         f.write('          <a href="' + styling_path + 'womenfuture.html">Women\'s Future Bracket</a>\n')
         f.write('          <a href="' + styling_path + 'womenresumes.html">Women\'s Resumes</a>\n')
         f.write('          <a href="' + styling_path + 'womenschedule.html">Women\'s Schedule</a>\n')
+        f.write('          <a href="' + styling_path + 'womenprojections.html">Women\'s Projections</a>\n')
         f.write('        </div>\n')
         f.write('      </li>\n')
         f.write('      <li class="non_image_element link_element">\n')
@@ -1000,6 +1002,10 @@ class Builder:
     def output_bracket(self):
         site_seed_lines = {8: 1, 4: 4, 3: 3, 2: 2}
         f = open(self.webfile, "w")
+        if self.mens:
+            team_pages_path = "team_pages"
+        else:
+            team_pages_path = "team_pagesw"
         self.output_meta(f)
         self.output_link_row(f)
         f.write('<body>\n\n')
@@ -1037,7 +1043,8 @@ class Builder:
                 f.write('<td>(' + str(seed_num) + ')</td>')
                 
                 if "/" not in team:
-                    f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="team_pages/' + team + '.html">' + self.get_team_out(team) + '</a>')
+                    f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="' + \
+                            team_pages_path + '/' + team + '.html">' + self.get_team_out(team) + '</a>')
                     if self.teams[team].auto_bid:
                         f.write("*")
                     f.write(" (" + self.teams[team].record + ")</td>")
@@ -1045,11 +1052,11 @@ class Builder:
                     team1 = team.split("/")[0]
                     team2 = team.split("/")[1]
                     f.write('<td><img class="tiny_logo" src=assets/' + team1 + '.png></img>' + \
-                            '<img class="tiny_logo" src=assets/' + team2 + '.png></img></td><td><a href="team_pages/' + \
-                        team1 + '.html">' + self.get_team_out(team1) + '</a>')
+                            '<img class="tiny_logo" src=assets/' + team2 + '.png></img></td><td><a href="' + \
+                            team_pages_path + '/' + team1 + '.html">' + self.get_team_out(team1) + '</a>')
                     if self.teams[team1].auto_bid:
                         f.write("*")
-                    f.write(" (" + self.teams[team1].record + ')/<a href="team_pages/' + \
+                    f.write(" (" + self.teams[team1].record + ')/<a href="' + team_pages_path + '/' + \
                             team2 + '.html">' + self.get_team_out(team2) + '</a>')
                     if self.teams[team2].auto_bid:
                         f.write("*")
@@ -1077,8 +1084,8 @@ class Builder:
             if self.teams[team].at_large_bid:
                 at_large_counter += 1
                 if at_large_counter > AT_LARGE_MAX - 8:
-                    f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="team_pages/' + \
-                        team + '.html">' + self.get_team_out(team) + '</a> (' + self.teams[team].record + ')</td>')
+                    f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="' + \
+                            team_pages_path + '/' + team + '.html">' + self.get_team_out(team) + '</a> (' + self.teams[team].record + ')</td>')
                     if at_large_counter == AT_LARGE_MAX - 4:
                         f.write('</tr>\n')
                         f.write('      <tr class="bubble_row"><td><h4>Last Four In</h4></td>')
@@ -1087,8 +1094,8 @@ class Builder:
                         f.write('      <tr class="gray_row bubble_row"><td><h4>First Four Out</h4></td>')
             elif not self.teams[team].auto_bid and team not in self.ineligible_teams:
                 bubble_counter += 1
-                f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="team_pages/' + \
-                    team + '.html">' + self.get_team_out(team) + '</a> (' + self.teams[team].record + ')</td>')
+                f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="' + \
+                        team_pages_path + '/' + team + '.html">' + self.get_team_out(team) + '</a> (' + self.teams[team].record + ')</td>')
                 if bubble_counter == 4:
                     f.write('</tr>\n')
                     f.write('      <tr class="bubble_row"><td><h4>Next Four Out</h4></td>')
@@ -1118,7 +1125,7 @@ class Builder:
                 f.write('    <tr>')
             for team in row:
                 if type(team) == tuple:
-                    f.write('<td><a href="team_pages/' + team[0] + '.html">' + \
+                    f.write('<td><a href="' + team_pages_path + '/' + team[0] + '.html">' + \
                             self.teams[team[0]].team_out + '</a> (' + str(team[1]) + ')</td>')
             f.write('</tr>\n')
         f.write('  </table>\n')
@@ -1126,7 +1133,7 @@ class Builder:
         f.write('<div class="seed_list_container">\n')
         f.write('  <ol>\n')
         for team in self.seed_list:
-            f.write('    <li><a href="team_pages/' + team[0] + '.html">' + team[1] + '</a></li>\n')
+            f.write('    <li><a href="' + team_pages_path + '/' + team[0] + '.html">' + team[1] + '</a></li>\n')
         f.write('  </ol>\n')
         f.write('</div>\n')
         f.write('</body>\n')

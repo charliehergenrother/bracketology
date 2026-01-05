@@ -270,6 +270,10 @@ body {
         z-index: 1;
         background: white;
     }
+
+    td {
+	padding-left: 3px;
+    }
 }
 
 

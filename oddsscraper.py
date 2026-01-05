@@ -114,7 +114,10 @@ def scrape_draftkings_main_list(oddsfile):
         if found_odds:
             odds = line[:line.find("</span>")]
             found_odds = False
-            results[team] = int(odds)
+            try:
+                results[team] = int(odds)
+            except ValueError:  # the dash DK uses isn't a minus sign I guess
+                results[team] = -int(odds[1:])
     return results
 
 

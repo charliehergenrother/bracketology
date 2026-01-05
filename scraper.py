@@ -1745,7 +1745,10 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         f.write('    </thead>\n')
         f.write('    <tbody>\n')
         for index, team in enumerate(sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x])):
-            f.write('    <tr><td><a href="team_pages/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
+            if mens:
+                f.write('    <tr><td><a href="team_pages/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
+            else:
+                f.write('    <tr><td><a href="team_pagesw/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
             f.write('<td>' + str(round(sum(team_seeds[team])/made_tournament[team], 2)) + '</td>')
             for outcome_string in ['conference', 'auto_bid', 'tournament', 'second_round', 'sweet_sixteen', 'elite_eight', 'final_four', 'ncg', 'championship']:
                 try:

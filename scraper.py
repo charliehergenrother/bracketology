@@ -950,8 +950,12 @@ def get_seeds(teams, scorer, simmed_kenpoms):
 def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
     #TODO: check on new formats
     conference_teams = dict()
-    with open("lib/ctourn_formats.json", "r") as f:
-        formats = json.loads(f.read())
+    if builder.mens:
+        with open("lib/ctourn_formats.json", "r") as f:
+            formats = json.loads(f.read())
+    else:
+        with open("lib/ctourn_formatsw.json", "r") as f:
+            formats = json.loads(f.read())
     for conference in builder.conference_winners:
         conference_teams[conference] = list()
     for team in scorer.teams:
@@ -1141,8 +1145,7 @@ def simulate_games(scorer, builder, weights, simmed_kenpoms):
                 "ncaa_round": -1
             }
     
-    if builder.mens:
-        conf_reg_winners = simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results)
+    conf_reg_winners = simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results)
     #print_Illinois(scorer, simmed_kenpoms)
     scorer.build_scores(weights, simmed_kenpoms)
     builder.select_seed_and_print_field()
@@ -1153,9 +1156,8 @@ def simulate_games(scorer, builder, weights, simmed_kenpoms):
     winners = simulate_tournament(builder, simmed_kenpoms, scorer, results)
     results['final_four'] += winners[-7:-3]
     results['champion'].append(winners[-1])
-    if builder.mens:
-        for conference in conf_reg_winners:
-            results['conference'][conference].append(conf_reg_winners[conference])
+    for conference in conf_reg_winners:
+        results['conference'][conference].append(conf_reg_winners[conference])
     return results
 
 def print_Illinois(scorer, team_kenpoms):
@@ -1591,9 +1593,8 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
             add_or_increment_key(team, national_champion)
         for team in results['teams']:
             team_results[team].append(results['teams'][team])
-        if builder.mens:
-            for conference in results['conference']:
-                add_or_increment_key(results['conference'][conference][0], final_conference_winners[conference])
+        for conference in results['conference']:
+            add_or_increment_key(results['conference'][conference][0], final_conference_winners[conference])
         successful_runs += 1
 
     for team in scorer.teams: #do this so that the output has the correct current record

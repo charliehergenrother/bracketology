@@ -136,6 +136,11 @@ MY_BETS = {
         'Army': 25000,
         'Central-Arkansas': 4000,
         'Middle-Tennessee': 1400,
+        'SMU': 8000,
+        'Buffalo': 7000,
+        'VCU': 230,
+        'Virginia': 1200,
+        'East-Tennessee-State': 100,
     },
     'final_four': {
         'Vanderbilt': 3000,
@@ -146,11 +151,14 @@ MY_BETS = {
         'Saint-Marys-College': 6500,
         'BYU': 850,
         'Villanova': 8000,
+        'Michigan-State': 10000,
+        'SMU': 8000,
     },
     'championship': {
         'Gonzaga': 4500,
         'Vanderbilt': 15000,
         'Iowa-State': 4500,
+        'Purdue': 1200,
     }
 }
 

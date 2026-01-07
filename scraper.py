@@ -141,6 +141,7 @@ MY_BETS = {
         'VCU': 230,
         'Virginia': 1200,
         'East-Tennessee-State': 100,
+        'Clemson': 2200,
     },
     'final_four': {
         'Vanderbilt': 3000,

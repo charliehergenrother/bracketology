@@ -263,6 +263,12 @@ body {
     margin-top: 20px;
 }
 
+.seed_tables_container {
+    font-family: Arial;
+    width: fit-content;
+    margin-right: 50px;
+}
+
 .outcomes_table {
     th {
         position: sticky;
@@ -272,8 +278,25 @@ body {
     }
 
     td {
-	padding-left: 3px;
+	    padding-left: 3px;
+        padding-right: 3px;
+    }
+
+    img {
+        padding-right: 5px;
+    }
+
+    .pct_col {
+        min-width: 60px;
     }
 }
 
+.conference_standings_container {
+    font-family: Arial;
+    margin-top: 50px;
+
+    td {
+        padding-right: 20px;
+    }
+}
 

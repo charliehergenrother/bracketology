@@ -3,12 +3,13 @@
 #class that represents one college basketball game from one team's perspective
 class Game:
 
-    def __init__(self, opp, loc, scr, oscr, dt):
+    def __init__(self, opp, loc, scr, oscr, dt, cg):
         self.opponent = opp
         self.location = loc
         self.team_score = scr
         self.opp_score = oscr
         self.date = dt
+        self.conference_game = cg
 
     def get_margin(self):
         return self.team_score - self.opp_score
@@ -19,7 +20,7 @@ class Game:
         return False
 
     def reprJSON(self):
-        return dict(opponent=self.opponent, location=self.location, team_score=self.team_score, opp_score=self.opp_score, date=self.date)
+        return dict(opponent=self.opponent, location=self.location, team_score=self.team_score, opp_score=self.opp_score, date=self.date, conference_game=self.conference_game)
 
     margin = property(get_margin)
     win = property(get_win)

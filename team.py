@@ -192,7 +192,7 @@ class Team:
                 game_line = 0
                 continue
             if game_line == 1:
-                curr_game = Game("", "", 0, 0, "")
+                curr_game = Game("", "", 0, 0, "", False)
                 game_line += 1
                 if not non_di:
                     continue
@@ -202,6 +202,8 @@ class Team:
                 continue
             if game_line == 3:
                 curr_game.opponent = line[line.find(">")+1:line.find("</div>")]
+                if "ts-nitty-nonconf" not in line:
+                    curr_game.conference_game = True
                 game_line += 1
                 continue
             if game_line == 4:

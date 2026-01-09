@@ -111,59 +111,10 @@ better_team_abbrs = {
         "North-Dakota-State": "NDSU",
         "Troy": "TROY",
         "Rhode-Island": "URI",
+        "Belmont": "BELM",
+        "Princeton": "PRIN",
+        "Columbia": "CMBA"
         }
-
-MY_BETS = {
-    'conference': {
-        'Georgia-Tech': 18000,
-        'UTSA': 7500,
-        'East-Carolina': 7500,
-        'Baylor': 2200,
-        'Nevada': 4000,
-        'Georgia': 7500,
-        'Vanderbilt': 3000,
-        'LSU': 10000,
-        'Villanova': 3000,
-        'Wichita-State': 2000,
-        'Sam-Houston-State': 6000,
-        'FAU': 2500,
-        'Seton-Hall': 20000,
-        'Iowa-State': 250,
-        'Gonzaga': -300,
-        'Creighton': 5000,
-        'Bellarmine': 6650,
-        'Holy-Cross': 25000,
-        'Army': 25000,
-        'Central-Arkansas': 4000,
-        'Middle-Tennessee': 1400,
-        'SMU': 8000,
-        'Buffalo': 7000,
-        'VCU': 230,
-        'Virginia': 1200,
-        'East-Tennessee-State': 100,
-        'Clemson': 2200,
-    },
-    'final_four': {
-        'Vanderbilt': 3000,
-        'Ole-Miss': 3500,
-        'Utah-State': 7500,
-        'Georgia': 10000,
-        'Nebraska': 10000,
-        'Saint-Marys-College': 6500,
-        'BYU': 850,
-        'Villanova': 8000,
-        'Michigan-State': 10000,
-        'SMU': 8000,
-        'Indiana': 8000,
-        'Saint-Louis': 12500,
-    },
-    'championship': {
-        'Gonzaga': 4500,
-        'Vanderbilt': 15000,
-        'Iowa-State': 4500,
-        'Purdue': 1200,
-    }
-}
 
 #class to turn the Team and Game objects into jsonifyable strings
 class ComplexEncoder(json.JSONEncoder):
@@ -293,8 +244,8 @@ class Scraper:
                     team_obj = json.loads(f.read())
                 games = set()
                 for game_obj in team_obj["games"]:
-                    games.add(Game(game_obj["opponent"], game_obj["location"], \
-                        game_obj["team_score"], game_obj["opp_score"], game_obj["date"]))
+                    games.add(Game(game_obj["opponent"], game_obj["location"], game_obj["team_score"], \
+                    game_obj["opp_score"], game_obj["date"], game_obj["conference_game"]))
                 curr_team = Team()
                 curr_team.fill_data(team_obj["conference"], team_obj["NET"], team_obj["KenPom"], team_obj["BPI"],
                         team_obj["Sagarin"], team_obj["Trank"], team_obj["KPI"], team_obj["SOR"], team_obj["WAB"],
@@ -413,17 +364,16 @@ class Scraper:
                     found_game = True
                     opp_name = line[line.find("80x80")+6:line.find(".png")]
                     game["opponent"] = opp_name
-                #problem: this only applies to future games. the data about which games are conference games isn't on the NET page.
-                #elif " <div class=\"team-schedule__conf-logo\">" in line:
-                #    conf_game_line_tracker = 1
-                #elif conf_game_line_tracker == 1:
-                #    conf_game_line_tracker += 1
-                #elif conf_game_line_tracker == 2:
-                #    if "team-schedule__conf-logo" in line:
-                #        game["conference_game"] = True
-                #    else:
-                #        game["conference_game"] = False
-                #    conf_game_line_tracker = 0
+                elif " <div class=\"team-schedule__conf-logo\">" in line:
+                    conf_game_line_tracker = 1
+                elif conf_game_line_tracker == 1:
+                    conf_game_line_tracker += 1
+                elif conf_game_line_tracker == 2:
+                    if "team-schedule__conf-logo" in line:
+                        game["conference_game"] = True
+                    else:
+                        game["conference_game"] = False
+                    conf_game_line_tracker = 0
                 elif "team-schedule__info-tv" in line:
                     if "TV: " in line:
                         game["channel"] = line[line.find("TV: ")+4:line.find("</span>")]
@@ -1095,11 +1045,7 @@ def simulate_games(scorer, builder, weights, simmed_kenpoms):
             if game.date == "10-10":   #previously simulated game
                 continue
             opponent = game.opponent
-            #TODO: oof, St. Joe's and La Salle play a nonconference game. probably a couple other examples like that. argh.
-            #fix needs to be a total restructuring. Need to cross-reference NET page with schedule page
-            #because the info about which games are conference games is only on the schedule page
-            #alternatively, just check it manually via monte carlo
-            if "Non Div I" not in opponent and scorer.teams[team].conference == scorer.teams[opponent].conference:
+            if game.conference_game:
                 if game.win:
                     scorer.teams[team].conference_wins += 1
                 else:
@@ -1116,22 +1062,21 @@ def simulate_games(scorer, builder, weights, simmed_kenpoms):
             if game_exists: 
                 continue
             opponent = game['opponent']
-            conference_game = scorer.teams[team].conference == scorer.teams[opponent].conference
             opp_kenpom = simmed_kenpoms[opponent]
             win_prob = scorer.get_win_prob(team_kenpom['rating'], opp_kenpom['rating'], game['location'])
-            new_game = Game(opponent, game['location'], 75, 0, '10-10')
-            opp_game = Game(team, reverse_location(game['location']), 0, 75, '10-10')
+            new_game = Game(opponent, game['location'], 75, 0, '10-10', game['conference_game'])
+            opp_game = Game(team, reverse_location(game['location']), 0, 75, '10-10', game['conference_game'])
             win_result = random.random()
             if win_result < win_prob:
                 new_game.opp_score = 70
                 opp_game.team_score = 70
-                if conference_game:
+                if game['conference_game']:
                     scorer.teams[team].conference_wins += 1
                     scorer.teams[opponent].conference_losses += 1
             else:
                 new_game.opp_score = 80
                 opp_game.team_score = 80
-                if conference_game:
+                if game['conference_game']:
                     scorer.teams[team].conference_losses += 1
                     scorer.teams[opponent].conference_wins += 1
             scorer.teams[team].games.add(new_game)
@@ -1368,7 +1313,8 @@ def scrape_initial_kenpom(year, scorer):
         #   ncaa_seed: X/-1
         #   ncaa_round: -1/0/1/2/3/4/5/6/7
         #}
-def output_team_html(mens, team, team_out, record, team_results, builder):
+def output_team_html(mens, team, team_out, record, team_results, all_conference_results, builder):
+    conf_results = all_conference_results[builder.teams[team].conference]
     total_runs = len(team_results)
     win_conference = len(list(filter(lambda x: x['conference_seed'] == 1, team_results)))
     make_tournament = len(list(filter(lambda x: x['ncaa_seed'] > 0, team_results)))
@@ -1431,26 +1377,51 @@ def output_team_html(mens, team, team_out, record, team_results, builder):
     f.write('    </div>\n')
     f.write('  </div>\n')
     f.write('</div>\n')
+    f.write('<div style="display: inline-flex">\n')
+    f.write('<div class="seed_tables_container">\n')
     team_table_output(f, 'wins', 'losses', team_results)
     team_table_output(f, 'conference_wins', 'conference_losses', team_results)
+    f.write('</div>\n')
+    f.write('<div class="conference_standings_container">\n')
+    f.write('  <table class="conference_table">\n')
+    f.write('    <thead>\n')
+    f.write('      <tr><th>Team</th><th>Wins</th><th>Losses</th></tr>\n')
+    f.write('    </thead>\n')
+    f.write('    <tbody>\n')
+    for conf_team in sorted(conf_results, key=lambda x: conf_results[x]['conference_wins'], reverse=True):
+        f.write('      <tr')
+        if conf_team == team_out:
+            f.write(' style="background-color: yellow"')
+        f.write('><td>' + conf_team + '</td><td>' + \
+            str(round(conf_results[conf_team]['conference_wins'], 2)) + '</td><td>' + \
+            str(round(conf_results[conf_team]['conference_losses'], 2)) + '</td></tr>\n')
+    f.write('    </tbody>\n')
+    f.write('  </table>\n')
+    f.write('</div>\n')
+    f.write('</div>\n')
 
 def team_table_output(f, win_string, loss_string, team_results):
+    total_runs = len(team_results)
+    total_games = team_results[0][win_string] + team_results[0][loss_string]
+    win_totals = [x[win_string] for x in team_results]
+    all_seeds = [x['ncaa_seed'] for x in team_results]
+    
     f.write('<div>\n')
+    if win_string == "wins":
+        f.write('  <h3 style="text-align: center"><u>Overall Record</u></h3>\n')
+    else:
+        f.write('  <h3 style="text-align: center"><u>Conference Record</u></h3>\n')
     f.write('  <table class="record_table">\n')
     f.write('    <thead>\n')
     f.write('      <tr><th>Record</th><th>% chance</th>')
-    for x in range(1, 17):
+    for x in range(min(all_seeds), max(all_seeds) + 1):
         f.write('<th>' + str(x) + '</th>')
     f.write('<th>Miss</th>')
     f.write('</tr>\n')
     f.write('    </thead>\n')
     f.write('    <tbody>\n')
-    total_runs = len(team_results)
-    total_games = team_results[0][win_string] + team_results[0][loss_string]
-    win_totals = [x[win_string] for x in team_results]
-    all_seeds = [x['ncaa_seed'] for x in team_results]
     f.write('<tr><td/><td/>')
-    for seed in range(1, 17):
+    for seed in range(min(all_seeds), max(all_seeds) + 1):
         outcome_percentage = round(100*all_seeds.count(seed)/total_runs, 2)
         color_percentage = str(-outcome_percentage / 2 + 100)
         f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
@@ -1467,7 +1438,7 @@ def team_table_output(f, win_string, loss_string, team_results):
 
         f.write('    <tr><td>' + str(win_total) + "-" + str(total_games - win_total) + '</td>')
         f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(win_total_pct) + '%</td>')
-        for seed in range(1, 17):
+        for seed in range(min(all_seeds), max(all_seeds) + 1):
             outcome_percentage = round(100*relevant_seeds.count(seed)/total_runs, 2)
             color_percentage = str(-outcome_percentage / 2 + 100)
             f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
@@ -1546,6 +1517,12 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
     conference_winners = dict(builder.conference_winners)
     scorer.team_kenpoms = scrape_initial_kenpom(builder.year, scorer)
     base_weights = scorer.get_weights(weightfile)
+    if os.path.exists("./my_bets.json"):
+        f = open("./my_bets.json", "r")
+        my_bets = json.loads(f.read())
+    else:
+        my_bets = {}
+
     for team in scorer.teams:
         scorer.teams[team].saved_games = set(scorer.teams[team].games)
         scorer.teams[team].saved_future_games = list([dict(x) for x in scorer.teams[team].future_games])
@@ -1607,10 +1584,18 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         for conference in results['conference']:
             add_or_increment_key(results['conference'][conference][0], final_conference_winners[conference])
         successful_runs += 1
+    
+    conference_results = dict()
+    for conference in final_conference_winners:
+        conference_results[conference] = dict()
 
     for team in scorer.teams: #do this so that the output has the correct current record
         scorer.teams[team].games = set(scorer.teams[team].saved_games)
         scorer.teams[team].future_games = list(scorer.teams[team].saved_future_games)
+        conference_results[builder.teams[team].conference][scorer.teams[team].team_out] = {
+            'conference_wins': sum(x['conference_wins'] for x in team_results[team])/len(team_results[team]),
+            'conference_losses': sum(x['conference_losses'] for x in team_results[team])/len(team_results[team])
+        }
 
     ## OUTPUT RESULTS ##
     result_percents = dict()
@@ -1659,11 +1644,11 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
                             f.write(str(float(best_odds)/float(odds)) + ",")
                         except ZeroDivisionError:   #team is 100% to win its conference
                             f.write("XXXXX,")
-                    if team in MY_BETS['conference']:
-                        if MY_BETS['conference'][team] > 0:
-                            f.write("Yes: +" + str(MY_BETS['conference'][team]))
+                    if team in my_bets['conference']:
+                        if my_bets['conference'][team] > 0:
+                            f.write("Yes: +" + str(my_bets['conference'][team]))
                         else:
-                            f.write("Yes: " + str(MY_BETS['conference'][team]))
+                            f.write("Yes: " + str(my_bets['conference'][team]))
                 
                 except KeyError:
                     f.write(",")
@@ -1708,7 +1693,7 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
                     write_book_odds(f, current_odds['final_four'][team], book)
                 except KeyError:    # odds not posted anywhere for this team
                     f.write(",,")
-            write_odds_margin(f, team, odds, current_odds, 'final_four')
+            write_odds_margin(f, team, odds, current_odds, 'final_four', my_bets)
 
     print()
     print("NATIONAL CHAMPIONS")
@@ -1730,7 +1715,7 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
                     write_book_odds(f, current_odds['championship'][team], book)
                 except KeyError:    # odds not posted anywhere for this team
                     f.write(",,")
-            write_odds_margin(f, team, odds, current_odds, 'championship')
+            write_odds_margin(f, team, odds, current_odds, 'championship', my_bets)
 
     for team in made_tournament:
         result_percents[team]['auto_bid'] = len(list(filter(lambda x: x['ctourn_winner'], team_results[team])))/successful_runs
@@ -1748,16 +1733,16 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         f.write('<col class="srcol"><col class="sscol"><col class="eecol">')
         f.write('<col class="ffcol"><col class="ncgcol"><col class="nccol"></colgroup>\n')
         f.write('    <thead>\n')
-        f.write('      <tr class="header_row"><th>Team</th><th>Avg. seed</th><th>Win conference</th>')
+        f.write('      <tr class="header_row"><th>Team</th><th>Avg. seed</th><th>Win conf</th>')
         f.write('<th>Auto bid</th><th>Tournament</th>')
         f.write('<th>2nd Round</th><th>Sweet 16</th><th>Elite 8</th><th>Final Four</th>')
-        f.write('<th>Championship game</th><th>Win championship</th>')
+        f.write('<th>Champ game</th><th>Win champ</th>')
         f.write('</tr>')
         f.write('    </thead>\n')
         f.write('    <tbody>\n')
         for index, team in enumerate(sorted(made_tournament, key=lambda x: sum(team_seeds[x])/made_tournament[x])):
             if mens:
-                f.write('    <tr><td><a href="team_pages/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
+                f.write('    <tr><td><img class="tiny_logo" src="assets/' + team + '.png"/><a href="team_pages/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
             else:
                 f.write('    <tr><td><a href="team_pagesw/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
             f.write('<td>' + str(round(sum(team_seeds[team])/made_tournament[team], 2)) + '</td>')
@@ -1767,7 +1752,7 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
                 except KeyError:
                     outcome_percentage = 0
                 color_percentage = str(-outcome_percentage / 2 + 100)
-                f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
+                f.write('<td class="pct_col" style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
             f.write('</tr>\n')
         f.write('    </tbody>')
         f.write('  </table>\n')
@@ -1775,13 +1760,13 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         f.write('</body>\n')
 
     for team in team_results:
-        output_team_html(mens, team, scorer.teams[team].team_out, scorer.teams[team].record, team_results[team], builder)
+        output_team_html(mens, team, scorer.teams[team].team_out, scorer.teams[team].record, team_results[team], conference_results, builder)
 
 def write_book_odds(f, current_odds, book):
     f.write(current_odds[book] + ",")
     f.write(get_plus_odds(current_odds[book]) + ",")
 
-def write_odds_margin(f, team, team_odds, current_odds, bet_type):
+def write_odds_margin(f, team, team_odds, current_odds, bet_type, my_bets):
     try:
         best_odds = current_odds[bet_type][team]['best']
         f.write(best_odds + ",")
@@ -1789,8 +1774,8 @@ def write_odds_margin(f, team, team_odds, current_odds, bet_type):
             f.write("0,")
         else:
             f.write(str(float(best_odds)/float(team_odds)) + ",")
-        if team in MY_BETS[bet_type]:
-            f.write("Yes: +" + str(MY_BETS[bet_type][team]))
+        if team in my_bets[bet_type]:
+            f.write("Yes: +" + str(my_bets[bet_type][team]))
     except KeyError:
         pass
     f.write("\n")

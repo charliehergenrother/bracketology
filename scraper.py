@@ -154,6 +154,8 @@ MY_BETS = {
         'Villanova': 8000,
         'Michigan-State': 10000,
         'SMU': 8000,
+        'Indiana': 8000,
+        'Saint-Louis': 12500,
     },
     'championship': {
         'Gonzaga': 4500,

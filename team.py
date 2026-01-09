@@ -225,6 +225,16 @@ class Team:
                 game_line = 0
                 continue
 
+    def get_conference_record(self):
+        wins = 0
+        losses = 0
+        for game in self.games:
+            if game.conference_game:
+                if game.margin > 0:
+                    wins += 1
+                else:
+                    losses += 1
+        return str(wins) + "-" + str(losses)
 
     def get_record(self):
         wins = 0
@@ -287,6 +297,7 @@ class Team:
             return sum([self.KPI, self.SOR, self.WAB])/3
 
     record = property(get_record)
+    conference_record = property(get_conference_record)
     record_pct = property(get_record_pct)
     #derived_Q1_record = property(get_derived_Q1_record)
     #derived_Q2_record = property(get_derived_Q2_record)

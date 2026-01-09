@@ -1313,7 +1313,7 @@ def scrape_initial_kenpom(year, scorer):
         #   ncaa_seed: X/-1
         #   ncaa_round: -1/0/1/2/3/4/5/6/7
         #}
-def output_team_html(mens, team, team_out, record, team_results, all_conference_results, builder):
+def output_team_html(mens, team, team_out, record, conference_record, team_results, all_conference_results, builder):
     conf_results = all_conference_results[builder.teams[team].conference]
     total_runs = len(team_results)
     win_conference = len(list(filter(lambda x: x['conference_seed'] == 1, team_results)))
@@ -1333,7 +1333,8 @@ def output_team_html(mens, team, team_out, record, team_results, all_conference_
     builder.output_meta(f, "../")
     builder.output_link_row(f, "../")
     f.write('<div class="title_row_team">\n')
-    f.write('  <img class="team_page_logo" src=../assets/' + team + '.png></img><h1>' + team_out + ' (' + record + ')</h1>\n')
+    f.write('  <img class="team_page_logo" src=../assets/' + team + '.png></img><h1>' + team_out + \
+        ' (' + record + ', ' + conference_record + ' ' + builder.teams[team].conference + ')</h1>\n')
     f.write('</div>\n')
     f.write('<div class="oddsbox_row">\n')
     f.write('  <div class="oddsbox">\n')
@@ -1414,14 +1415,14 @@ def team_table_output(f, win_string, loss_string, team_results):
     f.write('  <table class="record_table">\n')
     f.write('    <thead>\n')
     f.write('      <tr><th>Record</th><th>% chance</th>')
-    for x in range(min(all_seeds), max(all_seeds) + 1):
+    for x in range(max(1, min(all_seeds)), max(all_seeds) + 1):
         f.write('<th>' + str(x) + '</th>')
     f.write('<th>Miss</th>')
     f.write('</tr>\n')
     f.write('    </thead>\n')
     f.write('    <tbody>\n')
     f.write('<tr><td/><td/>')
-    for seed in range(min(all_seeds), max(all_seeds) + 1):
+    for seed in range(max(1, min(all_seeds)), max(all_seeds) + 1):
         outcome_percentage = round(100*all_seeds.count(seed)/total_runs, 2)
         color_percentage = str(-outcome_percentage / 2 + 100)
         f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
@@ -1438,7 +1439,7 @@ def team_table_output(f, win_string, loss_string, team_results):
 
         f.write('    <tr><td>' + str(win_total) + "-" + str(total_games - win_total) + '</td>')
         f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(win_total_pct) + '%</td>')
-        for seed in range(min(all_seeds), max(all_seeds) + 1):
+        for seed in range(max(1, min(all_seeds)), max(all_seeds) + 1):
             outcome_percentage = round(100*relevant_seeds.count(seed)/total_runs, 2)
             color_percentage = str(-outcome_percentage / 2 + 100)
             f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
@@ -1760,7 +1761,8 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         f.write('</body>\n')
 
     for team in team_results:
-        output_team_html(mens, team, scorer.teams[team].team_out, scorer.teams[team].record, team_results[team], conference_results, builder)
+        output_team_html(mens, team, scorer.teams[team].team_out, scorer.teams[team].record,
+        scorer.teams[team].conference_record, team_results[team], conference_results, builder)
 
 def write_book_odds(f, current_odds, book):
     f.write(current_odds[book] + ",")

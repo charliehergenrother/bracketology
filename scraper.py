@@ -1406,7 +1406,11 @@ def team_table_output(f, win_string, loss_string, team_results):
     total_games = team_results[0][win_string] + team_results[0][loss_string]
     win_totals = [x[win_string] for x in team_results]
     all_seeds = [x['ncaa_seed'] for x in team_results]
-    
+    try:
+        highest_seed = min(list(filter(lambda x: x > 0, all_seeds)))
+    except ValueError: # team did not make tournament
+        highest_seed = 16
+
     f.write('<div>\n')
     if win_string == "wins":
         f.write('  <h3 style="text-align: center"><u>Overall Record</u></h3>\n')
@@ -1415,14 +1419,14 @@ def team_table_output(f, win_string, loss_string, team_results):
     f.write('  <table class="record_table">\n')
     f.write('    <thead>\n')
     f.write('      <tr><th>Record</th><th>% chance</th>')
-    for x in range(max(1, min(all_seeds)), max(all_seeds) + 1):
+    for x in range(highest_seed, max(all_seeds) + 1):
         f.write('<th>' + str(x) + '</th>')
     f.write('<th>Miss</th>')
     f.write('</tr>\n')
     f.write('    </thead>\n')
     f.write('    <tbody>\n')
     f.write('<tr><td/><td/>')
-    for seed in range(max(1, min(all_seeds)), max(all_seeds) + 1):
+    for seed in range(highest_seed, max(all_seeds) + 1):
         outcome_percentage = round(100*all_seeds.count(seed)/total_runs, 2)
         color_percentage = str(-outcome_percentage / 2 + 100)
         f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
@@ -1439,7 +1443,7 @@ def team_table_output(f, win_string, loss_string, team_results):
 
         f.write('    <tr><td>' + str(win_total) + "-" + str(total_games - win_total) + '</td>')
         f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(win_total_pct) + '%</td>')
-        for seed in range(max(1, min(all_seeds)), max(all_seeds) + 1):
+        for seed in range(highest_seed, max(all_seeds) + 1):
             outcome_percentage = round(100*relevant_seeds.count(seed)/total_runs, 2)
             color_percentage = str(-outcome_percentage / 2 + 100)
             f.write('<td style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')

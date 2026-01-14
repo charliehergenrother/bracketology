@@ -993,7 +993,7 @@ class Builder:
         f.write('        </div>\n')
         f.write('      </li>\n')
         f.write('      <li class="non_image_element link_element">\n')
-        f.write('        <a href="about.html">About</a>\n')
+        f.write('        <a href="' + styling_path + 'about.html">About</a>\n')
         f.write('      </li>\n')
         f.write('    </ul>\n')
         f.write('  </nav>\n')

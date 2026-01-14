@@ -1384,6 +1384,7 @@ def output_team_html(mens, team, team_out, record, conference_record, team_resul
     team_table_output(f, 'conference_wins', 'conference_losses', team_results)
     f.write('</div>\n')
     f.write('<div class="conference_standings_container">\n')
+    f.write('  <h3>' + builder.teams[team].conference + ' Projected Standings</h3>\n')
     f.write('  <table class="conference_table">\n')
     f.write('    <thead>\n')
     f.write('      <tr><th>Team</th><th>Wins</th><th>Losses</th></tr>\n')
@@ -1391,9 +1392,10 @@ def output_team_html(mens, team, team_out, record, conference_record, team_resul
     f.write('    <tbody>\n')
     for conf_team in sorted(conf_results, key=lambda x: conf_results[x]['conference_wins'], reverse=True):
         f.write('      <tr')
-        if conf_team == team_out:
+        conf_team_out = builder.teams[conf_team].team_out
+        if conf_team_out == team_out:
             f.write(' style="background-color: yellow"')
-        f.write('><td>' + conf_team + '</td><td>' + \
+        f.write('><td><a href="../team_pages/' + conf_team + '.html">' + conf_team_out + '</a></td><td>' + \
             str(round(conf_results[conf_team]['conference_wins'], 2)) + '</td><td>' + \
             str(round(conf_results[conf_team]['conference_losses'], 2)) + '</td></tr>\n')
     f.write('    </tbody>\n')
@@ -1597,7 +1599,7 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
     for team in scorer.teams: #do this so that the output has the correct current record
         scorer.teams[team].games = set(scorer.teams[team].saved_games)
         scorer.teams[team].future_games = list(scorer.teams[team].saved_future_games)
-        conference_results[builder.teams[team].conference][scorer.teams[team].team_out] = {
+        conference_results[builder.teams[team].conference][team] = {
             'conference_wins': sum(x['conference_wins'] for x in team_results[team])/len(team_results[team]),
             'conference_losses': sum(x['conference_losses'] for x in team_results[team])/len(team_results[team])
         }
@@ -1749,7 +1751,7 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
             if mens:
                 f.write('    <tr><td><img class="tiny_logo" src="assets/' + team + '.png"/><a href="team_pages/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
             else:
-                f.write('    <tr><td><a href="team_pagesw/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
+                f.write('    <tr><td><img class="tiny_logo" src="assets/' + team + '.png"/><a href="team_pagesw/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
             f.write('<td>' + str(round(sum(team_seeds[team])/made_tournament[team], 2)) + '</td>')
             for outcome_string in ['conference', 'auto_bid', 'tournament', 'second_round', 'sweet_sixteen', 'elite_eight', 'final_four', 'ncg', 'championship']:
                 try:

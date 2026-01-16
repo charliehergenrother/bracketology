@@ -448,6 +448,7 @@ def translate_team_name(team):
         "Miami Ohio": "Miami-OH",
         "Mississippi": "Ole-Miss",
         "VA Commonwealth": "VCU",
+        "Central Florida": "UCF",
     }
     if team in ad_hoc_dict:
         return ad_hoc_dict[team]

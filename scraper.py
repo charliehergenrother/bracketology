@@ -1395,9 +1395,12 @@ def output_team_html(mens, team, team_out, record, conference_record, team_resul
         conf_team_out = builder.teams[conf_team].team_out
         if conf_team_out == team_out:
             f.write(' style="background-color: yellow"')
-        f.write('><td><a href="../team_pages/' + conf_team + '.html">' + conf_team_out + '</a></td><td>' + \
-            str(round(conf_results[conf_team]['conference_wins'], 2)) + '</td><td>' + \
-            str(round(conf_results[conf_team]['conference_losses'], 2)) + '</td></tr>\n')
+        if mens:
+            f.write('><td><a href="../team_pages/' + conf_team + '.html">' + conf_team_out + '</a></td><td>')
+        else:
+            f.write('><td><a href="../team_pagesw/' + conf_team + '.html">' + conf_team_out + '</a></td><td>')
+        f.write(str(round(conf_results[conf_team]['conference_wins'], 2)) + '</td><td>' + \
+        str(round(conf_results[conf_team]['conference_losses'], 2)) + '</td></tr>\n')
     f.write('    </tbody>\n')
     f.write('  </table>\n')
     f.write('</div>\n')
@@ -1422,7 +1425,10 @@ def team_table_output(f, win_string, loss_string, team_results):
     f.write('    <thead>\n')
     f.write('      <tr><th>Record</th><th>% chance</th>')
     for x in range(highest_seed, max(all_seeds) + 1):
-        f.write('<th>' + str(x) + '</th>')
+        if x == highest_seed:
+            f.write('<th>' + str(x) + ' seed</th>')
+        else:
+            f.write('<th>' + str(x) + '</th>')
     f.write('<th>Miss</th>')
     f.write('</tr>\n')
     f.write('    </thead>\n')

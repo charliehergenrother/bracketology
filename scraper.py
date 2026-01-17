@@ -941,7 +941,10 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
         bracket = []
         for rnd in reversed(rounds):
             matchups = []
-            cur_round_teams = int(rnd[0])
+            if rnd[0] == "T":
+                cur_round_teams = 10
+            else:
+                cur_round_teams = int(rnd[0])
             if cur_round_teams == num_teams * 2:
                 num_teams *= 2
                 if not reseed:
@@ -985,7 +988,10 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
         previous_winners = []
         num_eliminated_teams = 0
         for rnd in rounds:
-            cur_round_teams = int(rnd[0])
+            if rnd[0] == "T":
+                cur_round_teams = 10
+            else:
+                cur_round_teams = int(rnd[0])
             round_location = rnd[1]
             higher_seed = num_teams - (cur_round_teams - 1) - num_eliminated_teams
             lower_seed = num_teams - num_eliminated_teams

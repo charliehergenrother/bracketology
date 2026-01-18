@@ -449,6 +449,7 @@ def translate_team_name(team):
         "Mississippi": "Ole-Miss",
         "VA Commonwealth": "VCU",
         "Central Florida": "UCF",
+        "Florida Intl": "FIU",
     }
     if team in ad_hoc_dict:
         return ad_hoc_dict[team]
@@ -517,13 +518,13 @@ def combine_results(fd, dk, cs, bm, bt):
         if conference not in results['conference']:
             results['conference'][conference] = dict()
         run_combine(dk['conference'][conference], 'DK', results['conference'][conference])
-    for conference in cs['conference']:
-        conf_name = conference
-        if conference in conference_lookup:
-            conf_name = conference_lookup[conference]
-        if conf_name not in results['conference']:
-            results['conference'][conf_name] = dict()
-        run_combine(cs['conference'][conference], 'CS', results['conference'][conf_name])
+    #for conference in cs['conference']:
+    #    conf_name = conference
+    #    if conference in conference_lookup:
+    #        conf_name = conference_lookup[conference]
+    #    if conf_name not in results['conference']:
+    #        results['conference'][conf_name] = dict()
+    #    run_combine(cs['conference'][conference], 'CS', results['conference'][conf_name])
     for conference in bm['conference']:
         conf_name = conference
         if conference in conference_lookup:

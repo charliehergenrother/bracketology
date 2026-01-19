@@ -53,11 +53,35 @@ def scrape_fanduel_main_list(oddsfile):
                 team = ""
     return results
 
+def scrape_fanduel_tournament():
+    oddsfile = ODDS_PATH + "fd tourn"
+    odds_tables = do_fd_setup(oddsfile)
+    results = dict()
+    start_table = False
+    for line in odds_tables.split("\n"):
+        if not start_table:
+            if "To Make the 2026 NCAA Tournament" in line:
+                start_table = True
+            continue
+        if "To Make the 2026 NCAA Tournament Field of 68," in line:
+            team = line[line.find('aria-label')+12:line.find(" To Make the")]
+            side = line[line.find("68, ")+4]
+            if "+" in line:
+                odds = int(line[line.find("+")+1:line.find('" role')])
+            else:
+                odds = int(line[line.find(", -")+2:line.find('" role')])
+            if side == "Y":
+                results[team] = {side: odds}
+            else:
+                results[team][side] = odds
+    return results
+
 def scrape_fanduel():
     results = dict()
     results['championship'] = scrape_fanduel_main_list(ODDS_PATH + "fd champ")
     results['final_four'] = scrape_fanduel_main_list(ODDS_PATH + "fd ff")
     results['conference'] = scrape_fanduel_conference()
+    results['tournament'] = scrape_fanduel_tournament()
     return results
 
 def do_dk_setup(oddsfile):

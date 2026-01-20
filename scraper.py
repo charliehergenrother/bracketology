@@ -1470,9 +1470,12 @@ def team_table_output(f, win_string, loss_string, team_results):
     f.write('</div>\n')
 
 def get_current_odds(conferences):
-    results = {'conference': dict(), 'final_four': dict(), 'championship': dict()}
+    results = {'conference': dict(), 'final_four': dict(), 'championship': dict(),
+               'tournament_yes': dict(), 'tournament_no': dict()}
     g = open("./currentodds.csv", "r")
     conference = ""
+    tournament_yes = False
+    tournament_no = False
     final_four = False
     championship = False
     for line in g.read().split("\n"):
@@ -1482,9 +1485,17 @@ def get_current_odds(conferences):
             continue
         if "Team," in line:
             continue
+        if "TOURNAMENT - YES" in line:
+            tournament_yes = True
+            conference = ""
+            continue
+        if "TOURNAMENT - NO" in line:
+            tournament_no = True
+            tournament_yes = False
+            continue
         if "FINAL FOUR" in line:
             final_four = True
-            conference = ""
+            tournament_no = False
             continue
         if "CHAMPIONSHIP" in line:
             championship = True
@@ -1495,6 +1506,14 @@ def get_current_odds(conferences):
                 team_line = line.split(",")
                 team = team_line[0]
                 results['conference'][conference][team] = {"FD": team_line[1], "DK": team_line[3], "CS": team_line[5], "BM": team_line[7], "BT": team_line[9], "best": team_line[11]}
+        elif tournament_yes and len(line) > 2:
+            team_line = line.split(",")
+            team = team_line[0]
+            results['tournament_yes'][team] = {"FD": team_line[1], "DK": team_line[3], "CS": team_line[5], "BM": team_line[7], "BT": team_line[9], "best": team_line[11]}
+        elif tournament_no and len(line) > 2:
+            team_line = line.split(",")
+            team = team_line[0]
+            results['tournament_no'][team] = {"FD": team_line[1], "DK": team_line[3], "CS": team_line[5], "BM": team_line[7], "BT": team_line[9], "best": team_line[11]}
         elif final_four and len(line) > 2:
             team_line = line.split(",")
             team = team_line[0]
@@ -1692,6 +1711,27 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         if mc_outputfile:
             f.write(team + "," + str(tourn_pct) + "\n")
     
+    if mc_outputfile:
+        f.write("\n")
+        f.write("MAKE TOURNAMENT - YES\n")
+        f.write("Team,Odds,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds,Good bet?,Already bet?\n")
+        for team in sorted(current_odds['tournament_yes']):
+            odds = str(int((100/(made_tournament[team]/successful_runs))-100))
+            f.write(team + "," + odds + ",")
+            for book in ["FD", "DK", "CS", "BM","BT"]:
+                write_book_odds(f, current_odds['tournament_yes'][team], book)
+            write_odds_margin(f, team, odds, current_odds, 'tournament_yes', my_bets)
+        
+        f.write("\n")
+        f.write("MAKE TOURNAMENT - NO\n")
+        f.write("Team,Odds,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds,Good bet?,Already bet?\n")
+        for team in sorted(current_odds['tournament_no']):
+            odds = str(int((100/(1 - (made_tournament[team]/successful_runs)))-100))
+            f.write(team + "," + odds + ",")
+            for book in ["FD", "DK", "CS", "BM","BT"]:
+                write_book_odds(f, current_odds['tournament_no'][team], book)
+            write_odds_margin(f, team, odds, current_odds, 'tournament_no', my_bets)
+
     if mc_outputfile:
         f.write("\n")
         f.write("FINAL FOURS\n")

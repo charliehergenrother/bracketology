@@ -355,11 +355,51 @@ def scrape_bet365_conference():
             continue
     return results
 
+
+def scrape_bet365_tournament():
+    oddsfile = ODDS_PATH + "bt tourn.html"
+    f = open(oddsfile, "r")
+    for line in f.read().split("\n"):
+        if "Make NCAA Tournament" in line:
+            break
+    odds_tables = line.replace(">", ">\n")
+    results = dict()
+    found_yes = 3
+    found_no = 3
+    for line in odds_tables.split("\n"):
+        if "NCAAB Championship 2025/26 -" in line:
+            team = line[29:line.find("</div>")]
+            continue
+        if "Yes</span>" in line:
+            found_yes = 1
+            continue
+        if found_yes < 2:
+            found_yes += 1
+            continue
+        if found_yes == 2:
+            odds = int(line[:line.find("</span>")])
+            results[team] = {'Y': odds}
+            found_yes += 1
+            continue
+        if "No</span>" in line:
+            found_no = 1
+            continue
+        if found_no < 2:
+            found_no += 1
+            continue
+        if found_no == 2:
+            odds = int(line[:line.find("</span>")])
+            results[team]['N'] = odds
+            found_no += 1
+            continue
+    return results
+
 def scrape_bet365():
     results = dict()
     results['championship'] = scrape_bet365_main_list(ODDS_PATH + "bt champ.html")
     results['final_four'] = scrape_bet365_main_list(ODDS_PATH + "bt ff.html")
     results['conference'] = scrape_bet365_conference()
+    results['tournament'] = scrape_bet365_tournament()
     return results
 
 def get_string_odds(odds):
@@ -504,7 +544,7 @@ def run_combine(book_results, book_abbreviation, full_results):
         full_results[fixed_team][book_abbreviation] = book_results[team]
 
 def combine_results(fd, dk, cs, bm, bt):
-    results = {'conference': dict(), 'final_four': dict(), 'championship': dict()}
+    results = {'conference': dict(), 'final_four': dict(), 'championship': dict(), 'tournament': {'Y': dict(), 'N': dict()}}
     conference_lookup = {
         "ACC Conference": "ACC",
         "Big 10 Conference": "Big Ten",
@@ -564,6 +604,16 @@ def combine_results(fd, dk, cs, bm, bt):
             results['conference'][conf_name] = dict()
         run_combine(bt['conference'][conference], 'BT', results['conference'][conf_name])
     
+    for team in fd['tournament']:
+        fixed_team = translate_team_name(team)
+        results['tournament']['Y'][fixed_team] = {'FD': fd['tournament'][team]['Y']}
+        results['tournament']['N'][fixed_team] = {'FD': fd['tournament'][team]['N']}
+    for team in bt['tournament']:
+        fixed_team = translate_team_name(team)
+        if fixed_team in results['tournament']['Y']:
+            results['tournament']['Y'][fixed_team]['BT'] = bt['tournament'][team]['Y']
+            results['tournament']['N'][fixed_team]['BT'] = bt['tournament'][team]['N']
+
     for team in fd['final_four']:
         fixed_team = translate_team_name(team)
         results['final_four'][fixed_team] = {'FD': fd['final_four'][team]}
@@ -619,6 +669,17 @@ def main():
         for team in sorted(results['conference'][conference]):
             write_book_odds(f, team, results['conference'][conference][team], ["FD", "DK", "CS", "BM", "BT"])
         f.write("\n")
+
+    f.write("TOURNAMENT - YES\n")
+    f.write("Team,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds\n")
+    for team in sorted(results['tournament']['Y']):
+        write_book_odds(f, team, results['tournament']['Y'][team], ["FD", "DK", "CS", "BM", "BT"])
+    f.write("\n")
+    f.write("TOURNAMENT - NO\n")
+    f.write("Team,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds\n")
+    for team in sorted(results['tournament']['N']):
+        write_book_odds(f, team, results['tournament']['N'][team], ["FD", "DK", "CS", "BM", "BT"])
+    f.write("\n")
 
     f.write("FINAL FOUR\n")
     f.write("Team,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds\n")

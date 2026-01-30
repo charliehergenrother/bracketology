@@ -60,10 +60,10 @@ def scrape_fanduel_tournament():
     start_table = False
     for line in odds_tables.split("\n"):
         if not start_table:
-            if "To Make the 2026 NCAA Tournament" in line:
+            if " To Make the 2026 NCAA Tournament" in line:
                 start_table = True
             continue
-        if "To Make the 2026 NCAA Tournament Field of 68," in line:
+        if " To Make the 2026 NCAA Tournament Field of 68," in line:
             team = line[line.find('aria-label')+12:line.find(" To Make the")]
             side = line[line.find("68, ")+4]
             if "+" in line:
@@ -613,6 +613,9 @@ def combine_results(fd, dk, cs, bm, bt):
         if fixed_team in results['tournament']['Y']:
             results['tournament']['Y'][fixed_team]['BT'] = bt['tournament'][team]['Y']
             results['tournament']['N'][fixed_team]['BT'] = bt['tournament'][team]['N']
+        else:
+            results['tournament']['Y'][fixed_team] = {'BT': bt['tournament'][team]['Y']}
+            results['tournament']['N'][fixed_team] = {'BT': bt['tournament'][team]['N']}
 
     for team in fd['final_four']:
         fixed_team = translate_team_name(team)

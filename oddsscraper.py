@@ -608,14 +608,14 @@ def combine_results(fd, dk, cs, bm, bt):
         fixed_team = translate_team_name(team)
         results['tournament']['Y'][fixed_team] = {'FD': fd['tournament'][team]['Y']}
         results['tournament']['N'][fixed_team] = {'FD': fd['tournament'][team]['N']}
-    #for team in bt['tournament']:
-    #    fixed_team = translate_team_name(team)
-    #    if fixed_team in results['tournament']['Y']:
-    #        results['tournament']['Y'][fixed_team]['BT'] = bt['tournament'][team]['Y']
-    #        results['tournament']['N'][fixed_team]['BT'] = bt['tournament'][team]['N']
-    #    else:
-    #        results['tournament']['Y'][fixed_team] = {'BT': bt['tournament'][team]['Y']}
-    #        results['tournament']['N'][fixed_team] = {'BT': bt['tournament'][team]['N']}
+    for team in bt['tournament']:
+        fixed_team = translate_team_name(team)
+        if fixed_team in results['tournament']['Y']:
+            results['tournament']['Y'][fixed_team]['BT'] = bt['tournament'][team]['Y']
+            results['tournament']['N'][fixed_team]['BT'] = bt['tournament'][team]['N']
+        else:
+            results['tournament']['Y'][fixed_team] = {'BT': bt['tournament'][team]['Y']}
+            results['tournament']['N'][fixed_team] = {'BT': bt['tournament'][team]['N']}
 
     for team in fd['final_four']:
         fixed_team = translate_team_name(team)

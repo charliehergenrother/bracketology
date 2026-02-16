@@ -1716,7 +1716,10 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         f.write("MAKE TOURNAMENT - YES\n")
         f.write("Team,Odds,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds,Good bet?,Already bet?\n")
         for team in sorted(current_odds['tournament_yes']):
-            odds = str(int((100/(made_tournament[team]/successful_runs))-100))
+            try:
+                odds = str(int((100/(made_tournament[team]/successful_runs))-100))
+            except KeyError: #team never made tournament
+                continue
             f.write(team + "," + odds + ",")
             for book in ["FD", "DK", "CS", "BM","BT"]:
                 write_book_odds(f, current_odds['tournament_yes'][team], book)
@@ -1726,7 +1729,10 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         f.write("MAKE TOURNAMENT - NO\n")
         f.write("Team,Odds,FanDuel,FD+,DraftKings,DK+,Caesars,CS+,BetMGM,BM+,Bet365,BT+,best odds,Good bet?,Already bet?\n")
         for team in sorted(current_odds['tournament_no']):
-            odds = str(int((100/(1 - (made_tournament[team]/successful_runs)))-100))
+            try:
+                odds = str(int((100/(1 - (made_tournament[team]/successful_runs)))-100))
+            except KeyError: #team never made tournament
+                odds = "0"
             f.write(team + "," + odds + ",")
             for book in ["FD", "DK", "CS", "BM","BT"]:
                 write_book_odds(f, current_odds['tournament_no'][team], book)
@@ -1833,7 +1839,10 @@ def write_odds_margin(f, team, team_odds, current_odds, bet_type, my_bets):
         if float(team_odds) > float(best_odds):
             f.write("0,")
         else:
-            f.write(str(float(best_odds)/float(team_odds)) + ",")
+            try:
+                f.write(str(float(best_odds)/float(team_odds)) + ",")
+            except ZeroDivisionError:   #team always did specified thing
+                f.write("100,")
         if team in my_bets[bet_type]:
             f.write("Yes: +" + str(my_bets[bet_type][team]))
     except KeyError:

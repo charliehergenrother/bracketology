@@ -513,11 +513,11 @@ def translate_team_name(team):
         "Mississippi": "Ole-Miss",
         "VA Commonwealth": "VCU",
         "Central Florida": "UCF",
-        "Florida Intl": "FIU",
+        "Florida Intl": "FIU"
     }
     if team in ad_hoc_dict:
         return ad_hoc_dict[team]
-    fixed_team = team.replace(" ", "-")
+    fixed_team = team.strip().replace(" ", "-")
     return fixed_team
 
 def run_combine(book_results, book_abbreviation, full_results):
@@ -604,10 +604,10 @@ def combine_results(fd, dk, cs, bm, bt):
             results['conference'][conf_name] = dict()
         run_combine(bt['conference'][conference], 'BT', results['conference'][conf_name])
     
-    for team in fd['tournament']:
-        fixed_team = translate_team_name(team)
-        results['tournament']['Y'][fixed_team] = {'FD': fd['tournament'][team]['Y']}
-        results['tournament']['N'][fixed_team] = {'FD': fd['tournament'][team]['N']}
+    #for team in fd['tournament']:
+    #    fixed_team = translate_team_name(team)
+    #    results['tournament']['Y'][fixed_team] = {'FD': fd['tournament'][team]['Y']}
+    #    results['tournament']['N'][fixed_team] = {'FD': fd['tournament'][team]['N']}
     for team in bt['tournament']:
         fixed_team = translate_team_name(team)
         if fixed_team in results['tournament']['Y']:

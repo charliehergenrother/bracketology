@@ -87,10 +87,49 @@ def scrape_fanduel():
 def do_dk_setup(oddsfile):
     f = open(oddsfile, "r")
     for line in f:
-        if "Team to Reach" in line or "Men's NCAA Tournament Winner" in line or "Men's NCAAB Conference" in line:
+        if "Team to Reach" in line or "Men's NCAA Tournament Winner" in line \
+                or "Men's NCAAB Conference" in line or "Make the 2026 Men's" in line:
             break
     odds_tables = line.replace(">", ">\n")
     return odds_tables
+
+def scrape_draftkings_tournament():
+    oddsfile = ODDS_PATH + "dk tourn"
+    odds_tables = do_dk_setup(oddsfile)
+    results = dict()
+    yes_counter = 0
+    no_counter = 0
+    for line in odds_tables.split("\n"):
+        if "Make the 2026 Men's" in line:
+            team = line[5:line.find(" Make the")]
+            continue
+        if "Yes</span>" in line:
+            yes_counter = 1
+            continue
+        if yes_counter and yes_counter < 3:
+            yes_counter += 1
+            continue
+        if yes_counter == 3:
+            odds = line[:line.find("</span>")]
+            yes_counter = 0
+            try:
+                results[team] = {"Y": int(odds)}
+            except ValueError:  #aren't em dashes fun
+                results[team] = {"Y": -int(odds[1:])}
+        if "No</span>" in line:
+            no_counter = 1
+            continue
+        if no_counter and no_counter < 3:
+            no_counter += 1
+            continue
+        if no_counter == 3:
+            odds = line[:line.find("</span>")]
+            no_counter = 0
+            try:
+                results[team]["N"] = int(odds)
+            except ValueError:  #aren't em dashes fun
+                results[team]["N"] = -int(odds[1:])
+    return results
 
 def scrape_draftkings_conference():
     oddsfile = ODDS_PATH + "dk conf"
@@ -150,6 +189,7 @@ def scrape_draftkings():
     results['championship'] = scrape_draftkings_main_list(ODDS_PATH + "dk champ")
     results['final_four'] = scrape_draftkings_main_list(ODDS_PATH + "dk ff")
     results['conference'] = scrape_draftkings_conference()
+    results['tournament'] = scrape_draftkings_tournament()
     return results
 
 def do_caesars_setup(oddsfile):
@@ -572,50 +612,31 @@ def combine_results(fd, dk, cs, bm, bt):
         "American Athletic": "American",
         "CAA Conference": "Coastal Athletic",
     }
-    for conference in fd['conference']:
-        conf_name = conference_lookup[conference]
-        results['conference'][conf_name] = dict()
-        for team in fd['conference'][conference]:
+    for pair in [(fd, "FD"), (dk, "DK"), (bm, "BM"), (bt, "BT")]: #[(fd, "FD"), (dk, "DK"), (cs, "CS"), (bm, "BM"), (bt, "BT")]:
+        book, abbrev = pair[0], pair[1]
+        for conference in book['conference']:
+            conf_name = conference
+            if conference in conference_lookup:
+                conf_name = conference_lookup[conference]
+            if conf_name not in results['conference']:
+                results['conference'][conf_name] = dict()
+            run_combine(book['conference'][conference], abbrev, results['conference'][conf_name])
+
+    for pair in [(dk, "DK"), (bt, "BT")]: #[(fd, "FD"), (dk, "DK"), (bt, "BT")]:
+        book, abbrev = pair[0], pair[1]
+        for team in book['tournament']:
             fixed_team = translate_team_name(team)
-            results['conference'][conf_name][fixed_team] = {"FD": fd['conference'][conference][team]}
-    for conference in dk['conference']:
-        if conference not in results['conference']:
-            results['conference'][conference] = dict()
-        run_combine(dk['conference'][conference], 'DK', results['conference'][conference])
-    #for conference in cs['conference']:
-    #    conf_name = conference
-    #    if conference in conference_lookup:
-    #        conf_name = conference_lookup[conference]
-    #    if conf_name not in results['conference']:
-    #        results['conference'][conf_name] = dict()
-    #    run_combine(cs['conference'][conference], 'CS', results['conference'][conf_name])
-    for conference in bm['conference']:
-        conf_name = conference
-        if conference in conference_lookup:
-            conf_name = conference_lookup[conference]
-        if conf_name not in results['conference']:
-            results['conference'][conf_name] = dict()
-        run_combine(bm['conference'][conference], 'BM', results['conference'][conf_name])
-    for conference in bt['conference']:
-        conf_name = conference
-        if conference in conference_lookup:
-            conf_name = conference_lookup[conference]
-        if conf_name not in results['conference']:
-            results['conference'][conf_name] = dict()
-        run_combine(bt['conference'][conference], 'BT', results['conference'][conf_name])
-    
-    #for team in fd['tournament']:
-    #    fixed_team = translate_team_name(team)
-    #    results['tournament']['Y'][fixed_team] = {'FD': fd['tournament'][team]['Y']}
-    #    results['tournament']['N'][fixed_team] = {'FD': fd['tournament'][team]['N']}
-    for team in bt['tournament']:
-        fixed_team = translate_team_name(team)
-        if fixed_team in results['tournament']['Y']:
-            results['tournament']['Y'][fixed_team]['BT'] = bt['tournament'][team]['Y']
-            results['tournament']['N'][fixed_team]['BT'] = bt['tournament'][team]['N']
-        else:
-            results['tournament']['Y'][fixed_team] = {'BT': bt['tournament'][team]['Y']}
-            results['tournament']['N'][fixed_team] = {'BT': bt['tournament'][team]['N']}
+            if fixed_team in results['tournament']['Y']:
+                results['tournament']['Y'][fixed_team][abbrev] = book['tournament'][team]['Y']
+            else:
+                results['tournament']['Y'][fixed_team] = {abbrev: book['tournament'][team]['Y']}
+            if fixed_team in results['tournament']['N']:
+                results['tournament']['N'][fixed_team][abbrev] = book['tournament'][team]['N']
+            else:
+                try:
+                    results['tournament']['N'][fixed_team] = {abbrev: book['tournament'][team]['N']}
+                except KeyError: # book only put up yes odds, not no odds
+                    pass
 
     for team in fd['final_four']:
         fixed_team = translate_team_name(team)

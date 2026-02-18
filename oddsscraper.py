@@ -23,7 +23,7 @@ def scrape_fanduel_conference():
             conference = line[:line.find(" Regular")]
             results[conference] = dict()
             continue
-        if conference and "</span>" in line and "Show less" not in line:
+        if conference and conference in line and "</span>" in line and "Show less" not in line:
             if not team:
                 team = line[:line.index("</span>")]
             else:

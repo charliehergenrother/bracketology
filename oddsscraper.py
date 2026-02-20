@@ -547,6 +547,7 @@ def translate_team_name(team):
         "St. Mary's": "Saint-Marys-College",
         "Western KY": "Western-Kentucky",
         "W Carolina": "Western-Carolina",
+        "Georgia Bulldogs": "Georgia",
 
         "Miami Florida": "Miami-FL",
         "Miami Ohio": "Miami-OH",

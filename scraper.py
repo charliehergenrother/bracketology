@@ -1731,6 +1731,8 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         for team in sorted(current_odds['tournament_no']):
             try:
                 odds = str(int((100/(1 - (made_tournament[team]/successful_runs)))-100))
+            except ZeroDivisionError: #team never made tournament
+                odds = "0"
             except KeyError: #team never made tournament
                 odds = "0"
             f.write(team + "," + odds + ",")

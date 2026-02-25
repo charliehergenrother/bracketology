@@ -623,7 +623,7 @@ def combine_results(fd, dk, cs, bm, bt):
                 results['conference'][conf_name] = dict()
             run_combine(book['conference'][conference], abbrev, results['conference'][conf_name])
 
-    for pair in [(fd, "FD"), (dk, "DK"), (bt, "BT")]:
+    for pair in [(bt, "BT")]: #[(fd, "FD"), (dk, "DK"), (bt, "BT")]:
         book, abbrev = pair[0], pair[1]
         for team in book['tournament']:
             fixed_team = translate_team_name(team)

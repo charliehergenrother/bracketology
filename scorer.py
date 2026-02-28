@@ -236,7 +236,8 @@ class Scorer:
                     if "Non Div I" in game.opponent:
                         game_quad = 4
                     else:
-                        game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, simmed_kenpoms[game.opponent]["rank"])
+                        game_quad = self.get_quadrant(opp_NET, game.location)
                 else:
                     if "Non Div I" in game.opponent:
                         game_quad = 4
@@ -299,7 +300,8 @@ class Scorer:
                     if "Non Div I" in game.opponent:
                         game_quad = 4
                     else:
-                        game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, simmed_kenpoms[game.opponent]["rank"])
+                        game_quad = self.get_quadrant(opp_NET, game.location)
                 else:
                     if "Non Div I" in game.opponent:
                         game_quad = 4
@@ -363,7 +365,8 @@ class Scorer:
                     if "Non Div I" in game.opponent:
                         game_quad = 4
                     else:
-                        game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, simmed_kenpoms[game.opponent]["rank"])
+                        game_quad = self.get_quadrant(opp_NET, game.location)
                 else:
                     if "Non Div I" in game.opponent:
                         game_quad = 4
@@ -426,7 +429,8 @@ class Scorer:
                     if "Non Div I" in game.opponent:
                         game_quad = 4
                     else:
-                        game_quad = self.get_quadrant(simmed_kenpoms[game.opponent]['rank'], game.location)
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, simmed_kenpoms[game.opponent]["rank"])
+                        game_quad = self.get_quadrant(opp_NET, game.location)
                 else:
                     if "Non Div I" in game.opponent:
                         game_quad = 4
@@ -487,7 +491,7 @@ class Scorer:
                         if "Non Div I" in game.opponent:
                             opp_NET = 365
                         else:
-                            opp_NET = simmed_kenpoms[game.opponent]['rank']
+                            opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, simmed_kenpoms[game.opponent]["rank"])
                     else:
                         if "Non Div I" in game.opponent:
                             opp_NET = 365
@@ -550,7 +554,7 @@ class Scorer:
                         if "Non Div I" in game.opponent:
                             opp_NET = 365
                         else:
-                            opp_NET = simmed_kenpoms[game.opponent]['rank']
+                            opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, simmed_kenpoms[game.opponent]["rank"])
                     else:
                         if "Non Div I" in game.opponent:
                             opp_NET = 365
@@ -615,7 +619,7 @@ class Scorer:
                         if "Non Div I" in game.opponent:
                             opp_NET = 365
                         else:
-                            opp_NET = simmed_kenpoms[game.opponent]['rank']
+                            opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, simmed_kenpoms[game.opponent]["rank"])
                     else:
                         if "Non Div I" in game.opponent:
                             opp_NET = 365
@@ -698,7 +702,7 @@ class Scorer:
                         if "Non Div I" in game.opponent:
                             opp_NET = 365
                         else:
-                            opp_NET = simmed_kenpoms[game.opponent]['rank']
+                            opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, simmed_kenpoms[game.opponent]["rank"])
                     else:
                         if "Non Div I" in game.opponent:
                             opp_NET = 365
@@ -793,7 +797,7 @@ class Scorer:
                     if "Non Div I" in game.opponent:
                         opp_NET = 365
                     else:
-                        opp_NET = simmed_kenpoms[game.opponent]['rank']
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, simmed_kenpoms[game.opponent]["rank"])
                 else:
                     if "Non Div I" in game.opponent:
                         opp_NET = 365
@@ -845,7 +849,7 @@ class Scorer:
                     if "Non Div I" in game.opponent:
                         opp_NET = 365
                     else:
-                        opp_NET = simmed_kenpoms[game.opponent]['rank']
+                        opp_NET = self.get_NET_estimate(self.teams[game.opponent].NET, simmed_kenpoms[game.opponent]["rank"])
                 else:
                     if "Non Div I" in game.opponent:
                         opp_NET = 365

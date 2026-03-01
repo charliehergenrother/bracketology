@@ -1003,7 +1003,8 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
                     matchups.append([seed_to_team[higher_seed], seed_to_team[lower_seed]])
                 higher_seed += 1
                 lower_seed -= 1
-            #print(matchups)
+            higher_seed = num_teams - (cur_round_teams - 1) - num_eliminated_teams
+            lower_seed = num_teams - num_eliminated_teams
             for matchup in matchups:
                 win_prob = scorer.get_win_prob(simmed_kenpoms[matchup[0]]["rating"], simmed_kenpoms[matchup[1]]["rating"], round_location)
                 win_result = random.random()
@@ -1014,8 +1015,10 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
                         seeds_to_use.remove(matchup[0])
                 else:
                     if win_result >= win_prob:
-                        seed_to_team[lower_seed] = matchup[1]
+                        seed_to_team[higher_seed] = matchup[1]
                 num_eliminated_teams += 1
+                higher_seed += 1
+                lower_seed -= 1
         if reseed:
             #print(seeds_to_use[0])
             if len(seeds_to_use) == 1:

@@ -891,8 +891,49 @@ def break_tie(teams, win_dict, scorer, simmed_kenpoms):
         return_order += sorted_teams
     return return_order
 
-def get_seeds(teams, scorer, simmed_kenpoms):
+SET_BRACKETS = {
+        #"ACC": [],
+        #"America East": [],
+        #"American": [],
+        "ASUN": ["Central-Arkansas", "Austin-Peay", "Queens", "Lipscomb", "FGCU", "West-Georgia", "Eastern-Kentucky", "Bellarmine", "Jacksonville", "Stetson", "North-Florida", "North-Alabama"],
+        #"Atlantic 10": [],
+        #"Big 12": [],
+        #"Big East": [],
+        #"Big Sky": [],
+        "Big South": ["High-Point", "Winthrop", "Radford", "UNC-Asheville", "Longwood", "Presbyterian-College", "Charleston-Southern", "South-Carolina-Upstate", "Gardner-Webb"],
+        #"Big Ten": [],
+        #"Big West": [],
+        #"Coastal Athletic": [],
+        #"Conference USA": [],
+        "Horizon League": ["Wright-State", "Robert-Morris", "Detroit", "Oakland", "Green-Bay", "Purdue-Fort-Wayne", "Northern-Kentucky", "Milwaukee", "Youngstown-State", "Cleveland-State", "IU-Indianapolis"],
+        "Ivy League": ["Yale", "Harvard", "Penn", "Cornell"],
+        "MAAC": ["Merrimack", "Saint-Peters", "Siena", "Quinnipiac", "Marist", "Mount-Saint-Marys", "Fairfield", "Iona", "Sacred-Heart", "Manhattan"],
+        #"MEAC": [],
+        #"Mid-American": [],
+        "Missouri Valley": ["Belmont", "Bradley", "Illinois-State", "Murray-State", "UIC", "Northern-Iowa", "Valparaiso", "Southern-Illinois", "Drake", "Indiana-State", "Evansville"],
+        #"Mountain West": [],
+        "NEC": ["Long-Island", "Central-Connecticut", "Mercyhurst", "Le-Moyne", "Stonehill", "Fairleigh-Dickinson", "Wagner", "Chicago-State"],
+        "Ohio Valley": ["Tennessee-State", "Morehead-State", "Southeast-Missouri", "Tennessee-Martin", "SIUE", "Lindenwood", "Little-Rock", "Eastern-Illinois"],
+        "Patriot League": ["Navy", "Lehigh", "Colgate", "Boston-University", "American", "Loyola-Maryland", "Lafayette", "Bucknell", "Army", "Holy-Cross"],
+        #"SEC": [],
+        "Southern": ["East-Tennessee-State", "Wofford", "Samford", "Mercer", "Western-Carolina", "Furman", "UNCG", "Chattanooga", "The-Citadel", "VMI"],
+        #"Southland": [],
+        "Sun Belt": ["Troy", "Marshall", "Coastal-Carolina", "Appalachian-State", "Texas-State", "South-Alabama", "Arkansas-State", "Southern-Miss", "James-Madison", "Georgia-Southern", "Old-Dominion", "Louisiana", "Georgia-State", "ULM"],
+        #"SWAC": [],
+        "The Summit League": ["North-Dakota-State", "Saint-Thomas", "North-Dakota", "South-Dakota", "Omaha", "Denver", "South-Dakota-State", "Oral-Roberts", "UMKC"],
+        "West Coast": ["Gonzaga", "Saint-Marys-College", "Santa-Clara", "Oregon-State", "San-Francisco", "Pacific", "Seattle-University", "Washington-State", "Portland", "Loyola-Marymount", "San-Diego", "Pepperdine"]
+        #"Western Athletic": []
+    }
+
+def get_seeds(conference, teams, scorer, simmed_kenpoms):
     seed_list = list()
+    if conference in SET_BRACKETS:
+        for bracket_team in SET_BRACKETS[conference]:
+            for team in teams:
+                if bracket_team == team["name"]:
+                    seed_list.append(team)
+                    continue
+        return seed_list
     win_dict = dict()
     for team in teams:
         if team["conference_wins"] in win_dict:
@@ -907,6 +948,40 @@ def get_seeds(teams, scorer, simmed_kenpoms):
             for team in broken_tie_order:
                 seed_list.append(team)
     return seed_list
+
+BRACKET_RESULTS = {
+        #"ACC": [],
+        #"America East": [],
+        #"American": [],
+        #"ASUN": [],
+        #"Atlantic 10": [],
+        #"Big 12": [],
+        #"Big East": [],
+        #"Big Sky": [],
+        #"Big South": [],
+        #"Big Ten": [],
+        #"Big West": [],
+        #"Coastal Athletic": [],
+        #"Conference USA": [],
+        "Horizon League": {0: ["Cleveland-State"]},
+        #"Ivy League": [],
+        #"MAAC": [],
+        #"MEAC": [],
+        #"Mid-American": [],
+        #"Missouri Valley": [],
+        #"Mountain West": [],
+        #"NEC": [],
+        #"Ohio Valley": [],
+        #"Patriot League": [],
+        #"SEC": [],
+        #"Southern": [],
+        #"Southland": [],
+        #"Sun Belt": [],
+        #"SWAC": [],
+        #"The Summit League": [],
+        #"West Coast": []
+        #"Western Athletic": []
+}
 
 def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
     #TODO: check on new formats
@@ -938,7 +1013,6 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
             rounds.append(tourn_format[0:2])
             tourn_format = tourn_format[2:]
         num_teams = 1
-        bracket = []
         for rnd in reversed(rounds):
             matchups = []
             if rnd[0] == "T":
@@ -963,13 +1037,11 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
                         matchups.append([higher_seed, lower_seed])
                         higher_seed += 1
                         lower_seed -= 1
-            if not reseed:
-                bracket = list(matchups) + bracket
 
         #SET UP BRACKET WITH TEAMS
         seeds = []
         
-        seeded_teams = get_seeds(conference_teams[conference], scorer, simmed_kenpoms)
+        seeded_teams = get_seeds(conference, conference_teams[conference], scorer, simmed_kenpoms)
         # Uncomment below to test for missing/extra games, etc
         #print(conference)
         for index, team in enumerate(seeded_teams):
@@ -987,7 +1059,7 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
         seeds_to_use = list(seeds)
         previous_winners = []
         num_eliminated_teams = 0
-        for rnd in rounds:
+        for round_index, rnd in enumerate(rounds):
             if rnd[0] == "T":
                 cur_round_teams = 10
             else:
@@ -1006,6 +1078,23 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
             higher_seed = num_teams - (cur_round_teams - 1) - num_eliminated_teams
             lower_seed = num_teams - num_eliminated_teams
             for matchup in matchups:
+                if conference in BRACKET_RESULTS:
+                    if round_index in BRACKET_RESULTS[conference]:
+                        if matchup[0] in BRACKET_RESULTS[conference][round_index]:
+                            if reseed:
+                                seeds_to_use.remove(matchup[1])
+                            num_eliminated_teams += 1
+                            higher_seed += 1
+                            lower_seed -= 1
+                            continue
+                        elif matchup[1] in BRACKET_RESULTS[conference][round_index]:
+                            if reseed:
+                                seeds_to_use.remove(matchup[0])
+                            else:
+                                seed_to_team[higher_seed] = matchup[1]
+                            num_eliminated_teams += 1
+                            higher_seed += 1
+                            lower_seed -= 1
                 win_prob = scorer.get_win_prob(simmed_kenpoms[matchup[0]]["rating"], simmed_kenpoms[matchup[1]]["rating"], round_location)
                 win_result = random.random()
                 if reseed:

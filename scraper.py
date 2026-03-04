@@ -893,17 +893,17 @@ def break_tie(teams, win_dict, scorer, simmed_kenpoms):
 
 SET_BRACKETS = {
         #"ACC": [],
-        #"America East": [],
+        "America East": ["UMBC", "Vermont", "NJIT", "UMass-Lowell", "Albany", "Maine", "Bryant", "New-Hampshire"],
         #"American": [],
         "ASUN": ["Central-Arkansas", "Austin-Peay", "Queens", "Lipscomb", "FGCU", "West-Georgia", "Eastern-Kentucky", "Bellarmine", "Jacksonville", "Stetson", "North-Florida", "North-Alabama"],
         #"Atlantic 10": [],
         #"Big 12": [],
         #"Big East": [],
-        #"Big Sky": [],
+        "Big Sky": ["Portland-State", "Montana-State", "Eastern-Washington", "Montana", "Northern-Colorado", "Weber-State", "Idaho", "Sacramento-State", "Idaho-State", "Northern-Arizona"],
         "Big South": ["High-Point", "Winthrop", "Radford", "UNC-Asheville", "Longwood", "Presbyterian-College", "Charleston-Southern", "South-Carolina-Upstate", "Gardner-Webb"],
         #"Big Ten": [],
         #"Big West": [],
-        #"Coastal Athletic": [],
+        "Coastal Athletic": ["UNCW", "Charleston", "Hofstra", "Monmouth", "Drexel", "William-Mary", "Towson", "Stony-Brook", "Campbell", "Hampton", "Elon", "North-Carolina-AT", "Northeastern"],
         #"Conference USA": [],
         "Horizon League": ["Wright-State", "Robert-Morris", "Detroit", "Oakland", "Green-Bay", "Purdue-Fort-Wayne", "Northern-Kentucky", "Milwaukee", "Youngstown-State", "Cleveland-State", "IU-Indianapolis"],
         "Ivy League": ["Yale", "Harvard", "Penn", "Cornell"],
@@ -917,7 +917,7 @@ SET_BRACKETS = {
         "Patriot League": ["Navy", "Lehigh", "Colgate", "Boston-University", "American", "Loyola-Maryland", "Lafayette", "Bucknell", "Army", "Holy-Cross"],
         #"SEC": [],
         "Southern": ["East-Tennessee-State", "Wofford", "Samford", "Mercer", "Western-Carolina", "Furman", "UNCG", "Chattanooga", "The-Citadel", "VMI"],
-        #"Southland": [],
+        "Southland": ["Stephen-F-Austin", "McNeese", "UTRGV", "Texas-AM-Corpus-Christi", "New-Orleans", "Nicholls", "Northwestern-State", "Houston-Christian"],
         "Sun Belt": ["Troy", "Marshall", "Coastal-Carolina", "Appalachian-State", "Texas-State", "South-Alabama", "Arkansas-State", "Southern-Miss", "James-Madison", "Georgia-Southern", "Old-Dominion", "Louisiana", "Georgia-State", "ULM"],
         #"SWAC": [],
         "The Summit League": ["North-Dakota-State", "Saint-Thomas", "North-Dakota", "South-Dakota", "Omaha", "Denver", "South-Dakota-State", "Oral-Roberts", "UMKC"],
@@ -925,15 +925,60 @@ SET_BRACKETS = {
         #"Western Athletic": []
     }
 
-def get_seeds(conference, teams, scorer, simmed_kenpoms):
+SET_BRACKETS_W = {
+        "ACC": ["Duke", "Louisville", "North-Carolina", "North-Carolina-State", "Notre-Dame", "Virginia-Tech", "Syracuse", "Virginia", "Clemson", "California", "Georgia-Tech", "Miami-FL", "Stanford", "Florida-State", "Wake-Forest"],
+        "America East": ["Vermont", "Maine", "Binghamton", "UMBC", "NJIT", "Bryant", "New-Hampshire", "Albany"],
+        #"American": [],
+        "ASUN": ["Eastern-Kentucky", "Jacksonville", "Central-Arkansas", "Stetson", "FGCU", "North-Alabama", "West-Georgia", "Austin-Peay", "Lipscomb", "North-Florida", "Queens", "Bellarmine"],
+        "Atlantic 10": ["Rhode-Island", "George-Mason", "Richmond", "Davidson", "Saint-Josephs", "La-Salle", "Dayton", "Loyola-Chicago", "Saint-Bonaventure", "George-Washington", "Saint-Louis", "Duquesne", "VCU", "Fordham"],
+        "Big 12": ["TCU", "West-Virginia", "Baylor", "Oklahoma-State", "Texas-Tech", "Colorado", "Iowa-State", "Utah", "BYU", "Arizona-State", "Kansas", "Kansas-State", "Cincinnati", "UCF", "Arizona", "Houston"],
+        "Big East": ["Connecticut", "Villanova", "Seton-Hall", "Marquette", "Creighton", "Saint-Johns", "Providence", "Butler", "Georgetown", "DePaul", "Xavier"],
+        "Big Sky": ["Idaho", "Montana-State", "Northern-Colorado", "Idaho-State", "Sacramento-State", "Eastern-Washington", "Northern-Arizona", "Montana", "Weber-State", "Portland-State"],
+        "Big South": ["High-Point", "Radford", "Longwood", "Gardner-Webb", "Winthrop", "UNC-Asheville", "Charleston-Southern", "South-Carolina-Upstate", "Presbyterian-College"],
+        "Big Ten": ["UCLA", "Iowa", "Michigan", "Minnesota", "Ohio-State", "Maryland", "Michigan-State", "Washington", "USC", "Illinois", "Oregon", "Nebraska", "Indiana", "Purdue", "Wisconsin"],
+        #"Big West": [],
+        #"Coastal Athletic": [],
+        #"Conference USA": [],
+        "Horizon League": ["Green-Bay", "Youngstown-State", "Cleveland-State", "Northern-Kentucky", "Purdue-Fort-Wayne", "Robert-Morris", "IU-Indianapolis", "Oakland", "Wright-State", "Milwaukee", "Detroit"],
+        #"Ivy League": [],
+        "MAAC": ["Quinnipiac", "Fairfield", "Merrimack", "Iona", "Siena", "Mount-Saint-Marys", "Sacred-Heart", "Manhattan", "Marist", "Saint-Peters"],
+        #"MEAC": [],
+        #"Mid-American": [],
+        #"Missouri Valley": [],
+        #"Mountain West": [],
+        #"NEC": [],
+        "Ohio Valley": ["Western-Illinois", "Lindenwood", "Southern-Indiana", "Morehead-State", "Little-Rock", "Tennessee-Martin", "SIUE", "Southeast-Missouri"],
+        #"Patriot League": [],
+        "SEC": ["South-Carolina", "Vanderbilt", "Texas", "LSU", "Oklahoma", "Tennessee", "Ole-Miss", "Georgia", "Kentucky", "Texas-AM", "Alabama", "Florida", "Mississippi-State", "Missouri", "Auburn", "Arkansas"],
+        "Southern": ["Chattanooga", "East-Tennessee-State", "Wofford", "Furman", "Mercer", "Samford", "UNCG", "Western-Carolina"],
+        "Southland": ["McNeese", "Lamar", "Stephen-F-Austin", "UTRGV", "Northwestern-State", "Incarnate-Word", "Nicholls", "East-Texas-AM"],
+        "Sun Belt": ["Georgia-Southern", "Troy", "Arkansas-State", "James-Madison", "Marshall", "Old-Dominion", "Southern-Miss", "Texas-State", "Coastal-Carolina", "ULM", "Georgia-State", "South-Alabama", "Appalachian-State", "Louisiana" ],
+        #"SWAC": [],
+        "The Summit League": ["North-Dakota-State", "South-Dakota-State", "South-Dakota", "Oral-Roberts", "Saint-Thomas", "Denver", "UMKC", "Omaha", "North-Dakota"],
+        "West Coast": ["Loyola-Marymount", "Gonzaga", "Santa-Clara", "Oregon-State", "Portland", "Pepperdine", "San-Francisco", "Pacific", "Washington-State", "Saint-Marys-College", "San-Diego", "Seattle-University"]
+        #"Western Athletic": []
+}
+
+
+def get_seeds(mens, conference, teams, scorer, simmed_kenpoms):
     seed_list = list()
-    if conference in SET_BRACKETS:
-        for bracket_team in SET_BRACKETS[conference]:
-            for team in teams:
-                if bracket_team == team["name"]:
-                    seed_list.append(team)
-                    continue
-        return seed_list
+    if mens:
+        if conference in SET_BRACKETS:
+            for bracket_team in SET_BRACKETS[conference]:
+                for team in teams:
+                    if bracket_team == team["name"]:
+                        seed_list.append(team)
+                        continue
+            return seed_list
+    else:
+        if conference in SET_BRACKETS_W:
+            for bracket_team in SET_BRACKETS_W[conference]:
+                for team in teams:
+                    if bracket_team == team["name"]:
+                        seed_list.append(team)
+                        continue
+            return seed_list
+        
     win_dict = dict()
     for team in teams:
         if team["conference_wins"] in win_dict:
@@ -963,7 +1008,41 @@ BRACKET_RESULTS = {
         #"Big West": [],
         #"Coastal Athletic": [],
         #"Conference USA": [],
-        "Horizon League": {0: ["Cleveland-State"]},
+        "Horizon League": {0: ["Cleveland-State"], 1: ["Green-Bay"]},
+        #"Ivy League": [],
+        #"MAAC": [],
+        #"MEAC": [],
+        #"Mid-American": [],
+        #"Missouri Valley": [],
+        #"Mountain West": [],
+        #"NEC": [],
+        #"Ohio Valley": [],
+        "Patriot League": {0: ["Holy-Cross", "Bucknell"]},
+        #"SEC": [],
+        #"Southern": [],
+        #"Southland": [],
+        "Sun Belt": {0: ["Louisiana", "Old-Dominion"]},
+        #"SWAC": [],
+        #"The Summit League": [],
+        #"West Coast": []
+        #"Western Athletic": []
+}
+
+BRACKET_RESULTS_W = {
+        #"ACC": [],
+        #"America East": [],
+        #"American": [],
+        "ASUN": {0: ["Austin-Peay", "FGCU", "West-Georgia", "North-Alabama"]},
+        #"Atlantic 10": [],
+        #"Big 12": [],
+        #"Big East": [],
+        #"Big Sky": [],
+        #"Big South": [],
+        #"Big Ten": [],
+        #"Big West": [],
+        #"Coastal Athletic": [],
+        #"Conference USA": [],
+        "Horizon League": {0: ["Detroit"]},
         #"Ivy League": [],
         #"MAAC": [],
         #"MEAC": [],
@@ -976,7 +1055,7 @@ BRACKET_RESULTS = {
         #"SEC": [],
         #"Southern": [],
         #"Southland": [],
-        #"Sun Belt": [],
+        "Sun Belt": {0: ["South-Alabama", "Louisiana"]},
         #"SWAC": [],
         #"The Summit League": [],
         #"West Coast": []
@@ -984,12 +1063,13 @@ BRACKET_RESULTS = {
 }
 
 def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
-    #TODO: check on new formats
     conference_teams = dict()
     if builder.mens:
+        bracket_results = BRACKET_RESULTS
         with open("lib/ctourn_formats.json", "r") as f:
             formats = json.loads(f.read())
     else:
+        bracket_results = BRACKET_RESULTS_W
         with open("lib/ctourn_formatsw.json", "r") as f:
             formats = json.loads(f.read())
     for conference in builder.conference_winners:
@@ -1041,7 +1121,7 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
         #SET UP BRACKET WITH TEAMS
         seeds = []
         
-        seeded_teams = get_seeds(conference, conference_teams[conference], scorer, simmed_kenpoms)
+        seeded_teams = get_seeds(builder.mens, conference, conference_teams[conference], scorer, simmed_kenpoms)
         # Uncomment below to test for missing/extra games, etc
         #print(conference)
         for index, team in enumerate(seeded_teams):
@@ -1078,16 +1158,16 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
             higher_seed = num_teams - (cur_round_teams - 1) - num_eliminated_teams
             lower_seed = num_teams - num_eliminated_teams
             for matchup in matchups:
-                if conference in BRACKET_RESULTS:
-                    if round_index in BRACKET_RESULTS[conference]:
-                        if matchup[0] in BRACKET_RESULTS[conference][round_index]:
+                if conference in bracket_results:
+                    if round_index in bracket_results[conference]:
+                        if matchup[0] in bracket_results[conference][round_index]:
                             if reseed:
                                 seeds_to_use.remove(matchup[1])
                             num_eliminated_teams += 1
                             higher_seed += 1
                             lower_seed -= 1
                             continue
-                        elif matchup[1] in BRACKET_RESULTS[conference][round_index]:
+                        elif matchup[1] in bracket_results[conference][round_index]:
                             if reseed:
                                 seeds_to_use.remove(matchup[0])
                             else:
@@ -1095,6 +1175,7 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
                             num_eliminated_teams += 1
                             higher_seed += 1
                             lower_seed -= 1
+                            continue
                 win_prob = scorer.get_win_prob(simmed_kenpoms[matchup[0]]["rating"], simmed_kenpoms[matchup[1]]["rating"], round_location)
                 win_result = random.random()
                 if reseed:

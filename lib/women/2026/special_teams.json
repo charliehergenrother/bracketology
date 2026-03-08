@@ -1,5 +1,5 @@
 {
-    "eliminated_teams": [],
+    "eliminated_teams": ["Eastern-Kentucky", "Richmond"],
     "conference_winners": {
         "America East": "",
         "American": "",
@@ -22,7 +22,7 @@
         "Missouri Valley": "",
         "Mountain West": "",
         "NEC": "",
-        "Ohio Valley": "",
+        "Ohio Valley": "Western-Illinois",
         "Patriot League": "",
         "SEC": "",
         "Southern": "",

@@ -1,5 +1,5 @@
 {
-    "eliminated_teams": [],
+    "eliminated_teams": ["Belmont", "Murray-State", "Saint-Thomas", "Austin-Peay"],
     "conference_winners": {
         "America East": "",
         "American": "",
@@ -21,8 +21,8 @@
         "MEAC": "",
         "Missouri Valley": "",
         "Mountain West": "",
-        "NEC": "",
-        "Ohio Valley": "",
+        "NEC": "Long-Island",
+        "Ohio Valley": "Tennessee-State",
         "Patriot League": "",
         "SEC": "",
         "Southern": "",

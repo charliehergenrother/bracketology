@@ -223,6 +223,30 @@ def scrape_caesars_main_list(oddsfile):
             continue
     return results
 
+def scrape_caesars_final_four():
+    results = dict()
+    oddsfile = ODDS_PATH + "cs ff"
+    odds_tables = do_caesars_setup(oddsfile)
+    found_team = False
+    found_odds = False
+    for line in odds_tables.split("\n"):
+        if "heading-sm !" in line:
+            found_team = True
+            continue
+        if found_team:
+            team = line[:line.find("</span>")]
+            found_team = False
+            continue
+        if "market-button-odds" in line:
+            found_odds = True
+            continue
+        if found_odds:
+            odds = int(line[:line.find("</span>")])
+            results[team] = odds
+            found_odds = False
+            continue
+    return results
+
 def scrape_caesars_conference():
     oddsfile = ODDS_PATH + "cs conf"
     f = open(oddsfile, "r")
@@ -258,6 +282,7 @@ def scrape_caesars_conference():
 def scrape_caesars():
     results = dict()
     results['championship'] = scrape_caesars_main_list(ODDS_PATH + "cs champ")
+    results['final_four'] = scrape_caesars_final_four()
     results['conference'] = scrape_caesars_conference()
     return results
 
@@ -643,6 +668,7 @@ def combine_results(fd, dk, cs, bm, bt):
         fixed_team = translate_team_name(team)
         results['final_four'][fixed_team] = {'FD': fd['final_four'][team]}
     run_combine(dk['final_four'], 'DK', results['final_four'])
+    run_combine(cs['final_four'], 'CS', results['final_four'])
     run_combine(bt['final_four'], 'BT', results['final_four'])
     
     for team in fd['championship']:

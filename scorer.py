@@ -136,16 +136,15 @@ class Scorer:
             team_obj.loss_score = 0
         return team_obj.loss_score
 
-    def get_results_based_score(self, team, team_obj):
+    def get_results_based_score(self, team, team_obj, season_days, days_left):
         if self.tracker:
             try:
                 return team_obj.resume_score
             except AttributeError:
                 pass
-        return self.calculate_results_based_score(team, team_obj)
+        return self.calculate_results_based_score(team, team_obj, season_days, days_left)
 
-    def calculate_results_based_score(self, team, team_obj):
-        season_days, days_left = self.get_season_progress()
+    def calculate_results_based_score(self, team, team_obj, season_days, days_left):
         RES_weight = min(1, (season_days - days_left)/(season_days - 30))
         if self.monte_carlo:    # let other categories be a higher weight than resume score
             team_obj.results_based_score = RES_weight*(-math.log(team_obj.results_based + 19, 2)/2 + 3.16)
@@ -522,7 +521,8 @@ class Scorer:
             for game in team_obj.games:
                 if game.win and game.location == "N":
                     conf_tourn_multiplier = 1
-                    date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                    date_info = game.date.split('-')
+                    date_month, date_num = int(date_info[0]), int(date_info[1])
                     if date_month == 3:
                         if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
                             conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
@@ -546,7 +546,8 @@ class Scorer:
             for game in team_obj.games:
                 if game.win and game.location == "N":
                     conf_tourn_multiplier = 1
-                    date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                    date_info = game.date.split('-')
+                    date_month, date_num = int(date_info[0]), int(date_info[1])
                     if date_month == 3:
                         if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
                             conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
@@ -585,7 +586,8 @@ class Scorer:
             for game in team_obj.games:
                 if game.win:
                     conf_tourn_multiplier = 1
-                    date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                    date_info = game.date.split('-')
+                    date_month, date_num = int(date_info[0]), int(date_info[1])
                     if date_month == 3:
                         if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
                             conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
@@ -611,7 +613,8 @@ class Scorer:
             for game in team_obj.games:
                 if game.win:
                     conf_tourn_multiplier = 1
-                    date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                    date_info = game.date.split('-')
+                    date_month, date_num = int(date_info[0]), int(date_info[1])
                     if date_month == 3:
                         if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
                             conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
@@ -649,13 +652,14 @@ class Scorer:
         top_25_wins = 0
         if self.future and not self.monte_carlo:
             for game in team_obj.games:
-                if game.win > 0:
+                if game.win:
                     if "Non Div I" in game.opponent:
                         opp_NET = 365
                     else:
                         opp_NET = net_estimates[game.opponent]
                     conf_tourn_multiplier = 1
-                    date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                    date_info = game.date.split('-')
+                    date_month, date_num = int(date_info[0]), int(date_info[1])
                     if date_month == 3:
                         if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
                             conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
@@ -697,7 +701,7 @@ class Scorer:
                         top_25_wins += win_prob * (45 - opp_NET)/10
         else:
             for game in team_obj.games:
-                if game.win > 0:
+                if game.win:
                     if self.monte_carlo:
                         if "Non Div I" in game.opponent:
                             opp_NET = 365
@@ -709,7 +713,8 @@ class Scorer:
                         else:
                             opp_NET = self.teams[game.opponent].NET
                     conf_tourn_multiplier = 1
-                    date_month, date_num = int(game.date.split('-')[0]), int(game.date.split('-')[1])
+                    date_info = game.date.split('-')
+                    date_month, date_num = int(date_info[0]), int(date_info[1])
                     if date_month == 3:
                         if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
                             conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
@@ -888,8 +893,7 @@ class Scorer:
         elif spread < -21:
             return 0.02
 
-    def get_NET_estimate(self, curr_NET, curr_KenPom):
-        season_days, days_left = self.get_season_progress()
+    def get_NET_estimate(self, curr_NET, curr_KenPom, season_days, days_left):
         # estimated NET begins as all KenPom and builds more actual NET in as the season progresses until 30 days, all becomes NET
         NET_weight = min(1, (season_days - days_left)/(season_days - 30))
         NET_estimate = (NET_weight*curr_NET) + (1 - NET_weight)*curr_KenPom
@@ -898,12 +902,13 @@ class Scorer:
     #calculate resume score for all teams
     def build_scores(self, WEIGHTS, simmed_kenpoms=dict()):
         net_estimates = dict()
+        season_days, days_left = self.get_season_progress()
         if self.monte_carlo:
             for team in simmed_kenpoms:
-                net_estimates[team] = self.get_NET_estimate(self.teams[team].NET, simmed_kenpoms[team]["rank"])
+                net_estimates[team] = self.get_NET_estimate(self.teams[team].NET, simmed_kenpoms[team]["rank"], season_days, days_left)
         elif self.future:
             for team in self.teams:
-                net_estimates[team] = self.get_NET_estimate(self.teams[team].NET, self.team_kenpoms[team]["rank"])
+                net_estimates[team] = self.get_NET_estimate(self.teams[team].NET, self.team_kenpoms[team]["rank"], season_days, days_left)
 
         for team in self.teams:
             if self.verbose and not self.monte_carlo:
@@ -916,7 +921,7 @@ class Scorer:
             score += WEIGHTS["Q1_WEIGHT"]*self.get_Q1_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["Q2_WEIGHT"]*self.get_Q2_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["Q3_WEIGHT"]*self.get_Q3_score(team, team_obj, simmed_kenpoms, net_estimates)
-            score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(team, team_obj)
+            score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(team, team_obj, season_days, days_left)
             score += WEIGHTS["Q4_WEIGHT"]*self.get_Q4_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["ROAD_WEIGHT"]*self.get_road_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["NEUTRAL_WEIGHT"]*self.get_neutral_score(team, team_obj, simmed_kenpoms, net_estimates)

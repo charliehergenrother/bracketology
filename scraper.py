@@ -263,7 +263,7 @@ class Scraper:
             TEAM_NITTY_URL_START = "https://www.warrennolan.com/basketballw/" + self.year + "/team-net-sheet?team="
         team_url = TEAM_NITTY_URL_START + team
         self.teams[team] = Team()
-        self.teams[team].scrape_data(team, team_url, self.year)
+        self.teams[team].scrape_data(team, team_url, self.year, self.mens)
         reverse_team_dict[self.teams[team].team_out] = team
 
     #scrape college basketball data from the web
@@ -1002,15 +1002,15 @@ BRACKET_RESULTS = {
         #"Atlantic 10": [],
         #"Big 12": [],
         #"Big East": [],
-        "Big Sky": {0: ["Idaho-State", "Idaho"]},
+        "Big Sky": {0: ["Idaho-State", "Idaho"], 1: ["Portland-State", "Idaho"]},
         "Big South": {0: ["Gardner-Webb"], 1: ["High-Point", "Winthrop", "UNC-Asheville", "Presbyterian-College"], 2: ["High-Point", "Winthrop"], 3: ["High-Point"]},
         #"Big Ten": [],
         #"Big West": [],
-        "Coastal Athletic": {0: ["Northeastern"], 1: ["Campbell", "Drexel", "Towson", "William-Mary"], 2: ["Campbell"]},
+        "Coastal Athletic": {0: ["Northeastern"], 1: ["Campbell", "Drexel", "Towson", "William-Mary"], 2: ["Campbell", "Monmouth", "Towson", "Hofstra"]},
         #"Conference USA": [],
         "Horizon League": {0: ["Cleveland-State"], 1: ["Green-Bay", "Detroit", "Northern-Kentucky", "Robert-Morris", "Wright-State"], 2: ["Northern-Kentucky"]},
         #"Ivy League": [],
-        "MAAC": {0: ["Sacred-Heart", "Fairfield"], 1: ["Merrimack", "Fairfield", "Marist", "Siena"]},
+        "MAAC": {0: ["Sacred-Heart", "Fairfield"], 1: ["Merrimack", "Fairfield", "Marist", "Siena"], 2: ["Merrimack", "Siena"]},
         #"MEAC": [],
         #"Mid-American": [],
         "Missouri Valley": {0: ["Drake", "Valparaiso", "Northern-Iowa"], 1: ["Drake", "UIC", "Bradley", "Northern-Iowa"], 2: ["UIC", "Northern-Iowa"], 3: ["Northern-Iowa"]},
@@ -1020,11 +1020,11 @@ BRACKET_RESULTS = {
         "Patriot League": {0: ["Holy-Cross", "Bucknell"], 1: ["Boston-University", "Colgate", "Lehigh", "Navy"], 2: ["Lehigh", "Boston-University"]},
         #"SEC": [],
         "Southern": {0: ["UNCG", "The-Citadel"], 1: ["East-Tennessee-State", "UNCG", "Furman", "Western-Carolina"], 2: ["Furman", "East-Tennessee-State"]},
-        #"Southland": [],
-        "Sun Belt": {0: ["Louisiana", "Old-Dominion"], 1: ["James-Madison", "Georgia-Southern"], 2: ["Southern-Miss", "Georgia-Southern"], 3: ["Southern-Miss", "Georgia-Southern"], 4: ["Southern-Miss", "Georgia-Southern"]},
+        "Southland": {0: ["New-Orleans", "Nicholls"]},
+        "Sun Belt": {0: ["Louisiana", "Old-Dominion"], 1: ["James-Madison", "Georgia-Southern"], 2: ["Southern-Miss", "Georgia-Southern"], 3: ["Southern-Miss", "Georgia-Southern"], 4: ["Southern-Miss", "Georgia-Southern"], 5: ["Troy", "Georgia-Southern"]},
         #"SWAC": [],
-        "The Summit League": {0: ["Oral-Roberts"], 1: ["North-Dakota-State", "Saint-Thomas", "Omaha", "North-Dakota"], 2: ["North-Dakota-State", "North-Dakota"]},
-        "West Coast": {0: ["Portland", "San-Diego"], 1: ["Portland", "Seattle-University"], 2: ["San-Francisco", "Pacific"]}
+        "The Summit League": {0: ["Oral-Roberts"], 1: ["North-Dakota-State", "Saint-Thomas", "Omaha", "North-Dakota"], 2: ["North-Dakota-State", "North-Dakota"], 3: ["North-Dakota-State"]},
+        "West Coast": {0: ["Portland", "San-Diego"], 1: ["Portland", "Seattle-University"], 2: ["San-Francisco", "Pacific"], 3: ["Oregon-State", "Santa-Clara"]}
         #"Western Athletic": []
 }
 
@@ -1048,7 +1048,7 @@ BRACKET_RESULTS_W = {
         #"MEAC": [],
         #"Mid-American": [],
         #"Missouri Valley": [],
-        "Mountain West": {0: ["Air-Force", "Boise-State", "Fresno-State", "Grand-Canyon"]},
+        "Mountain West": {0: ["Air-Force", "Boise-State", "Fresno-State", "Grand-Canyon"], 1: ["Air-Force", "Boise-State", "UNLV", "Colorado-State"]},
         #"NEC": [],
         "Ohio Valley": {0: ["Southeast-Missouri", "SIUE"], 1: ["Southeast-Missouri", "Southern-Indiana"], 2: ["Western-Illinois", "Lindenwood"], 3: ["Western-Illinois"]},
         "Patriot League": {0: ["Boston-University", "Colgate"]},

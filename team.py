@@ -46,7 +46,7 @@ class Team:
         self.noncon_SOS = ncsos
         self.games = gms
 
-    def scrape_data(self, team, url, year):
+    def scrape_data(self, team, url, year, mens):
         team_page = requests.get(url)
         if team_page.status_code != 200:
             print("team problem!", url)
@@ -75,10 +75,7 @@ class Team:
                 self.conference = line[line.find('">', line.find("/conference/"))+2:line.find("</a>")]
                 continue
             if "font-weight: bold; font-size: 16px;" in line:
-                try:
-                    self.NET = int(line[line.find("16px")+7:line.find("</span>")])
-                except ValueError:  #TODO this is for the women's pages that aren't working. Mercyhurst, IU Indianapolis, West Georgia
-                    self.NET = 361
+                self.NET = int(line[line.find("16px")+7:line.find("</span>")])
                 continue
             if not SOS_line:
                 if ("NET SOS") in line:
@@ -91,81 +88,58 @@ class Team:
                 if line.strip()[:line.strip().find("<")] == "N/A":
                     self.NET_SOS = 150
                 else:
-                    try:
-                        self.NET_SOS = int(line.strip()[:line.strip().find("<")])
-                    except ValueError: #TODO see above
-                        self.NET_SOS = 150
+                    self.NET_SOS = int(line.strip()[:line.strip().find("<")])
                 SOS_line += 1
                 continue
             elif SOS_line == 5:
                 if line.strip() == "N/A":   #2020-21 was crazy
                     self.noncon_SOS = 150
                 else:
-                    try:
-                        self.noncon_SOS = int(line.strip())
-                    except ValueError: #TODO see above
-                        self.noncon_SOS = 150
+                    self.noncon_SOS = int(line.strip())
                 SOS_line += 1
                 continue
             
-            if not KPI_line:
-                if ("KPI") in line:
+            if mens:
+                if not KPI_line:
+                    if ("KPI") in line:
+                        KPI_line += 1
+                        continue
+                elif KPI_line < 5:
                     KPI_line += 1
                     continue
-            elif KPI_line < 5:
-                KPI_line += 1
-                continue
-            elif KPI_line == 5:
-                try:
+                elif KPI_line == 5:
                     self.KPI = int(line.strip()[:line.strip().find("<")])
-                except ValueError: #TODO see above #TODO this is also cause KPI is blank rn
-                    self.KPI = 0
-                KPI_line += 1
-                continue
-            elif KPI_line == 6:
-                try:
+                    KPI_line += 1
+                    continue
+                elif KPI_line == 6:
                     self.SOR = int(line.strip()[:line.strip().find("<")])
-                except ValueError: #TODO see above
-                    self.SOR = 0
-                KPI_line += 1
-                continue
-            elif KPI_line == 7:
-                try:
+                    KPI_line += 1
+                    continue
+                elif KPI_line == 7:
                     self.WAB = int(line.strip())
-                except ValueError: #TODO see above
-                    self.WAB = 0
-                KPI_line += 1
-                continue
+                    KPI_line += 1
+                    continue
             
-            if not BPI_line:
-                if ("BPI") in line:
+                if not BPI_line:
+                    if ("BPI") in line:
+                        BPI_line += 1
+                        continue
+                elif BPI_line < 6:
                     BPI_line += 1
                     continue
-            elif BPI_line < 6:
-                BPI_line += 1
-                continue
-            elif BPI_line == 6:
-                try:
+                elif BPI_line == 6:
                     self.BPI = int(line.strip()[:line.strip().find("<")])
-                except ValueError: #TODO see above
-                    self.BPI = 0
-                BPI_line += 1
-                continue
-            elif BPI_line == 7:
-                try:
+                    BPI_line += 1
+                    continue
+                elif BPI_line == 7:
                     self.KenPom = int(line.strip()[:line.strip().find("<")])
-                except ValueError: #TODO see above
-                    self.KenPom = 0
-                BPI_line += 1
-                continue
-            #TODO i'm just putting T-rank in sagarin rn cause i'm lazy. gotta fix & stay compatible with old years
-            elif BPI_line == 8:
-                try:
+                    BPI_line += 1
+                    continue
+                #TODO i'm just putting T-rank in sagarin rn cause i'm lazy. gotta fix & stay compatible with old years
+                elif BPI_line == 8:
                     self.Sagarin = int(line.strip())
-                except ValueError: #TODO see above
-                    self.Sagarin = 0
-                BPI_line += 1
-                continue
+                    BPI_line += 1
+                    continue
 
             if "ts-nitty-row" in line:
                 game_line = 1

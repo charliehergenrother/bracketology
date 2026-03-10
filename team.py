@@ -138,6 +138,8 @@ class Team:
                 #TODO i'm just putting T-rank in sagarin rn cause i'm lazy. gotta fix & stay compatible with old years
                 elif BPI_line == 8:
                     self.Sagarin = int(line.strip())
+                    if self.Sagarin == 0:
+                        raise "DataNotAllCollected"
                     BPI_line += 1
                     continue
 

@@ -1,5 +1,5 @@
 {
-    "eliminated_teams": ["Belmont", "Murray-State", "Saint-Thomas", "Austin-Peay", "UNCW", "Navy", "Colgate", "American"],
+    "eliminated_teams": ["Belmont", "Murray-State", "Saint-Thomas", "Austin-Peay", "UNCW", "Navy", "Colgate", "American", "Northern-Colorado"],
     "conference_winners": {
         "America East": "",
         "American": "",
@@ -25,11 +25,11 @@
         "Ohio Valley": "Tennessee-State",
         "Patriot League": "",
         "SEC": "",
-        "Southern": "",
+        "Southern": "Furman",
         "Southland": "",
         "SWAC": "",
         "The Summit League": "North-Dakota-State",
-        "Sun Belt": "",
+        "Sun Belt": "Troy",
         "Western Athletic": "",
         "West Coast": ""
     },

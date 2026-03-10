@@ -889,9 +889,21 @@ class Scorer:
         if abs(spread) <= 21:
             return -0.00002609*spread*spread*spread + 0.00002466*spread*spread + 0.033206*spread + 0.5
         elif spread > 21:
-            return 0.98
+            if spread < 25:
+                return 0.98
+            if spread < 30:
+                return 0.99
+            if spread < 35:
+                return 0.995
+            return 0.999
         elif spread < -21:
-            return 0.02
+            if spread > -25:
+                return 0.02
+            if spread > -30:
+                return 0.01
+            if spread > -35:
+                return 0.005
+            return 0.001
 
     def get_NET_estimate(self, curr_NET, curr_KenPom, season_days, days_left):
         # estimated NET begins as all KenPom and builds more actual NET in as the season progresses until 30 days, all becomes NET

@@ -1000,7 +1000,7 @@ BRACKET_RESULTS = {
         #"American": [],
         "ASUN": {0: ["Bellarmine", "FGCU", "Stetson", "West-Georgia"], 1: ["Central-Arkansas", "FGCU", "Austin-Peay", "Queens"], 2: ["Central-Arkansas", "Queens"], 3: ["Queens"]},
         #"Atlantic 10": [],
-        #"Big 12": [],
+        "Big 12": {0: ["Arizona-State"]},
         #"Big East": [],
         "Big Sky": {0: ["Idaho-State", "Idaho"], 1: ["Portland-State", "Idaho", "Montana", "Eastern-Washington"]},
         "Big South": {0: ["Gardner-Webb"], 1: ["High-Point", "Winthrop", "UNC-Asheville", "Presbyterian-College"], 2: ["High-Point", "Winthrop"], 3: ["High-Point"]},

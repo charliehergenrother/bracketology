@@ -878,7 +878,9 @@ class Scorer:
         return WEIGHTS
 
     def get_win_prob(self, team_kenpom, opp_kenpom, location):
-        team_spread_neutral = (team_kenpom - opp_kenpom)*0.675  #average possessions: 67.5
+        team_spread_neutral = team_kenpom - opp_kenpom
+        if self.mens:
+            team_spread_neutral = team_spread_neutral*0.675  #average possessions: 67.5
         if location == 'H':
             spread = team_spread_neutral + 3
         elif location == 'N':

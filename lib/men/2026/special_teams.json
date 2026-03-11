@@ -1,5 +1,5 @@
 {
-    "eliminated_teams": ["Belmont", "Murray-State", "Saint-Thomas", "Austin-Peay", "UNCW", "Navy", "Colgate", "American", "Northern-Colorado"],
+    "eliminated_teams": ["Belmont", "Murray-State", "Saint-Thomas", "Austin-Peay", "UNCW", "Navy", "Colgate", "American", "Northern-Colorado", "Portland-State", "Montana-State"],
     "conference_winners": {
         "America East": "",
         "American": "",
@@ -12,11 +12,11 @@
         "Big South": "High-Point",
         "Big Ten": "",
         "Big West": "",
-        "Coastal Athletic": "",
+        "Coastal Athletic": "Hofstra",
         "Conference USA": "",
-        "Horizon League": "",
+        "Horizon League": "Wright-State",
         "Ivy League": "",
-        "MAAC": "",
+        "MAAC": "Siena",
         "Mid-American": "",
         "MEAC": "",
         "Missouri Valley": "Northern-Iowa",
@@ -31,7 +31,7 @@
         "The Summit League": "North-Dakota-State",
         "Sun Belt": "Troy",
         "Western Athletic": "",
-        "West Coast": ""
+        "West Coast": "Gonzaga"
     },
     "ineligible_teams": ["Le-Moyne", "Mercyhurst", "New-Haven", "West-Georgia"],
     "ineligible_sites": {

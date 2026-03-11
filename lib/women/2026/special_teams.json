@@ -14,13 +14,13 @@
         "Big West": "",
         "Coastal Athletic": "",
         "Conference USA": "",
-        "Horizon League": "",
+        "Horizon League": "Green-Bay",
         "Ivy League": "",
         "MAAC": "Fairfield",
         "Mid-American": "",
         "MEAC": "",
         "Missouri Valley": "",
-        "Mountain West": "",
+        "Mountain West": "Colorado-State",
         "NEC": "",
         "Ohio Valley": "Western-Illinois",
         "Patriot League": "",
@@ -31,7 +31,7 @@
         "The Summit League": "South-Dakota-State",
         "Sun Belt": "James-Madison",
         "Western Athletic": "",
-        "West Coast": ""
+        "West Coast": "Gonzaga"
     },
     "ineligible_teams": ["Le-Moyne", "Mercyhurst", "New-Haven", "West-Georgia"]
 }

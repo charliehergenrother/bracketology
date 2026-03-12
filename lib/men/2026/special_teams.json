@@ -1,5 +1,5 @@
 {
-    "eliminated_teams": ["Belmont", "Murray-State", "Saint-Thomas", "Austin-Peay", "UNCW", "Navy", "Colgate", "American", "Northern-Colorado", "Portland-State", "Montana-State"],
+    "eliminated_teams": ["Belmont", "Murray-State", "Saint-Thomas", "Austin-Peay", "UNCW", "Navy", "Colgate", "American", "Northern-Colorado", "Portland-State", "Montana-State", "Bethune-Cookman", "Liberty"],
     "conference_winners": {
         "America East": "",
         "American": "",
@@ -8,7 +8,7 @@
         "ASUN": "Queens",
         "Big 12": "",
         "Big East": "",
-        "Big Sky": "",
+        "Big Sky": "Idaho",
         "Big South": "High-Point",
         "Big Ten": "",
         "Big West": "",
@@ -23,10 +23,10 @@
         "Mountain West": "",
         "NEC": "Long-Island",
         "Ohio Valley": "Tennessee-State",
-        "Patriot League": "",
+        "Patriot League": "Lehigh",
         "SEC": "",
         "Southern": "Furman",
-        "Southland": "",
+        "Southland": "McNeese",
         "SWAC": "",
         "The Summit League": "North-Dakota-State",
         "Sun Belt": "Troy",

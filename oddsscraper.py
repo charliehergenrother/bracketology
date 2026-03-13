@@ -282,7 +282,7 @@ def scrape_caesars_conference():
 def scrape_caesars():
     results = dict()
     results['championship'] = scrape_caesars_main_list(ODDS_PATH + "cs champ")
-    results['final_four'] = scrape_caesars_final_four()
+    #results['final_four'] = scrape_caesars_final_four()
     results['conference'] = scrape_caesars_conference()
     return results
 
@@ -668,7 +668,7 @@ def combine_results(fd, dk, cs, bm, bt):
         fixed_team = translate_team_name(team)
         results['final_four'][fixed_team] = {'FD': fd['final_four'][team]}
     run_combine(dk['final_four'], 'DK', results['final_four'])
-    run_combine(cs['final_four'], 'CS', results['final_four'])
+    #run_combine(cs['final_four'], 'CS', results['final_four'])
     run_combine(bt['final_four'], 'BT', results['final_four'])
     
     for team in fd['championship']:

@@ -24,7 +24,7 @@
         "Patriot League": {"format": "4H8H4H2H", "ineligible_winners": []},
         "SEC": {"format": "8N8N8N4N2N", "ineligible_winners": []},
         "Southern": {"format": "4N8N4N2N", "ineligible_winners": []},
-        "Southland": {"format": "8N4N2N", "ineligible_winners": []},
+        "Southland": {"format": "4N4N4N2N", "ineligible_winners": []},
         "SWAC": {"format": "4N4N8N4N2N", "ineligible_winners": []},
         "The Summit League": {"format": "2N8N4N2N", "ineligible_winners": []},
         "Sun Belt": {"format": "4N4N4N4N4N4N2N", "ineligible_winners": []},

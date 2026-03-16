@@ -679,12 +679,13 @@ def process_args():
     mc_outputfile = ""
     mc_output_html = ""
     simulations = 0
+    tournament_selected = False
 
     while argindex < len(sys.argv):
         if sys.argv[argindex] == '-h':
             print("Welcome to auto-bracketology!")
             print("Usage:")
-            print("./scraper.py [-h] [-m/-w] [-y year] [-f [-g schedulefile]] [-c <sims> [-d montecarlofile]] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-u resumewebfile] [-e|-s] [-t] [-v]")
+            print("./scraper.py [-h] [-m/-w] [-y year] [-f [-g schedulefile]] [-c <sims> [-d montecarlofile] [-p montecarlohtml] [-x]] [-i weightfile] [-o outputfile] [-r resumefile] [-b webfile] [-u resumewebfile] [-e|-s] [-t] [-v]")
             print("     -h: print this help message")
             print("     -m: men's tournament projection [default]")
             print("     -w: women's tournament projection")
@@ -703,6 +704,7 @@ def process_args():
             print("     -s: scrape data anew regardless of whether data has been scraped today")
             print("     -t: tracker mode. Generate weights and test their effectiveness")
             print("     -v: verbose. Print team resumes and bracketing procedure")
+            print("     -x: Post-selection mode for monte carlo")
             sys.exit()
         elif sys.argv[argindex] == '-w':
             mens = False
@@ -744,6 +746,8 @@ def process_args():
         elif sys.argv[argindex] == '-p':
             mc_output_html = sys.argv[argindex + 1]
             argindex += 1
+        elif sys.argv[argindex] == '-x':
+            tournament_selected = True
         elif sys.argv[argindex] == '-y':
             if int(sys.argv[argindex + 1]) < 2021:
                 print("year not supported, sorry. Try 2021-present.")
@@ -762,7 +766,7 @@ def process_args():
             weightfile = "lib/women/weights.txt"
     return year, mens, outputfile, resumefile, webfile, resumewebfile, upcomingschedulefile, \
             datadir, should_scrape, force_scrape, verbose, tracker, weightfile, future, \
-            monte_carlo, mc_outputfile, simulations, mc_output_html
+            monte_carlo, mc_outputfile, simulations, mc_output_html, tournament_selected
 
 def add_or_increment_key(key, dictionary):
     try:
@@ -793,7 +797,7 @@ def simulate_one_tournament_game(team1, team2, team_kenpoms, scorer, results):
         #print(team2, "over", team1)
     return winner
 
-def simulate_tournament(builder, team_kenpoms, scorer, results):
+def simulate_tournament(builder, team_kenpoms, scorer, results=dict()):
     winners = list()
     for region_num in [0, 3, 1, 2]:
         for seed in [1, 8, 5, 4, 6, 3, 7, 2]:
@@ -1040,14 +1044,14 @@ BRACKET_RESULTS_W = {
         "Big South": {0: ["South-Carolina-Upstate"], 1: ["High-Point", "Winthrop", "Radford", "Longwood"], 2: ["High-Point", "Radford"], 3: ["High-Point"]},
         "Big Ten": {0: ["Indiana", "Illinois", "Oregon"], 1: ["Washington", "Ohio-State", "Illinois", "Oregon"], 2: ["UCLA", "Ohio-State", "Iowa", "Michigan"], 3: ["UCLA", "Iowa"], 4: ["UCLA"]},
         "Big West": {0: ["Cal-State-Fullerton", "UC-Riverside"], 1: ["Hawaii", "UC-Davis"], 2: ["Hawaii", "UC-San-Diego"], 3: ["UC-San-Diego"]},
-        "Coastal Athletic": {0: ["UNCW"], 1: ["William-Mary", "Monmouth", "Hofstra", "Elon"], 2: ["Charleston", "Stony-Brook", "Hofstra", "Drexel"], 3: ["Charleston", "Hofstra"]},
+        "Coastal Athletic": {0: ["UNCW"], 1: ["William-Mary", "Monmouth", "Hofstra", "Elon"], 2: ["Charleston", "Stony-Brook", "Hofstra", "Drexel"], 3: ["Charleston", "Hofstra"], 4: ["Charleston"]},
         "Conference USA": {0: ["Delaware", "Jacksonville-State"], 1: ["Louisiana-Tech", "FIU", "Liberty", "Missouri-State"], 2: ["Louisiana-Tech", "Missouri-State"], 3: ["Missouri-State"]},
         "Horizon League": {0: ["Detroit"], 1: ["Cleveland-State", "Youngstown-State", "Purdue-Fort-Wayne", "IU-Indianapolis", "Green-Bay"], 2: ["Purdue-Fort-Wayne"], 3: ["Green-Bay", "Youngstown-State"], 4: ["Green-Bay"]},
         "Ivy League": {0: ["Princeton", "Harvard"], 1: ["Princeton"]},
         "MAAC": {0: ["Manhattan", "Sacred-Heart"], 1: ["Quinnipiac", "Fairfield", "Iona", "Merrimack"], 2: ["Quinnipiac", "Fairfield"], 3: ["Fairfield"]},
         "MEAC": {0: ["Howard", "Maryland-Eastern-Shore", "Coppin-State", "Norfolk-State"], 1: ["Howard", "Norfolk-State"], 2: ["Howard"]},
         "Mid-American": {0: ["Miami-OH", "Ohio", "Ball-State", "Toledo"], 1: ["Miami-OH", "Toledo"], 2: ["Miami-OH"]},
-        "Missouri Valley": {0: ["Indiana-State", "Evansville", "Drake"], 1: ["Murray-State", "Northern-Iowa", "Evansville", "Illinois-State"], 2: ["Murray-State", "Evansville"]},
+        "Missouri Valley": {0: ["Indiana-State", "Evansville", "Drake"], 1: ["Murray-State", "Northern-Iowa", "Evansville", "Illinois-State"], 2: ["Murray-State", "Evansville"], 3: ["Murray-State"]},
         "Mountain West": {0: ["Air-Force", "Boise-State", "Fresno-State", "Grand-Canyon"], 1: ["Air-Force", "Boise-State", "UNLV", "Colorado-State"], 2: ["Air-Force", "Colorado-State"], 3: ["Colorado-State"]},
         "NEC": {0: ["Mercyhurst", "Fairleigh-Dickinson", "Long-Island", "Le-Moyne"], 1: ["Fairleigh-Dickinson", "Long-Island"], 2: ["Fairleigh-Dickinson"]},
         "Ohio Valley": {0: ["Southeast-Missouri", "SIUE"], 1: ["Southeast-Missouri", "Southern-Indiana"], 2: ["Western-Illinois", "Lindenwood"], 3: ["Western-Illinois"]},
@@ -1709,7 +1713,7 @@ def get_plus_odds(odds):
     return odds
 
 #run a monte carlo simulation of the remaining college basketball season
-def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfile, mc_output_html):
+def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfile, mc_output_html, tournament_selected):
     rng = numpy.random.default_rng()
     today_date = date.today()
     selection_sunday = date(2026, 3, 15)
@@ -1755,9 +1759,95 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         #}
         team_results[team] = list()
     successful_runs = 0
+    if tournament_selected:
+        simmed_kenpoms = dict()
+        results = {"teams": dict()}
+        all_results = dict()
+        if builder.mens:
+            builder.regions = {
+                    0: {1: "Duke", 2: "Connecticut", 3: "Michigan-State", 4: "Kansas", 5: "Saint-Johns", 6: "Louisville", 7: "UCLA", 8: "Ohio-State", 9: "TCU", 10: "UCF", 11: "South-Florida", 12: "Northern-Iowa", 13: "California-Baptist", 14: "North-Dakota-State", 15: "Furman", 16: "Siena"},
+                    1: {1: "Arizona", 2: "Purdue", 3: "Gonzaga", 4: "Arkansas", 5: "Wisconsin", 6: "BYU", 7: "Miami-FL", 8: "Villanova", 9: "Utah-State", 10: "Missouri", 11: "Texas/North-Carolina-State", 12: "High-Point", 13: "Hawaii", 14: "Kennesaw-State", 15: "Queens", 16: "Long-Island"},
+                    2: {1: "Michigan", 2: "Iowa-State", 3: "Virginia", 4: "Alabama", 5: "Texas-Tech", 6: "Tennessee", 7: "Kentucky", 8: "Georgia", 9: "Saint-Louis", 10: "Santa-Clara", 11: "Miami-OH/SMU", 12: "Akron", 13: "Hofstra", 14: "Wright-State", 15: "Tennessee-State", 16: "UMBC/Howard"},
+                    3: {1: "Florida", 2: "Houston", 3: "Illinois", 4: "Nebraska", 5: "Vanderbilt", 6: "North-Carolina", 7: "Saint-Marys-College", 8: "Clemson", 9: "Iowa", 10: "Texas-AM", 11: "VCU", 12: "McNeese", 13: "Troy", 14: "Penn", 15: "Idaho", 16: "Prairie-View-AM/Lehigh"},
+            }
+        else:
+            builder.regions = {
+                0: {1: "Connecticut", 2: "Vanderbilt", 3: "Ohio-State", 4: "North-Carolina", 5: "Maryland", 6: "Notre-Dame", 7: "Illinois", 8: "Iowa-State", 9: "Syracuse", 10: "Colorado", 11: "Fairfield", 12: "Murray-State", 13: "Western-Illinois", 14: "Howard", 15: "High-Point", 16: "UTSA"},
+                1: {1: "UCLA", 2: "LSU", 3: "Duke", 4: "Minnesota", 5: "Ole-Miss", 6: "Baylor", 7: "Texas-Tech", 8: "Oklahoma-State", 9: "Princeton", 10: "Villanova", 11: "Nebraska/Richmond", 12: "Gonzaga", 13: "Green-Bay", 14: "Charleston", 15: "Jacksonville", 16: "California-Baptist"},
+                2: {1: "Texas", 2: "Michigan", 3: "Louisville", 4: "West-Virginia", 5: "Kentucky", 6: "Alabama", 7: "North-Carolina-State", 8: "Oregon", 9: "Virginia-Tech", 10: "Tennessee", 11: "Rhode-Island", 12: "James-Madison", 13: "Miami-OH", 14: "Vermont", 15: "Holy-Cross", 16: "Missouri-State/Stephen-F-Austin"},
+                3: {1: "South-Carolina", 2: "Iowa", 3: "TCU", 4: "Oklahoma", 5: "Michigan-State", 6: "Washington", 7: "Georgia", 8: "Clemson", 9: "USC", 10: "Virginia/Arizona-State", 11: "South-Dakota-State", 12: "Colorado-State", 13: "Idaho", 14: "UC-San-Diego", 15: "Fairleigh-Dickinson", 16: "Southern/Samford"},
+            }
+        for region in builder.regions:
+            for seed in builder.regions[region]:
+                team = builder.regions[region][seed]
+                if "/" not in team:
+                    results["teams"][team] = dict()
+                    all_results[team] = {
+                        'first_round': 0,
+                        'second_round': 0,
+                        'sweet_sixteen': 0,
+                        'elite_eight': 0,
+                        'final_four': 0,
+                        'ncg': 0,
+                        'championship': 0
+                    }
+                else:
+                    for play_in_team in team.split("/"):
+                        results["teams"][play_in_team] = dict()
+                        all_results[play_in_team] = {
+                            'first_round': 0,
+                            'second_round': 0,
+                            'sweet_sixteen': 0,
+                            'elite_eight': 0,
+                            'final_four': 0,
+                            'ncg': 0,
+                            'championship': 0
+                        }
+        for i in range(simulations):
+            print("Running sim", i)
+            for team in results["teams"]:
+                simmed_kenpoms[team] = {"rating": rng.normal(scorer.team_kenpoms[team]["rating"], 0.8)}
+            winners = simulate_tournament(builder, simmed_kenpoms, scorer, results)
+            for team in results["teams"]:
+                team_result = results["teams"][team]
+                for tourney_round in [('first_round', 1), ('second_round', 2), ('sweet_sixteen', 3), ('elite_eight', 4), ('final_four', 5), ('ncg', 6), ('championship', 7)]:
+                    if team_result["ncaa_round"] >= tourney_round[1]:
+                        all_results[team][tourney_round[0]] += 1
+        
+        if mc_output_html:
+            f = open(mc_output_html, "w")
+            builder.output_meta(f)
+            builder.output_link_row(f, "")
+            f.write('<body>\n')
+            f.write('<div class="table_container">\n')
+            f.write('  <table class="outcomes_table">\n')
+            f.write('    <colgroup><col class="teamcol"><col class="confcol"><col class="autocol"><col class="tourncol">')
+            f.write('<col class="srcol"><col class="sscol"><col class="eecol">')
+            f.write('<col class="ffcol"><col class="ncgcol"><col class="nccol"></colgroup>\n')
+            f.write('    <thead>\n')
+            f.write('      <tr class="header_row"><th>Team</th><th>Seed</th><th>1st Round</th>')
+            f.write('<th>2nd Round</th><th>Sweet 16</th><th>Elite 8</th><th>Final Four</th>')
+            f.write('<th>Champ game</th><th>Win champ</th>')
+            f.write('</tr>')
+            f.write('    </thead>\n')
+            f.write('    <tbody>\n')
+
+            for team in sorted(all_results, key=lambda x: all_results[x]['championship'], reverse=True):
+                if builder.mens:
+                    f.write('    <tr><td><img class="tiny_logo" src="assets/' + team + '.png"/><a href="team_pages/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
+                else:
+                    f.write('    <tr><td><img class="tiny_logo" src="assets/' + team + '.png"/><a href="team_pagesw/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
+                f.write('<td>' + str(results["teams"][team]["ncaa_seed"]) + '</td>')
+                for outcome_string in ['first_round', 'second_round', 'sweet_sixteen', 'elite_eight', 'final_four', 'ncg', 'championship']:
+                    outcome_percentage = round(all_results[team][outcome_string]*100/simulations, 2)
+                    color_percentage = str(-outcome_percentage / 2 + 100)
+                    f.write('<td class="pct_col" style="background-color: hsl(120, 50%, ' + color_percentage + '%)">' + str(outcome_percentage) + '%</td>')
+                f.write('</tr>\n')
+
+        return
+
     for i in range(simulations):
         print("Running sim", i)
-        simmed_kenpoms = dict()
         for team in scorer.teams:
             scorer.teams[team].games = set(scorer.teams[team].saved_games)
             scorer.teams[team].future_games = list(scorer.teams[team].saved_future_games)
@@ -1977,7 +2067,8 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         f.write('<col class="srcol"><col class="sscol"><col class="eecol">')
         f.write('<col class="ffcol"><col class="ncgcol"><col class="nccol"></colgroup>\n')
         f.write('    <thead>\n')
-        f.write('      <tr class="header_row"><th>Team</th><th>Avg. seed</th><th>Win conf</th>')
+        f.write('      <tr class="header_row"><th>Team</th>')
+        f.write('<th>Avg. seed</th><th>Win conf</th>')
         f.write('<th>Auto bid</th><th>Tournament</th>')
         f.write('<th>2nd Round</th><th>Sweet 16</th><th>Elite 8</th><th>Final Four</th>')
         f.write('<th>Champ game</th><th>Win champ</th>')
@@ -2032,7 +2123,8 @@ def main():
     scraper = Scraper()
     scraper.year, scraper.mens, scraper.outputfile, scraper.resumefile, scraper.webfile, resumewebfile, \
             upcomingschedulefile, scraper.datadir, should_scrape, force_scrape, scraper.verbose, \
-            scraper.tracker, weightfile, future, monte_carlo, mc_outputfile, simulations, mc_output_html = process_args()
+            scraper.tracker, weightfile, future, monte_carlo, mc_outputfile, simulations, mc_output_html, \
+            tournament_selected = process_args()
     builder = scraper.load_data(should_scrape, force_scrape, future, monte_carlo)
     scorer = Scorer(builder, future, scraper.mens, scraper.tracker, monte_carlo)
     if scraper.tracker:
@@ -2052,7 +2144,8 @@ def main():
         return
     elif monte_carlo:
         scraper.load_schedule_data(should_scrape, force_scrape)
-        run_monte_carlo(simulations, scorer, builder, scraper.mens, weightfile, mc_outputfile, mc_output_html)
+        run_monte_carlo(simulations, scorer, builder, scraper.mens, weightfile, \
+                mc_outputfile, mc_output_html, tournament_selected)
         if scraper.outputfile:
             scorer.outputfile = scraper.outputfile
             scorer.output_scores()

@@ -1722,7 +1722,7 @@ def findmaxlen(teams, indices):
 
 def print_bracket(winners, old_regions):
     regions = list()
-    for x in old_regions:
+    for x in [0, 3, 1, 2]:
         regions.append(old_regions[x])
     space = max([max([len(x[y]) for y in x]) for x in regions])
     left1 = findmaxlen(winners, [x for x in range(0, 16)])

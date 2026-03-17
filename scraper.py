@@ -1712,6 +1712,100 @@ def get_plus_odds(odds):
         return str((100/(float(odds)/(float(odds) - 100))) - 100)
     return odds
 
+def findmaxlen(teams, indices):
+    maxlen = ""
+    for x in indices:
+        if len(teams[x]) > len(maxlen):
+            maxlen = teams[x]
+    lens = [len(teams[x]) for x in indices]
+    return max(lens)
+
+def print_bracket(winners, old_regions):
+    regions = list()
+    for x in old_regions:
+        regions.append(old_regions[x])
+    space = max([max([len(x[y]) for y in x]) for x in regions])
+    left1 = findmaxlen(winners, [x for x in range(0, 16)])
+    right1 = findmaxlen(winners, [x for x in range(16, 32)])
+    left2 = findmaxlen(winners, [x for x in range(32, 40)])
+    right2 = findmaxlen(winners, [x for x in range(40, 48)])
+    left3 = findmaxlen(winners, [x for x in range(48, 52)])
+    right3 = findmaxlen(winners, [x for x in range(52, 56)])
+    left4 = findmaxlen(winners, [x for x in range(56, 58)])
+    right4 = findmaxlen(winners, [x for x in range(58, 60)])
+
+    myfirst = ' ' * (left1 + left2 + left3 + left4 + right1 + right2 + right3 + right4 + 16)
+    mysecond = ' ' * (left2 + left3 + left4 + right2 + right3 + right4 + 12)
+    mythird = ' ' * (left3 + left4 + right3 + right4 + 8)
+    myfourth = ' ' * (left4 + right4 + 4)
+
+    print(regions[0][1].ljust(space) + myfirst + regions[2][1].rjust(space))
+    print(' '*space + '| ' + winners[0].ljust(left1) + mysecond + winners[16].rjust(right1) + ' |')
+    print(regions[0][16].ljust(space) + myfirst + regions[2][16].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + '| ' + winners[32].ljust(left2) + mythird + winners[40].rjust(right2) + ' |')
+    print(regions[0][8].ljust(space) + myfirst + regions[2][8].rjust(space))
+    print(' '*space + '| ' + winners[1].ljust(left1) + mysecond + winners[17].rjust(right1) + ' |')
+    print(regions[0][9].ljust(space) + myfirst + regions[2][9].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + ' '*2 + ' '*left2 + '| ' + winners[48].ljust(left3) + myfourth + winners[52].rjust(right3) + ' |')
+    print(regions[0][5].ljust(space) + myfirst + regions[2][5].rjust(space))
+    print(' '*space + '| ' + winners[2].ljust(left1) + mysecond + winners[18].rjust(right1) + ' |')
+    print(regions[0][12].ljust(space) + myfirst + regions[2][12].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + '| ' + winners[33].ljust(left2) + mythird + winners[41].rjust(right2) + ' |')
+    print(regions[0][4].ljust(space) + myfirst + regions[2][4].rjust(space))
+    print(' '*space + '| ' + winners[3].ljust(left1) + mysecond + winners[19].rjust(right1) + ' |')
+    print(regions[0][13].ljust(space) + myfirst + regions[2][13].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + ' '*2 + ' '*left2 + ' '*2 + ' '*left3 + '| ' + winners[56].ljust(left4) + '  ' + winners[58].rjust(right4) + ' |')
+    print(regions[0][6].ljust(space) + myfirst + regions[2][6].rjust(space))
+    print(' '*space + '| ' + winners[4].ljust(left1) + mysecond + winners[20].rjust(right1) + ' |')
+    print(regions[0][11].ljust(space) + myfirst + regions[2][11].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + '| ' + winners[34].ljust(left2) + mythird + winners[42].rjust(right2) + ' |')
+    print(regions[0][3].ljust(space) + myfirst + regions[2][3].rjust(space))
+    print(' '*space + '| ' + winners[5].ljust(left1) + mysecond + winners[21].rjust(right1) + ' |')
+    print(regions[0][14].ljust(space) + myfirst + regions[2][14].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + ' '*2 + ' '*left2 + '| ' + winners[49].ljust(left3) + myfourth + winners[53].rjust(right3) + ' |')
+    print(regions[0][7].ljust(space) + myfirst + regions[2][7].rjust(space))
+    print(' '*space + '| ' + winners[6].ljust(left1) + mysecond + winners[22].rjust(right1) + ' |')
+    print(regions[0][10].ljust(space) + myfirst + regions[2][10].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + '| ' + winners[35].ljust(left2) + mythird + winners[43].rjust(right2) + ' |')
+    print(regions[0][2].ljust(space) + myfirst + regions[2][2].rjust(space))
+    print(' '*space + '| ' + winners[7].ljust(left1) + mysecond + winners[23].rjust(right1) + ' |')
+    print(regions[0][15].ljust(space) + myfirst + regions[2][15].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + ' '*2 + ' '*left2 + ' '*left3 + '| ' + winners[60].ljust(left4) + '   ' + winners[61].rjust(right4) + ' |')
+    print()
+    print(' '*space + ' '*2 + ' '*left1 + ' '*2 + ' '*left2 + ' '*left3 + '           ' + winners[62].ljust(right4))
+    print(regions[1][1].ljust(space) + myfirst + regions[3][1].rjust(space))
+    print(' '*space + '| ' + winners[8].ljust(left1) + mysecond + winners[24].rjust(right1) + ' |')
+    print(regions[1][16].ljust(space) + myfirst + regions[3][16].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + '| ' + winners[36].ljust(left2) + mythird + winners[44].rjust(right2) + ' |')
+    print(regions[1][8].ljust(space) + myfirst + regions[3][8].rjust(space))
+    print(' '*space + '| ' + winners[9].ljust(left1) + mysecond + winners[25].rjust(right1) + ' |')
+    print(regions[1][9].ljust(space) + myfirst + regions[3][9].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + ' '*2 + ' '*left2 + '| ' + winners[50].ljust(left3) + myfourth + winners[54].rjust(right3) + ' |')
+    print(regions[1][5].ljust(space) + myfirst + regions[3][5].rjust(space))
+    print(' '*space + '| ' + winners[10].ljust(left1) + mysecond + winners[26].rjust(right1) + ' |')
+    print(regions[1][12].ljust(space) + myfirst + regions[3][12].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + '| ' + winners[37].ljust(left2) + mythird + winners[45].rjust(right2) + ' |')
+    print(regions[1][4].ljust(space) + myfirst + regions[3][4].rjust(space))
+    print(' '*space + '| ' + winners[11].ljust(left1) + mysecond + winners[27].rjust(right1) + ' |')
+    print(regions[1][13].ljust(space) + myfirst + regions[3][13].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + ' '*2 + ' '*left2 + ' '*2 + ' '*left3 + '| ' + winners[57].ljust(left4) + '   ' + winners[59].rjust(right4) + ' |')
+    print(regions[1][6].ljust(space) + myfirst + regions[3][6].rjust(space))
+    print(' '*space + '| ' + winners[12].ljust(left1) + mysecond + winners[28].rjust(right1) + ' |')
+    print(regions[1][11].ljust(space) + myfirst + regions[3][11].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + '| ' + winners[38].ljust(left2) + mythird + winners[46].rjust(right2) + ' |')
+    print(regions[1][3].ljust(space) + myfirst + regions[3][3].rjust(space))
+    print(' '*space + '| ' + winners[13].ljust(left1) + mysecond + winners[29].rjust(right1) + ' |')
+    print(regions[1][14].ljust(space) + myfirst + regions[3][14].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + ' '*2 + ' '*left2 + '| ' + winners[51].ljust(left3) + myfourth + winners[55].rjust(right3) + ' |')
+    print(regions[1][7].ljust(space) + myfirst + regions[3][7].rjust(space))
+    print(' '*space + '| ' + winners[14].ljust(left1) + mysecond + winners[30].rjust(right1) + ' |')
+    print(regions[1][10].ljust(space) + myfirst + regions[3][10].rjust(space))
+    print(' '*space + ' '*2 + ' '*left1 + '| ' + winners[39].ljust(left2) + mythird + winners[47].rjust(right2) + ' |')
+    print(regions[1][2].ljust(space) + myfirst + regions[3][2].rjust(space))
+    print(' '*space + '| ' + winners[15].ljust(left1) + mysecond + winners[31].rjust(right1) + ' |')
+    print(regions[1][15].ljust(space) + myfirst + regions[3][15].rjust(space))
+    print()
+
 #run a monte carlo simulation of the remaining college basketball season
 def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfile, mc_output_html, tournament_selected):
     rng = numpy.random.default_rng()
@@ -1808,6 +1902,7 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
             for team in results["teams"]:
                 simmed_kenpoms[team] = {"rating": rng.normal(scorer.team_kenpoms[team]["rating"], 0.8)}
             winners = simulate_tournament(builder, simmed_kenpoms, scorer, results)
+            print_bracket(winners, builder.regions)
             for team in results["teams"]:
                 team_result = results["teams"][team]
                 for tourney_round in [('first_round', 1), ('second_round', 2), ('sweet_sixteen', 3), ('elite_eight', 4), ('final_four', 5), ('ncg', 6), ('championship', 7)]:

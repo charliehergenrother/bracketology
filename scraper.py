@@ -1890,7 +1890,6 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
             rank_counter += 1
         builder.first_weekend_sites = list(first_weekend_sites)
         builder.conference_winners = dict(conference_winners)
-        builder.head_to_head = dict()
         weights = dict()
         # vary weights a little bit
         for weight in base_weights:

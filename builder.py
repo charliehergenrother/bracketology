@@ -835,6 +835,7 @@ class Builder:
         save_team = list()
         saved_teams = list()
         self.seed_list = list()
+        self.head_to_head = dict()
         AUTO_MAX = AUTO_MAXES[self.year]
         AT_LARGE_MAX = NUMBER_TEAMS[self.year] - AUTO_MAX
 

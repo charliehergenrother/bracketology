@@ -28,8 +28,8 @@ WEIGHTS = {
 }
 # TODO just make the year a constant, man
 SCRAPE_DATE_FILE = "scrapedate.txt"
-TEAM_MEN_URL_START = "https://www.warrennolan.com/basketball/2026/team-clubhouse?team="
-TEAM_WOMEN_URL_START = "https://www.warrennolan.com/basketballw/2026/team-clubhouse?team="
+TEAM_MEN_URL_START = "https://www.warrennolan.com/basketball/2027/team-clubhouse?team="
+TEAM_WOMEN_URL_START = "https://www.warrennolan.com/basketballw/2027/team-clubhouse?team="
 
 #class to generate resume ratings from scraped data about college basketball teams
 class Scorer:
@@ -104,7 +104,7 @@ class Scorer:
     def get_season_progress(self):
         today_date = date.today()
         selection_sunday = date(int(self.year), 3, SELECTION_SUNDAY_DATES[self.year])
-        season_start = date(int(self.year) - 1, 11, 3)
+        season_start = date(int(self.year) - 1, 11, 1)
         season_days = (selection_sunday - season_start).days
         if season_start > today_date:
             days_left = season_days
@@ -115,11 +115,8 @@ class Scorer:
     #calculate score for a team's winning percentage (scale: 1.000 = 1.000, 0.000 = 0.600)
     #param team: Team object to calculate score for
     def get_loss_score(self, team, team_obj):
-        if self.tracker:
-            try:
-                return team_obj.loss_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "loss_score"):
+            return team_obj.loss_score
         return self.calculate_loss_score(team, team_obj)
 
     def calculate_loss_score(self, team, team_obj):
@@ -137,11 +134,8 @@ class Scorer:
         return team_obj.loss_score
 
     def get_results_based_score(self, team, team_obj, season_days, days_left):
-        if self.tracker:
-            try:
-                return team_obj.resume_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "results_based_score"):
+            return team_obj.results_based_score
         return self.calculate_results_based_score(team, team_obj, season_days, days_left)
 
     def calculate_results_based_score(self, team, team_obj, season_days, days_left):
@@ -159,11 +153,8 @@ class Scorer:
     #calculate score for a team's NET rank  (scale: 1.000 = 1, 0.000 = 60)
     #param team: Team object to calculate score for
     def get_NET_score(self, team, team_obj, simmed_kenpoms, net_estimates):
-        if self.tracker:
-            try:
-                return team_obj.NET_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "NET_score"):
+            return team_obj.NET_score
         return self.calculate_NET_score(team, team_obj, simmed_kenpoms, net_estimates)
 
     def calculate_NET_score(self, team, team_obj, simmed_kenpoms, net_estimates):
@@ -178,11 +169,8 @@ class Scorer:
     #calculate score for a team's predictive rating (scale: 1.000 = 1, 0.000 = 60)
     #param team: Team object to calculate score for
     def get_power_score(self, team, team_obj, simmed_kenpoms):
-        if self.tracker:
-            try:
-                return team_obj.power_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "power_score"):
+            return team_obj.power_score
         return self.calculate_power_score(team, team_obj, simmed_kenpoms)
 
     def calculate_power_score(self, team, team_obj, simmed_kenpoms):
@@ -195,11 +183,8 @@ class Scorer:
     #calculate score for a team's record in quadrant 1 (scale: 0.800 = 1, 0.000 = .000)
     #param team: Team object to calculate score for
     def get_Q1_score(self, team, team_obj, simmed_kenpoms, net_estimates):
-        if self.tracker:
-            try:
-                return team_obj.Q1_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "Q1_score"):
+            return team_obj.Q1_score
         return self.calculate_Q1_score(team, team_obj, simmed_kenpoms, net_estimates)
 
     def calculate_Q1_score(self, team, team_obj, simmed_kenpoms, net_estimates):
@@ -218,10 +203,7 @@ class Scorer:
                 else:
                     losses += 1
             for game in team_obj.future_games:
-                try:
-                    opp_NET = net_estimates[game['opponent']]
-                except KeyError: #Until New Haven makes the NET
-                    opp_NET = 365
+                opp_NET = net_estimates[game['opponent']]
                 game_quad = self.get_quadrant(opp_NET, game['location'])
                 win_prob = self.get_win_prob(self.team_kenpoms[team]["rating"], self.team_kenpoms[game['opponent']]["rating"], game['location'])
                 if game_quad == 1:
@@ -257,11 +239,8 @@ class Scorer:
     #calculate score for a team's record in quadrant 2 (scale: 1.000 = 1, 0.000 = .500)
     #param team: Team object to calculate score for
     def get_Q2_score(self, team, team_obj, simmed_kenpoms, net_estimates):
-        if self.tracker:
-            try:
-                return team_obj.Q2_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "Q2_score"):
+            return team_obj.Q2_score
         return self.calculate_Q2_score(team, team_obj, simmed_kenpoms, net_estimates)
 
     def calculate_Q2_score(self, team, team_obj, simmed_kenpoms, net_estimates):
@@ -281,10 +260,7 @@ class Scorer:
                     if game_quad >= 2:
                         losses += 1
             for game in team_obj.future_games:
-                try:
-                    opp_NET = net_estimates[game['opponent']]
-                except KeyError: #Until New Haven makes the NET
-                    opp_NET = 365
+                opp_NET = net_estimates[game['opponent']]
                 game_quad = self.get_quadrant(opp_NET, game['location'])
                 win_prob = self.get_win_prob(self.team_kenpoms[team]["rating"], self.team_kenpoms[game['opponent']]["rating"], game['location'])
                 if game_quad <= 2:
@@ -322,11 +298,8 @@ class Scorer:
     #calculate score for a team's record in quadrant 3 (scale: 1.000 = 1, 0.000 = .800)
     #param team: Team object to calculate score for
     def get_Q3_score(self, team, team_obj, simmed_kenpoms, net_estimates):
-        if self.tracker:
-            try:
-                return team_obj.Q3_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "Q3_score"):
+            return team_obj.Q3_score
         return self.calculate_Q3_score(team, team_obj, simmed_kenpoms, net_estimates)
 
     def calculate_Q3_score(self, team, team_obj, simmed_kenpoms, net_estimates):
@@ -346,10 +319,7 @@ class Scorer:
                     if game_quad >= 3:
                         losses += 1
             for game in team_obj.future_games:
-                try:
-                    opp_NET = net_estimates[game['opponent']]
-                except KeyError: #Until New Haven makes the NET
-                    opp_NET = 365
+                opp_NET = net_estimates[game['opponent']]
                 game_quad = self.get_quadrant(opp_NET, game['location'])
                 win_prob = self.get_win_prob(self.team_kenpoms[team]["rating"], self.team_kenpoms[game['opponent']]["rating"], game['location'])
                 if game_quad <= 3:
@@ -388,11 +358,8 @@ class Scorer:
     #calculate score for a team's record in quadrant 4 (scale: 1.000 = 1, 0.000 = .950)
     #param team: Team object to calculate score for
     def get_Q4_score(self, team, team_obj, simmed_kenpoms, net_estimates):
-        if self.tracker:
-            try:
-                return team_obj.Q4_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "Q4_score"):
+            return team_obj.Q4_score
         return self.calculate_Q4_score(team, team_obj, simmed_kenpoms, net_estimates)
 
     def calculate_Q4_score(self, team, team_obj, simmed_kenpoms, net_estimates):
@@ -411,10 +378,7 @@ class Scorer:
                     if game_quad == 4:
                         losses += 1
             for game in team_obj.future_games:
-                try:
-                    opp_NET = net_estimates[game['opponent']]
-                except KeyError: #Until New Haven makes the NET
-                    opp_NET = 365
+                opp_NET = net_estimates[game['opponent']]
                 game_quad = self.get_quadrant(opp_NET, game['location'])
                 win_prob = self.get_win_prob(self.team_kenpoms[team]["rating"], self.team_kenpoms[game['opponent']]["rating"], game['location'])
                 wins += win_prob
@@ -455,11 +419,8 @@ class Scorer:
         #sliding scale. #1-#50: full win. #51-#99: decreases win count by 0.02 for each rank down.
     #param team: Team object to calculate score for
     def get_road_score(self, team, team_obj, simmed_kenpoms, net_estimates):
-        if self.tracker:
-            try:
-                return team_obj.road_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "road_score"):
+            return team_obj.road_score
         return self.calculate_road_score(team, team_obj, simmed_kenpoms, net_estimates)
 
     def calculate_road_score(self, team, team_obj, simmed_kenpoms, net_estimates):
@@ -508,11 +469,8 @@ class Scorer:
         #also, sliding penalty for conference tournament games. this is done for accuracy, not cause I like it.
     #param team: Team object to calculate score for
     def get_neutral_score(self, team, team_obj, simmed_kenpoms, net_estimates):
-        if self.tracker:
-            try:
-                return team_obj.neutral_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "neutral_score"):
+            return team_obj.neutral_score
         return self.calculate_neutral_score(team, team_obj, simmed_kenpoms, net_estimates)
 
     def calculate_neutral_score(self, team, team_obj, simmed_kenpoms, net_estimates):
@@ -573,11 +531,8 @@ class Scorer:
         #also, sliding penalty for conference tournament games. this is done for accuracy, not cause I like it.
     #param team: Team object to calculate score for
     def get_top10_score(self, team, team_obj, simmed_kenpoms, net_estimates):
-        if self.tracker:
-            try:
-                return team_obj.top10_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "top10_score"):
+            return team_obj.top10_score
         return self.calculate_top10_score(team, team_obj, simmed_kenpoms, net_estimates)
 
     def calculate_top10_score(self, team, team_obj, simmed_kenpoms, net_estimates):
@@ -600,10 +555,7 @@ class Scorer:
                     elif opp_NET <= 15:
                         top_10_wins += conf_tourn_multiplier * (15 - opp_NET)/10
             for game in team_obj.future_games:
-                try:
-                    opp_NET = net_estimates[game['opponent']]
-                except KeyError: #Until New Haven makes the NET
-                    opp_NET = 365
+                opp_NET = net_estimates[game['opponent']]
                 win_prob = self.get_win_prob(self.team_kenpoms[team]["rating"], self.team_kenpoms[game['opponent']]["rating"], game['location'])
                 if opp_NET <= 5:
                     top_10_wins += win_prob
@@ -641,11 +593,8 @@ class Scorer:
         #also, sliding penalty for conference tournament games. this is done for accuracy, not cause I like it.
     #param team: Team object to calculate score for
     def get_top25_score(self, team, team_obj, simmed_kenpoms, net_estimates):
-        if self.tracker:
-            try:
-                return team_obj.top25_score
-            except AttributeError:
-                pass
+        if hasattr(team_obj, "top25_score"):
+            return team_obj.top25_score
         return self.calculate_top25_score(team, team_obj, simmed_kenpoms, net_estimates)
 
     def calculate_top25_score(self, team, team_obj, simmed_kenpoms, net_estimates):
@@ -679,10 +628,7 @@ class Scorer:
                         elif opp_NET <= 45:
                             top_25_wins += conf_tourn_multiplier * (45 - opp_NET)/10
             for game in team_obj.future_games:
-                try:
-                    opp_NET = net_estimates[game['opponent']]
-                except KeyError: #Until New Haven makes the NET
-                    opp_NET = 365
+                opp_NET = net_estimates[game['opponent']]
                 win_prob = self.get_win_prob(self.team_kenpoms[team]["rating"], self.team_kenpoms[game['opponent']]["rating"], game['location'])
                 if game['location'] == "H":
                     if opp_NET <= 10:
@@ -787,10 +733,7 @@ class Scorer:
                     elif opp_NET > 175:
                         awful_losses += (opp_NET - 175)/50
             for game in team_obj.future_games:
-                try:
-                    opp_NET = net_estimates[game['opponent']]
-                except KeyError: #Until New Haven makes the NET
-                    opp_NET = 365
+                opp_NET = net_estimates[game['opponent']]
                 win_prob = self.get_win_prob(self.team_kenpoms[team]["rating"], self.team_kenpoms[game['opponent']]["rating"], game['location'])
                 if opp_NET > 225:
                     awful_losses += (1 - win_prob)
@@ -840,10 +783,7 @@ class Scorer:
                     if game_quad > 1:
                         bad_losses += 1
             for game in team_obj.future_games:
-                try:
-                    opp_NET = net_estimates[game['opponent']]
-                except KeyError: #Until New Haven makes the NET
-                    opp_NET = 365
+                opp_NET = net_estimates[game['opponent']]
                 game_quad = self.get_quadrant(opp_NET, game['location'])
                 win_prob = self.get_win_prob(self.team_kenpoms[team]["rating"], self.team_kenpoms[game['opponent']]["rating"], game['location'])
                 if game_quad >= 2:
@@ -913,6 +853,179 @@ class Scorer:
         NET_estimate = (NET_weight*curr_NET) + (1 - NET_weight)*curr_KenPom
         return NET_estimate
 
+    def get_conf_tourn_multiplier(self, game):
+        conf_tourn_multiplier = 1
+        date_info = game.date.split('-')
+        date_month, date_num = int(date_info[0]), int(date_info[1])
+        if date_month == 3:
+            if date_num > SELECTION_SUNDAY_DATES[self.year] - 7:
+                conf_tourn_multiplier = (SELECTION_SUNDAY_DATES[self.year] - date_num)/7
+        return conf_tourn_multiplier
+
+    def score_quadrants_win(self, data_repo, increment, game_quad):
+        if game_quad <= 4:
+            data_repo["Q4"]["wins"] += increment
+            if game_quad <= 3:
+                data_repo["Q3"]["wins"] += increment
+                if game_quad <= 2:
+                    data_repo["Q2"]["wins"] += increment
+                    if game_quad == 1:
+                        data_repo["Q1"]["wins"] += increment
+
+    def score_quadrants_loss(self, data_repo, increment, game_quad):
+        data_repo["Q1"]["losses"] += 1
+        if game_quad >= 2:
+            data_repo["Q2"]["losses"] += 1
+            if game_quad >= 3:
+                data_repo["Q3"]["losses"] += 1
+                if game_quad == 4:
+                    data_repo["Q4"]["losses"] += 1
+
+    def score_location_win(self, data_repo, increment, opp_NET, location):
+        if location == "A":
+            if opp_NET <= 50:
+                data_repo["road"]["good_road_wins"] += increment
+            elif opp_NET <= 100:
+                data_repo["road"]["good_road_wins"] += increment * (100 - opp_NET)/50
+        elif location == "N":
+            if opp_NET <= 50:
+                data_repo["neutral"]["good_neutral_wins"] += increment
+            elif opp_NET <= 100:
+                data_repo["neutral"]["good_neutral_wins"] += increment * (100 - opp_NET)/50
+
+    def score_rank_win(self, data_repo, increment, opp_NET, location):
+        if opp_NET <= 5:
+            data_repo["top10"]["wins"] += increment
+        elif opp_NET <= 15:
+            data_repo["top10"]["wins"] += increment * (15 - opp_NET)/10
+
+        if location == "H":
+            if opp_NET <= 10:
+                data_repo["top25"]["wins"] += increment
+            elif opp_NET <= 20:
+                data_repo["top25"]["wins"] += increment * (20 - opp_NET)/10
+        elif location == "N":
+            if opp_NET <= 20:
+                data_repo["top25"]["wins"] += increment
+            elif opp_NET <= 30:
+                data_repo["top25"]["wins"] += increment * (30 - opp_NET)/10
+        elif location == "A":
+            if opp_NET <= 35:
+                data_repo["top25"]["wins"] += increment
+            elif opp_NET <= 45:
+                data_repo["top25"]["wins"] += increment * (45 - opp_NET)/10
+
+    def score_bad_loss(self, data_repo, increment, opp_NET, game_quad):
+        if game_quad >= 2:
+            data_repo["bad_loss"]["losses"] += increment
+        if opp_NET > 225:
+            data_repo["awful_loss"]["losses"] += increment
+        elif opp_NET > 175:
+            data_repo["awful_loss"]["losses"] += increment * (opp_NET - 175)/50
+
+    #iterate over game object once
+    def score_games(self, team, team_obj, net_estimates):
+        data_repo = {
+            "Q1": {"wins": 0, "losses": 0},
+            "Q2": {"wins": 0, "losses": 0},
+            "Q3": {"wins": 0, "losses": 0},
+            "Q4": {"wins": 0, "losses": 0},
+            "road": {"good_road_wins": 0},
+            "neutral": {"good_neutral_wins": 0},
+            "top10": {"wins": 0},
+            "top25": {"wins": 0},
+            "awful_loss": {"losses": 0},
+            "bad_loss": {"losses": 0},
+        }
+        if self.future and not self.monte_carlo:
+            for game in team_obj.games:
+                if "Non Div I" in game.opponent:
+                    opp_NET = 365
+                else:
+                    opp_NET = net_estimates[game.opponent]
+                game_quad = self.get_quadrant(opp_NET, game.location)
+                
+                if game.win:
+                    conf_tourn_multiplier = self.get_conf_tourn_multiplier(game)
+                    
+                    self.score_quadrants_win(data_repo, 1, game_quad)
+                    self.score_location_win(data_repo, conf_tourn_multiplier, opp_NET, game.location)
+                    self.score_rank_win(data_repo, conf_tourn_multiplier, opp_NET, game.location)
+                    
+                else:
+                    self.score_quadrants_loss(data_repo, 1, game_quad)
+                    self.score_bad_loss(data_repo, 1, opp_NET, game_quad)
+            
+            for game in team_obj.future_games:
+                try:
+                    opp_NET = net_estimates[game['opponent']]
+                except KeyError: #For teams new to Div I
+                    opp_NET = 365
+                game_quad = self.get_quadrant(opp_NET, game['location'])
+                win_prob = self.get_win_prob(self.team_kenpoms[team]["rating"], self.team_kenpoms[game['opponent']]["rating"], game['location'])
+                
+                self.score_quadrants_win(data_repo, win_prob, game_quad)
+                self.score_quadrants_loss(data_repo, 1 - win_prob, game_quad)
+                self.score_location_win(data_repo, win_prob, opp_NET, game['location'])
+                self.score_rank_win(data_repo, win_prob, opp_NET, game['location'])
+                self.score_bad_loss(data_repo, 1 - win_prob, opp_NET, game_quad)
+        
+        else:
+            for game in team_obj.games:
+                if "Non Div I" in game.opponent:
+                    opp_NET = 365
+                    game_quad = 4
+                else:
+                    if self.monte_carlo:
+                        opp_NET = net_estimates[game.opponent]
+                    else:
+                        opp_NET = self.teams[game.opponent].NET
+                    game_quad = self.get_quadrant(opp_NET, game.location)
+                
+                if game.win:
+                    conf_tourn_multiplier = self.get_conf_tourn_multiplier(game)
+                    
+                    self.score_quadrants_win(data_repo, 1, game_quad)
+                    self.score_location_win(data_repo, conf_tourn_multiplier, opp_NET, game.location)
+                    self.score_rank_win(data_repo, conf_tourn_multiplier, opp_NET, game.location)
+
+                else:
+                    self.score_quadrants_loss(data_repo, 1, game_quad)
+                    self.score_bad_loss(data_repo, 1, opp_NET, game_quad)
+        try:
+            q1_pct = data_repo["Q1"]["wins"]/(data_repo["Q1"]["wins"] + data_repo["Q1"]["losses"])
+        except ZeroDivisionError:
+            q1_pct = 0
+        team_obj.Q1_score = q1_pct/0.8
+
+        try:
+            q2_pct = data_repo["Q2"]["wins"]/(data_repo["Q2"]["wins"] + data_repo["Q2"]["losses"])
+        except ZeroDivisionError:
+            q2_pct = 0
+        team_obj.Q2_score = (q2_pct-0.5)/0.5
+
+        try:
+            q3_pct = data_repo["Q3"]["wins"]/(data_repo["Q3"]["wins"] + data_repo["Q3"]["losses"])
+        except ZeroDivisionError:
+            q3_pct = 0
+        team_obj.Q3_score = (q3_pct-0.8)/0.2
+            
+        try:
+            q4_pct = data_repo["Q4"]["wins"]/(data_repo["Q4"]["wins"] + data_repo["Q4"]["losses"])
+        except ZeroDivisionError:
+            q4_pct = 0
+        if q4_pct >= 0.95:
+            team_obj.Q4_score = (q4_pct-0.95)/0.05
+        else:   #limit how bad multiple Q4 losses can hurt you
+            team_obj.Q4_score = (q4_pct-0.95)/0.3
+            
+        team_obj.road_score = data_repo["road"]["good_road_wins"]/5
+        team_obj.neutral_score = data_repo["neutral"]["good_neutral_wins"]/5
+        team_obj.top10_score = data_repo["top10"]["wins"]/3
+        team_obj.top25_score = data_repo["top25"]["wins"]/5
+        team_obj.awful_loss_score = (1 - data_repo["awful_loss"]["losses"])
+        team_obj.bad_loss_score = (1 - data_repo["bad_loss"]["losses"]/5)
+
     #calculate resume score for all teams
     def build_scores(self, WEIGHTS, simmed_kenpoms=dict()):
         net_estimates = dict()
@@ -929,20 +1042,23 @@ class Scorer:
                 print("Scoring", team)
             team_obj = self.teams[team]
             score = 0
+            self.score_games(team, team_obj, net_estimates)
+            
             score += WEIGHTS["LOSS_WEIGHT"]*self.get_loss_score(team, team_obj)
             score += WEIGHTS["NET_WEIGHT"]*self.get_NET_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["POWER_WEIGHT"]*self.get_power_score(team, team_obj, simmed_kenpoms)
+            score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(team, team_obj, season_days, days_left)
+            score += WEIGHTS["SOS_WEIGHT"]*self.get_SOS_score(team, team_obj)
+            score += WEIGHTS["NONCON_SOS_WEIGHT"]*self.get_NCSOS_score(team, team_obj)
+
             score += WEIGHTS["Q1_WEIGHT"]*self.get_Q1_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["Q2_WEIGHT"]*self.get_Q2_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["Q3_WEIGHT"]*self.get_Q3_score(team, team_obj, simmed_kenpoms, net_estimates)
-            score += WEIGHTS["RESULTS_BASED_WEIGHT"]*self.get_results_based_score(team, team_obj, season_days, days_left)
             score += WEIGHTS["Q4_WEIGHT"]*self.get_Q4_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["ROAD_WEIGHT"]*self.get_road_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["NEUTRAL_WEIGHT"]*self.get_neutral_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["TOP_10_WEIGHT"]*self.get_top10_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["TOP_25_WEIGHT"]*self.get_top25_score(team, team_obj, simmed_kenpoms, net_estimates)
-            score += WEIGHTS["SOS_WEIGHT"]*self.get_SOS_score(team, team_obj)
-            score += WEIGHTS["NONCON_SOS_WEIGHT"]*self.get_NCSOS_score(team, team_obj)
             score += WEIGHTS["AWFUL_LOSS_WEIGHT"]*self.get_awful_loss_score(team, team_obj, simmed_kenpoms, net_estimates)
             score += WEIGHTS["BAD_LOSS_WEIGHT"]*self.get_bad_loss_score(team, team_obj, simmed_kenpoms, net_estimates)
             self.teams[team].score = score

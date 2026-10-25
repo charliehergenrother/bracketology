@@ -4,7 +4,8 @@ from itertools import permutations
 from datetime import date
 import math
 
-AUTO_MAXES = {"2020": 32, "2021": 31, "2022": 32, "2023": 32, "2024": 32, "2025": 31, "2026": 31}
+AUTO_MAXES = {"2020": 32, "2021": 31, "2022": 32, "2023": 32, "2024": 32, "2025": 31, "2026": 31, "2027": 32}
+NUMBER_TEAMS = {"2020": 68, "2021": 68, "2022": 68, "2023": 68, "2024": 68, "2025": 68, "2026": 76, "2027": 76}
 TEAM_COORDINATES_FILE = "lib/team_locations.txt"
 
 #class to build a bracket from resume ratings of college basketball teams
@@ -39,19 +40,14 @@ class Builder:
         bubble_count = 0
         bubble_string = "BUBBLE: \n"
         AUTO_MAX = AUTO_MAXES[self.year]
-        AT_LARGE_MAX = 68 - AUTO_MAX
+        AT_LARGE_MAX = NUMBER_TEAMS[self.year] - AUTO_MAX
         
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
-            if team == "New-Haven":
-                continue
             at_large_bid = False
             if team in self.ineligible_teams:
                 continue
             if team in self.eliminated_teams or (self.conference_winners[self.teams[team].conference] and \
                     self.conference_winners[self.teams[team].conference] != team):
-                #teams under .500 are ineligible for at-large bids
-                if self.teams[team].record_pct < 0.5 and not self.future:
-                    continue
                 if at_large_bids < AT_LARGE_MAX:
                     at_large_bids += 1
                     at_large_bid = True
@@ -82,21 +78,21 @@ class Builder:
             if not self.monte_carlo:
                 print("(" + str(curr_seed) + ") " + self.teams[team].team_out, end="")
             if at_large_bid:
-                if at_large_bids >= AT_LARGE_MAX - 3:
+                if at_large_bids >= AT_LARGE_MAX - 11:
                     if (AT_LARGE_MAX - at_large_bids) % 2 == 1:
                         curr_seed_max += 1
-                    bubble_string += (self.teams[team].team_out + " - Last Four In\n")
+                    bubble_string += (self.teams[team].team_out + " - Play-In Game\n")
                     if not self.monte_carlo:
-                        print(" - Last Four In")
-                elif at_large_bids >= AT_LARGE_MAX - 7:
-                    bubble_string += (self.teams[team].team_out + " - Last Four Byes\n")
-                    if not self.monte_carlo:
-                        print(" - Last Four Byes")
+                        print(" - Play-In Game")
                 else:
                     if not self.monte_carlo:
                         print()
-            elif not self.monte_carlo:
-                print("*")
+            else:
+                if auto_bids >= AUTO_MAX - 12:
+                    if (AUTO_MAX - auto_bids) % 2 == 1:
+                        curr_seed_max += 1
+                if not self.monte_carlo:
+                    print("*")
             if num_curr_seed == curr_seed_max and curr_seed < 16:
                 curr_seed += 1
                 num_curr_seed = 1
@@ -208,14 +204,20 @@ class Builder:
                     continue
             except AttributeError:      #there are two teams from this conference in the play-ins
                 continue
-            game_count = 0
-            for game in self.teams[test_team].games:
-                if game.opponent == team:
-                    game_count += 1
-            if self.future:
-                for game in self.teams[test_team].future_games:
-                    if game['opponent'] == team:
+            if (team, test_team) in self.head_to_head:
+                game_count = self.head_to_head[(team, test_team)]
+            elif (test_team, team) in self.head_to_head:
+                game_count = self.head_to_head[(test_team, team)]
+            else:
+                game_count = 0
+                for game in self.teams[test_team].games:
+                    if game.opponent == team:
                         game_count += 1
+                if self.future:
+                    for game in self.teams[test_team].future_games:
+                        if game['opponent'] == team:
+                            game_count += 1
+
             if self.teams[test_team].seed + seed_num == 17: #first round matchup
                 if self.verbose:
                     print("teams are meeting too early in this region", region_num, team, test_team)
@@ -427,47 +429,75 @@ class Builder:
         for region in self.regions:
             del region["score"]
 
-    #create matchups for the two play-in games. avoid matching up two teams from a conference if possible
-    #param teams: a list of four team names in the play-in
+    def teams_played(self, team_1, team_2):
+        for game in self.teams[team_1].games:
+            if game.opponent == team_2:
+                return True
+        if self.future:
+            for game in self.teams[team_1].future_games:
+                if game['opponent'] == team_2:
+                    return True
+        return False
+
+    #create matchups for the play-in games. avoid matching up two teams from a conference if possible
+    #param teams: a list of twelve team names in the play-in
     def get_play_in_matchups(self, teams):
-        if self.teams[teams[0]].conference == self.teams[teams[1]].conference or \
-            self.teams[teams[2]].conference == self.teams[teams[3]].conference:
-            teams[1], teams[2] = teams[2], teams[1]
-        return [[teams[0], teams[1]], [teams[2], teams[3]]]
+        index = 0
+        times_through = 0
+        while index < 11:
+            times_through += 1
+            if times_through > 100: #we tried
+                break
+            if self.teams_played(teams[index], teams[index+1]):
+                matchup_found = False
+                for recurse_index in range(index + 2, 12):
+                    matchup_index = recurse_index - 1 if recurse_index % 2 else recurse_index + 1
+                    if not self.teams_played(teams[index], teams[recurse_index]) and \
+                        not self.teams_played(teams[index+1], teams[matchup_index]):
+                        if self.verbose:
+                            print("switching", teams[index+1], teams[recurse_index])
+                        teams[index+1], teams[recurse_index] = teams[recurse_index], teams[index+1]
+                        index += 2
+                        matchup_found = True
+                        break
+                if not matchup_found:
+                    for recurse_index in range(index - 1, -1, -1):
+                        matchup_index = recurse_index - 1 if recurse_index % 2 else recurse_index + 1
+                        if not self.teams_played(teams[index], teams[recurse_index]) and \
+                            not self.teams_played(teams[index+1], teams[matchup_index]):
+                            if self.verbose:
+                                print("switching", teams[index+1], teams[recurse_index])
+                            teams[index+1], teams[recurse_index] = teams[recurse_index], teams[index+1]
+                            index += 2
+                            break
+            else:
+                index += 2
+        return [[teams[0], teams[1]], [teams[2], teams[3]],
+                [teams[4], teams[5]], [teams[6], teams[7]],
+                [teams[8], teams[9]], [teams[10], teams[11]]]
     
     #find play-in teams a spot in the bracket and place them there
     #param teams: a list of four team names in the play-in
     #param seeds: the four seeds these teams will receive
     def place_play_in(self, teams, seeds):
         matchups = self.get_play_in_matchups(teams)
-        matchup_1 = '/'.join(matchups[0])
-        matchup_2 = '/'.join(matchups[1])
+        save_teams = list()
 
-        region_order = self.get_region_order(matchups[0][0], seeds[0])
-        save_team_1, region_num = self.find_team_spot(matchup_1, \
-                self.get_region_num(seeds[0], region_order[0], region_order), seeds[0],\
+        for index, matchup in enumerate(matchups):
+            matchup_teams = '/'.join(matchup)
+            region_order = self.get_region_order(matchup[0], seeds[index*2])
+            save_team, region_num = self.find_team_spot(matchup_teams, \
+                self.get_region_num(seeds[index*2], region_order[0], region_order), seeds[index*2],\
                 region_order, True)
-        if region_num != -1:
-            self.place_team(region_num, seeds[0], matchup_1)
-            if self.verbose:
-                print("Placed (" + str(seeds[0]) + ") " + matchup_1 + \
-                    ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
+            if region_num != -1:
+                self.place_team(region_num, seeds[index*2], matchup_teams)
+                if self.verbose:
+                    print("Placed (" + str(seeds[index*2]) + ") " + matchup_teams + \
+                        ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
+            else:
+                save_teams.append(save_team)
 
-        region_order = self.get_region_order(matchups[1][0], seeds[2])
-        save_team_2, region_num = self.find_team_spot(matchup_2, \
-                self.get_region_num(seeds[2], region_order[0], region_order), seeds[2], \
-                region_order, True)
-        if region_num != -1:
-            self.place_team(region_num, seeds[2], matchup_2)
-            if self.verbose:
-                print("Placed (" + str(seeds[2]) + ") " + matchup_2 + \
-                    ": region (" + str(region_num) + ") " + self.region_num_to_name[region_num])
-                print()
-        if len(save_team_1) and len(save_team_2):
-            return tuple([save_team_1, save_team_2])
-        if len(save_team_1):
-            return save_team_1
-        return save_team_2
+        return save_teams
 
     def replace_from_sites(self, seed_num, sites):
         for team in sites:
@@ -702,7 +732,23 @@ class Builder:
                 self.region_num_to_name[region_num] = site_name
                 if self.verbose:
                     print(site_name, "chosen for", region_num)
+                return
+
+        #only regional left is ineligible
+        for site_name in self.region_rankings[team]:
+            if site_name not in self.region_name_to_num:
+                open_site = site_name
                 break
+        for switch_index in range(2, -1, -1):
+            switch_site = self.region_num_to_name[switch_index]
+            if team not in self.ineligible_sites[switch_site]:
+                self.region_name_to_num[switch_site] = 3
+                self.region_name_to_num[open_site] = switch_index
+                self.region_num_to_name[3] = switch_site
+                self.region_num_to_name[switch_index] = open_site
+                if self.verbose:
+                    print(site_name, "chosen for", region_num)
+                return
     
     #choose a first weekend site that a #1-#4 seed will be the highest-seeded team at
     def choose_first_weekend(self, team, region_num, seed_num, team_index):
@@ -790,7 +836,7 @@ class Builder:
         saved_teams = list()
         self.seed_list = list()
         AUTO_MAX = AUTO_MAXES[self.year]
-        AT_LARGE_MAX = 68 - AUTO_MAX
+        AT_LARGE_MAX = NUMBER_TEAMS[self.year] - AUTO_MAX
 
         #traverse seed list, placing teams in bracket as you go
         sorted_teams = sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True)
@@ -816,7 +862,12 @@ class Builder:
                 for seed in at_large_play_in_seeds:
                     if seed == seed_num:
                         play_in_count += 1
+                for seed in auto_play_in_seeds:
+                    if seed == seed_num:
+                        play_in_count += 1
                 if self.teams[team].at_large_bid and (not saved_teams or saved_teams[0][0] != team):
+                    seed_count += play_in_count // 2
+                elif self.teams[team].auto_bid and seed_num > 14 and (not saved_teams or saved_teams[0][0] != team):
                     seed_count += play_in_count // 2
                 else:
                     seed_count += (play_in_count + 1) // 2
@@ -864,7 +915,7 @@ class Builder:
                     self.place_team(region_num, seed_num, team)
                 continue
             #save play-in teams to be placed all together
-            elif self.teams[team].at_large_bid and at_large_count >= AT_LARGE_MAX - 4 and (not placing_saved_team):
+            elif self.teams[team].at_large_bid and at_large_count >= AT_LARGE_MAX - 12 and (not placing_saved_team):
                 self.save_play_in_team(at_large_play_in_teams, at_large_play_in_seeds, team, seed_num)
                 if at_large_count == AT_LARGE_MAX - 1:
                     #print("placing", at_large_play_in_teams, at_large_play_in_seeds)
@@ -872,18 +923,15 @@ class Builder:
                     if len(save_team):
                         if self.verbose:
                             print("problems with", save_team, self.regions)
-                        if type(save_team) == tuple:    #couldn't place either play-in matchup in the bracket
-                            saved_teams.append(save_team[0])
-                            saved_teams.append(save_team[1])
-                        else:
-                            saved_teams.append(save_team)
+                        for failed_team in save_team:
+                            saved_teams.append(failed_team)
                     at_large_play_in_teams = list()
                     at_large_play_in_seeds = list()
                 at_large_count += 1
                 team_index += 1
                 continue
             
-            elif self.teams[team].auto_bid and auto_count >= AUTO_MAX - 4:
+            elif self.teams[team].auto_bid and auto_count >= AUTO_MAX - 12:
                 self.save_play_in_team(auto_play_in_teams, auto_play_in_seeds, team, seed_num)
                 if auto_count == AUTO_MAX - 1:
                     self.place_play_in(auto_play_in_teams, auto_play_in_seeds)
@@ -1076,29 +1124,32 @@ class Builder:
         f.write('<div class="bubble_container table_container">\n')
         f.write('  <table class="bubble_table">\n')
         f.write('    <tbody>\n')
-        f.write('      <tr class="gray_row bubble_row"><td><h4>Last Four Byes</h4></td>')
+        f.write('      <tr class="gray_row bubble_row"><td><h4>Play-In Games</h4></td>')
         at_large_counter = 0
         bubble_counter = 0
-        AT_LARGE_MAX = 68 - AUTO_MAXES[self.year]
+        AT_LARGE_MAX = NUMBER_TEAMS[self.year] - AUTO_MAXES[self.year]
         for team in sorted(self.teams, key=lambda x: self.teams[x].score, reverse=True):
             if self.teams[team].at_large_bid:
                 at_large_counter += 1
-                if at_large_counter > AT_LARGE_MAX - 8:
+                if at_large_counter > AT_LARGE_MAX - 12:
                     f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="' + \
                             team_pages_path + '/' + team + '.html">' + self.get_team_out(team) + '</a> (' + self.teams[team].record + ')</td>')
+                    if at_large_counter == AT_LARGE_MAX - 8:
+                        f.write('</tr>\n')
+                        f.write('      <tr class="bubble_row"><td><h4>Play-In Games</h4></td>')
                     if at_large_counter == AT_LARGE_MAX - 4:
                         f.write('</tr>\n')
-                        f.write('      <tr class="bubble_row"><td><h4>Last Four In</h4></td>')
+                        f.write('      <tr class="gray_row bubble_row"><td><h4>Play-In Games</h4></td>')
                     elif at_large_counter == AT_LARGE_MAX:
                         f.write('</tr>\n')
-                        f.write('      <tr class="gray_row bubble_row"><td><h4>First Four Out</h4></td>')
+                        f.write('      <tr class="bubble_row"><td><h4>First Four Out</h4></td>')
             elif not self.teams[team].auto_bid and team not in self.ineligible_teams:
                 bubble_counter += 1
                 f.write('<td><img class="team_logo" src=assets/' + team + '.png></img></td><td><a href="' + \
                         team_pages_path + '/' + team + '.html">' + self.get_team_out(team) + '</a> (' + self.teams[team].record + ')</td>')
                 if bubble_counter == 4:
                     f.write('</tr>\n')
-                    f.write('      <tr class="bubble_row"><td><h4>Next Four Out</h4></td>')
+                    f.write('      <tr class="gray_row bubble_row"><td><h4>Next Four Out</h4></td>')
                 elif bubble_counter == 8:
                     f.write('</tr>\n')
                     break

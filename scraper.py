@@ -16,13 +16,14 @@ import subprocess
 import numpy
 
 SCRAPE_DATE_FILE = "scrapedate.txt"
-TEAM_MEN_URL_START = "https://www.warrennolan.com/basketball/2026/team-clubhouse?team="
-TEAM_WOMEN_URL_START = "https://www.warrennolan.com/basketballw/2026/team-clubhouse?team="
+TEAM_MEN_URL_START = "https://www.warrennolan.com/basketball/2027/team-clubhouse?team="
+TEAM_WOMEN_URL_START = "https://www.warrennolan.com/basketballw/2027/team-clubhouse?team="
 
 reverse_team_dict = dict()
 
 #for use when outputting resumes in "Q1 Wins" column
 better_team_abbrs = {
+        "Ohio-State": "OSU",
         "Montana-State": "MTST",
         "Arkansas-State": "ARST",
         "Fairfield": "FFLD",
@@ -32,7 +33,6 @@ better_team_abbrs = {
         "UC-Irvine": "UCI",
         "San-Diego-State": "SDSU", 
         "Kansas-State": "KSU",
-        "Ohio-State": "OSU",
         "Oklahoma-State": "OKST",
         "Oregon-State": "ORST",
         "Michigan-State": "MSU",
@@ -661,7 +661,7 @@ class Scraper:
 
 #accept command line arguments
 def process_args():
-    year = "2026"
+    year = "2027"
     argindex = 1
     outputfile = ""
     resumefile = ""
@@ -798,6 +798,10 @@ def simulate_one_tournament_game(team1, team2, team_kenpoms, scorer, results):
     return winner
 
 def simulate_tournament(builder, team_kenpoms, scorer, results=dict()):
+    if builder.mens:
+        real_winners = {0: []}
+    else:
+        real_winners = {0: []} 
     winners = list()
     for region_num in [0, 3, 1, 2]:
         for seed in [1, 8, 5, 4, 6, 3, 7, 2]:
@@ -815,13 +819,47 @@ def simulate_tournament(builder, team_kenpoms, scorer, results=dict()):
                 results['teams'][team_2.split("/")[1]]['ncaa_round'] = 0
             #if "/" not in team_1 and "/" not in team_2:
                 #print(seed, team_1, team_kenpoms[team_1], 'vs.', 17-seed, team_2, team_kenpoms[team_2], end=": ")
-            winners.append(simulate_one_tournament_game(team_1, team_2, team_kenpoms, scorer, results))
+            if team_1 in real_winners[0]:
+                winners.append(team_1)
+            elif team_2 in real_winners[0]:
+                winners.append(team_2)
+            else:
+                winners.append(simulate_one_tournament_game(team_1, team_2, team_kenpoms, scorer, results))
             results['teams'][winners[-1]]['ncaa_round'] = 2
             #print(winners[-1])
     index = 0
     while index + 1 < len(winners):
         #print(winners[index], team_kenpoms[winners[index]], 'vs.', winners[index + 1], team_kenpoms[winners[index + 1]], end=": ")
-        winners.append(simulate_one_tournament_game(winners[index], winners[index + 1], team_kenpoms, scorer, results))
+        if len(winners) < 48 and 1 in real_winners:
+            if winners[index] in real_winners[1]:
+                winners.append(winners[index])
+            elif winners[index + 1] in real_winners[1]:
+                winners.append(winners[index + 1])
+            else:
+                winners.append(simulate_one_tournament_game(winners[index], winners[index + 1], team_kenpoms, scorer, results))
+        elif len(winners) < 56 and 2 in real_winners:
+            if winners[index] in real_winners[2]:
+                winners.append(winners[index])
+            elif winners[index + 1] in real_winners[2]:
+                winners.append(winners[index + 1])
+            else:
+                winners.append(simulate_one_tournament_game(winners[index], winners[index + 1], team_kenpoms, scorer, results)) 
+        elif len(winners) < 60 and 3 in real_winners:
+            if winners[index] in real_winners[3]:
+                winners.append(winners[index])
+            elif winners[index + 1] in real_winners[3]:
+                winners.append(winners[index + 1])
+            else:
+                winners.append(simulate_one_tournament_game(winners[index], winners[index + 1], team_kenpoms, scorer, results)) 
+        elif len(winners) < 62 and 4 in real_winners:
+            if winners[index] in real_winners[4]:
+                winners.append(winners[index])
+            elif winners[index + 1] in real_winners[4]:
+                winners.append(winners[index + 1])
+            else:
+                winners.append(simulate_one_tournament_game(winners[index], winners[index + 1], team_kenpoms, scorer, results)) 
+        else:
+            winners.append(simulate_one_tournament_game(winners[index], winners[index + 1], team_kenpoms, scorer, results)) 
         if len(winners) == 63:
             results['teams'][winners[-1]]['ncaa_round'] = 7
         elif len(winners) >= 61:
@@ -850,7 +888,7 @@ def record_vs_range(team, group):
     except ZeroDivisionError: # shouldn't happen, but need it while data isn't perfect
         return 0
 
-def break_tie(teams, win_dict, scorer, simmed_kenpoms):
+def break_tie(teams, win_dict, scorer, simmed_kenpoms, season_days, days_left):
     return_order = list()
 
     tied_teams = [x["name"] for x in teams]
@@ -867,7 +905,7 @@ def break_tie(teams, win_dict, scorer, simmed_kenpoms):
     if len(win_pcts) == 1:
         return_order.append(sorted_teams[0])
     elif len(win_pcts) != len(teams):
-        return_order += break_tie(sorted_teams, win_dict, scorer, simmed_kenpoms)
+        return_order += break_tie(sorted_teams, win_dict, scorer, simmed_kenpoms, season_days, days_left)
         sorted_teams = list()
     else:
         teams_needing_tiebreak = sorted_teams
@@ -885,86 +923,21 @@ def break_tie(teams, win_dict, scorer, simmed_kenpoms):
                 return_order.append(sorted_teams[0])
                 break
             elif len(win_pcts) != len(teams_needing_tiebreak):
-                return_order += break_tie(sorted_teams, win_dict, scorer, simmed_kenpoms)
+                return_order += break_tie(sorted_teams, win_dict, scorer, simmed_kenpoms, season_days, days_left)
                 sorted_teams = list()
                 break
             else:
                 continue
     if len(sorted_teams) > 1: #recursed all the way down the seed list, no way to break tie
-        sorted_teams.sort(key=lambda x: scorer.get_NET_estimate(scorer.teams[x["name"]].NET, simmed_kenpoms[x["name"]]["rank"]), reverse=True)
+        sorted_teams.sort(key=lambda x: scorer.get_NET_estimate(scorer.teams[x["name"]].NET, simmed_kenpoms[x["name"]]["rank"], season_days, days_left), reverse=True)
         return_order += sorted_teams
     return return_order
 
-SET_BRACKETS = {
-        "ACC": ["Duke", "Virginia", "Miami-FL", "North-Carolina", "Clemson", "Louisville", "North-Carolina-State", "Florida-State", "California", "Stanford", "SMU", "Virginia-Tech", "Wake-Forest", "Syracuse", "Pittsburgh"],
-        "America East": ["UMBC", "Vermont", "NJIT", "UMass-Lowell", "Albany", "Maine", "Bryant", "New-Hampshire"],
-        "American": ["South-Florida", "Wichita-State", "Tulsa", "UAB", "Charlotte", "North-Texas", "FAU", "Memphis", "Tulane", "Temple"],
-        "ASUN": ["Central-Arkansas", "Austin-Peay", "Queens", "Lipscomb", "FGCU", "West-Georgia", "Eastern-Kentucky", "Bellarmine", "Jacksonville", "Stetson", "North-Florida", "North-Alabama"],
-        "Atlantic 10": ["Saint-Louis", "VCU", "Saint-Josephs", "Dayton", "George-Mason", "Davidson", "Duquesne", "Fordham", "George-Washington", "Rhode-Island", "Richmond", "La-Salle", "Saint-Bonaventure", "Loyola-Chicago"],
-        "Big 12": ["Arizona", "Houston", "Kansas", "Texas-Tech", "Iowa-State", "TCU", "West-Virginia", "UCF", "Cincinnati", "BYU", "Colorado", "Arizona-State", "Baylor", "Oklahoma-State", "Kansas-State", "Utah"],
-        "Big East": ["Saint-Johns", "Connecticut", "Villanova", "Seton-Hall", "Creighton", "DePaul", "Marquette", "Butler", "Providence", "Xavier", "Georgetown"],
-        "Big Sky": ["Portland-State", "Montana-State", "Eastern-Washington", "Montana", "Northern-Colorado", "Weber-State", "Idaho", "Sacramento-State", "Idaho-State", "Northern-Arizona"],
-        "Big South": ["High-Point", "Winthrop", "Radford", "UNC-Asheville", "Longwood", "Presbyterian-College", "Charleston-Southern", "South-Carolina-Upstate", "Gardner-Webb"],
-        "Big Ten": ["Michigan", "Nebraska", "Michigan-State", "Illinois", "Wisconsin", "UCLA", "Purdue", "Ohio-State", "Iowa", "Indiana", "Minnesota", "Washington", "USC", "Rutgers", "Northwestern", "Oregon", "Maryland", "Penn-State"],
-        "Big West": ["UC-Irvine", "Hawaii", "Cal-State-Fullerton", "Cal-State-Northridge", "UC-San-Diego", "UC-Davis", "UC-Santa-Barbara", "Cal-Poly"],
-        "Coastal Athletic": ["UNCW", "Charleston", "Hofstra", "Monmouth", "Drexel", "William-Mary", "Towson", "Stony-Brook", "Campbell", "Hampton", "Elon", "North-Carolina-AT", "Northeastern"],
-        "Conference USA": ["Liberty", "Sam-Houston-State", "Western-Kentucky", "Louisiana-Tech", "Middle-Tennessee", "Kennesaw-State", "Jacksonville-State", "FIU", "Missouri-State", "New-Mexico-State"],
-        "Horizon League": ["Wright-State", "Robert-Morris", "Detroit", "Oakland", "Green-Bay", "Purdue-Fort-Wayne", "Northern-Kentucky", "Milwaukee", "Youngstown-State", "Cleveland-State", "IU-Indianapolis"],
-        "Ivy League": ["Yale", "Harvard", "Penn", "Cornell"],
-        "MAAC": ["Merrimack", "Saint-Peters", "Siena", "Quinnipiac", "Marist", "Mount-Saint-Marys", "Fairfield", "Iona", "Sacred-Heart", "Manhattan"],
-        "MEAC": ["Howard", "Morgan-State", "North-Carolina-Central", "Norfolk-State", "South-Carolina-State", "Maryland-Eastern-Shore", "Delaware-State"],
-        "Mid-American": ["Miami-OH", "Akron", "Kent-State", "Toledo", "Bowling-Green", "Ohio", "Buffalo", "UMass"],
-        "Missouri Valley": ["Belmont", "Bradley", "Illinois-State", "Murray-State", "UIC", "Northern-Iowa", "Valparaiso", "Southern-Illinois", "Drake", "Indiana-State", "Evansville"],
-        "Mountain West": ["Utah-State", "San-Diego-State", "New-Mexico", "Grand-Canyon", "Nevada", "Boise-State", "Colorado-State", "UNLV", "Wyoming", "Fresno-State", "San-Jose-State", "Air-Force"],
-        "NEC": ["Long-Island", "Central-Connecticut", "Mercyhurst", "Le-Moyne", "Stonehill", "Fairleigh-Dickinson", "Wagner", "Chicago-State"],
-        "Ohio Valley": ["Tennessee-State", "Morehead-State", "Southeast-Missouri", "Tennessee-Martin", "SIUE", "Lindenwood", "Little-Rock", "Eastern-Illinois"],
-        "Patriot League": ["Navy", "Lehigh", "Colgate", "Boston-University", "American", "Loyola-Maryland", "Lafayette", "Bucknell", "Army", "Holy-Cross"],
-        "SEC": ["Florida", "Alabama", "Arkansas", "Vanderbilt", "Tennessee", "Texas-AM", "Georgia", "Missouri", "Kentucky", "Texas", "Oklahoma", "Auburn", "Mississippi-State", "South-Carolina", "Ole-Miss", "LSU"],
-        "Southern": ["East-Tennessee-State", "Wofford", "Samford", "Mercer", "Western-Carolina", "Furman", "UNCG", "Chattanooga", "The-Citadel", "VMI"],
-        "Southland": ["Stephen-F-Austin", "McNeese", "UTRGV", "Texas-AM-Corpus-Christi", "New-Orleans", "Nicholls", "Northwestern-State", "Houston-Christian"],
-        "Sun Belt": ["Troy", "Marshall", "Coastal-Carolina", "Appalachian-State", "Texas-State", "South-Alabama", "Arkansas-State", "Southern-Miss", "James-Madison", "Georgia-Southern", "Old-Dominion", "Louisiana", "Georgia-State", "ULM"],
-        "SWAC": ["Bethune-Cookman", "Florida-AM", "Southern", "Texas-Southern", "Alabama-AM", "Arkansas-Pine-Bluff", "Jackson-State", "Prairie-View-AM", "Grambling-State", "Alabama-State", "Alcorn-State", "Mississippi-Valley-State"],
-        "The Summit League": ["North-Dakota-State", "Saint-Thomas", "North-Dakota", "South-Dakota", "Omaha", "Denver", "South-Dakota-State", "Oral-Roberts", "UMKC"],
-        "West Coast": ["Gonzaga", "Saint-Marys-College", "Santa-Clara", "Oregon-State", "San-Francisco", "Pacific", "Seattle-University", "Washington-State", "Portland", "Loyola-Marymount", "San-Diego", "Pepperdine"],
-        "Western Athletic": ["Utah-Valley", "California-Baptist", "Utah-Tech", "UTA", "Southern-Utah", "Abilene-Christian", "Tarleton-State"]
-    }
+#FORMAT: "Western Athletic": ["California-Baptist", "Abilene-Christian", "Southern-Utah", "Utah-Valley", "Tarleton-State", "UTA", "Utah-Tech"]
+SET_BRACKETS = {}
+SET_BRACKETS_W = {}
 
-SET_BRACKETS_W = {
-        "ACC": ["Duke", "Louisville", "North-Carolina", "North-Carolina-State", "Notre-Dame", "Virginia-Tech", "Syracuse", "Virginia", "Clemson", "California", "Georgia-Tech", "Miami-FL", "Stanford", "Florida-State", "Wake-Forest"],
-        "America East": ["Vermont", "Maine", "Binghamton", "UMBC", "NJIT", "Bryant", "New-Hampshire", "Albany"],
-        "American": ["Rice", "East-Carolina", "South-Florida", "Tulsa", "North-Texas", "UTSA", "Temple", "Charlotte", "FAU", "Tulane"],
-        "ASUN": ["Eastern-Kentucky", "Jacksonville", "Central-Arkansas", "Stetson", "FGCU", "North-Alabama", "West-Georgia", "Austin-Peay", "Lipscomb", "North-Florida", "Queens", "Bellarmine"],
-        "Atlantic 10": ["Rhode-Island", "George-Mason", "Richmond", "Davidson", "Saint-Josephs", "La-Salle", "Dayton", "Loyola-Chicago", "Saint-Bonaventure", "George-Washington", "Saint-Louis", "Duquesne", "VCU", "Fordham"],
-        "Big 12": ["TCU", "West-Virginia", "Baylor", "Oklahoma-State", "Texas-Tech", "Colorado", "Iowa-State", "Utah", "BYU", "Arizona-State", "Kansas", "Kansas-State", "Cincinnati", "UCF", "Arizona", "Houston"],
-        "Big East": ["Connecticut", "Villanova", "Seton-Hall", "Marquette", "Creighton", "Saint-Johns", "Providence", "Butler", "Georgetown", "DePaul", "Xavier"],
-        "Big Sky": ["Idaho", "Montana-State", "Northern-Colorado", "Idaho-State", "Sacramento-State", "Eastern-Washington", "Northern-Arizona", "Montana", "Weber-State", "Portland-State"],
-        "Big South": ["High-Point", "Radford", "Longwood", "Gardner-Webb", "Winthrop", "UNC-Asheville", "Charleston-Southern", "South-Carolina-Upstate", "Presbyterian-College"],
-        "Big Ten": ["UCLA", "Iowa", "Michigan", "Minnesota", "Ohio-State", "Maryland", "Michigan-State", "Washington", "USC", "Illinois", "Oregon", "Nebraska", "Indiana", "Purdue", "Wisconsin"],
-        "Big West": ["UC-Irvine", "UC-San-Diego", "UC-Davis", "Hawaii", "Cal-State-Fullerton", "UC-Santa-Barbara", "UC-Riverside", "Cal-State-Northridge"],
-        "Coastal Athletic": ["Charleston", "Campbell", "Drexel", "Stony-Brook", "Monmouth", "Elon", "Towson", "William-Mary", "North-Carolina-AT", "Hofstra", "Hampton", "Northeastern", "UNCW" ],
-        "Conference USA": ["Louisiana-Tech", "FIU", "Middle-Tennessee", "Sam-Houston-State", "Liberty", "Missouri-State", "Jacksonville-State", "Delaware", "Kennesaw-State", "UTEP"],
-        "Horizon League": ["Green-Bay", "Youngstown-State", "Cleveland-State", "Northern-Kentucky", "Purdue-Fort-Wayne", "Robert-Morris", "IU-Indianapolis", "Oakland", "Wright-State", "Milwaukee", "Detroit"],
-        "Ivy League": ["Princeton", "Columbia", "Harvard", "Brown"],
-        "MAAC": ["Quinnipiac", "Fairfield", "Merrimack", "Iona", "Siena", "Mount-Saint-Marys", "Sacred-Heart", "Manhattan", "Marist", "Saint-Peters"],
-        "MEAC": ["Howard", "Maryland-Eastern-Shore", "Norfolk-State", "Coppin-State", "North-Carolina-Central", "Morgan-State", "Delaware-State", "South-Carolina-State"],
-        "Mid-American": ["Miami-OH", "Ball-State", "UMass", "Central-Michigan", "Ohio", "Toledo", "Bowling-Green", "Kent-State"],
-        "Missouri Valley": ["Murray-State", "Belmont", "Illinois-State", "Northern-Iowa", "Bradley", "Drake", "UIC", "Southern-Illinois", "Indiana-State", "Evansville", "Valparaiso"],
-        "Mountain West": ["San-Diego-State", "UNLV", "Colorado-State", "New-Mexico", "Boise-State", "Grand-Canyon", "Fresno-State", "Wyoming", "Air-Force", "Nevada", "Utah-State", "San-Jose-State"],
-        "NEC": ["Fairleigh-Dickinson", "Mercyhurst", "Long-Island", "Wagner", "Le-Moyne", "Chicago-State", "Stonehill", "Saint-Francis-PA"],
-        "Ohio Valley": ["Western-Illinois", "Lindenwood", "Southern-Indiana", "Morehead-State", "Little-Rock", "Tennessee-Martin", "SIUE", "Southeast-Missouri"],
-        "Patriot League": ["Navy", "Holy-Cross", "Army", "Lehigh", "Loyola-Maryland", "Lafayette", "Bucknell", "Boston-University", "American", "Colgate"],
-        "SEC": ["South-Carolina", "Vanderbilt", "Texas", "LSU", "Oklahoma", "Tennessee", "Ole-Miss", "Georgia", "Kentucky", "Texas-AM", "Alabama", "Florida", "Mississippi-State", "Missouri", "Auburn", "Arkansas"],
-        "Southern": ["Chattanooga", "East-Tennessee-State", "Wofford", "Furman", "Mercer", "Samford", "UNCG", "Western-Carolina"],
-        "Southland": ["McNeese", "Lamar", "Stephen-F-Austin", "UTRGV", "Northwestern-State", "Incarnate-Word", "Nicholls", "East-Texas-AM"],
-        "Sun Belt": ["Georgia-Southern", "Troy", "Arkansas-State", "James-Madison", "Marshall", "Old-Dominion", "Southern-Miss", "Texas-State", "Coastal-Carolina", "ULM", "Georgia-State", "South-Alabama", "Appalachian-State", "Louisiana" ],
-        "SWAC": ["Alabama-AM", "Alcorn-State", "Alabama-State", "Southern", "Jackson-State", "Grambling-State", "Arkansas-Pine-Bluff", "Florida-AM", "Mississippi-Valley-State", "Texas-Southern", "Bethune-Cookman", "Prairie-View-AM"],
-        "The Summit League": ["North-Dakota-State", "South-Dakota-State", "South-Dakota", "Oral-Roberts", "Saint-Thomas", "Denver", "UMKC", "Omaha", "North-Dakota"],
-        "West Coast": ["Loyola-Marymount", "Gonzaga", "Santa-Clara", "Oregon-State", "Portland", "Pepperdine", "San-Francisco", "Pacific", "Washington-State", "Saint-Marys-College", "San-Diego", "Seattle-University"],
-        "Western Athletic": ["California-Baptist", "Abilene-Christian", "Southern-Utah", "Utah-Valley", "Tarleton-State", "UTA", "Utah-Tech"]
-}
-
-
-def get_seeds(mens, conference, teams, scorer, simmed_kenpoms):
+def get_seeds(mens, conference, teams, scorer, simmed_kenpoms, season_days, days_left):
     seed_list = list()
     if mens:
         if conference in SET_BRACKETS:
@@ -993,80 +966,16 @@ def get_seeds(mens, conference, teams, scorer, simmed_kenpoms):
         if len(win_dict[win_amount]) == 1:
             seed_list.append(win_dict[win_amount][0])
         else:
-            broken_tie_order = break_tie(win_dict[win_amount], win_dict, scorer, simmed_kenpoms)
+            broken_tie_order = break_tie(win_dict[win_amount], win_dict, scorer, simmed_kenpoms, season_days, days_left)
             for team in broken_tie_order:
                 seed_list.append(team)
     return seed_list
 
-BRACKET_RESULTS = {
-        "ACC": {0: ["Pittsburgh", "SMU", "Wake-Forest"], 1: ["North-Carolina-State", "Louisville", "Florida-State", "Clemson"], 2: ["Virginia", "Miami-FL", "Duke", "Clemson"], 3: ["Virginia", "Duke"], 4: ["Duke"]},
-        "America East": {0: ["UMBC", "UMass-Lowell", "Vermont", "NJIT"], 1: ["UMBC", "Vermont"], 2: ["UMBC"]},
-        "American": {0: ["Tulane", "FAU"], 1: ["Charlotte", "North-Texas"], 2: ["Charlotte", "Tulsa"], 3: ["South-Florida", "Wichita-State"]},
-        "ASUN": {0: ["Bellarmine", "FGCU", "Stetson", "West-Georgia"], 1: ["Central-Arkansas", "FGCU", "Austin-Peay", "Queens"], 2: ["Central-Arkansas", "Queens"], 3: ["Queens"]},
-        "Atlantic 10": {0: ["Saint-Bonaventure", "Loyola-Chicago"], 1: ["George-Washington", "Saint-Bonaventure", "Duquesne", "Davidson"], 2: ["Saint-Louis", "Dayton", "VCU", "Saint-Josephs"], 3: ["Dayton", "VCU"]},
-        "Big 12": {0: ["Arizona-State", "Cincinnati", "BYU", "Oklahoma-State"], 1: ["Iowa-State", "UCF", "BYU", "TCU"], 2: ["Iowa-State", "Arizona", "Houston", "Kansas"], 3: ["Arizona", "Houston"], 4: ["Arizona"]},
-        "Big East": {0: ["Providence", "Xavier", "Georgetown"], 1: ["Saint-Johns", "Seton-Hall", "Connecticut", "Georgetown"], 2: ["Saint-Johns", "Connecticut"], 3: ["Saint-Johns"]},
-        "Big Sky": {0: ["Idaho-State", "Idaho"], 1: ["Portland-State", "Idaho", "Montana", "Eastern-Washington"], 2: ["Montana", "Idaho"], 3: ["Idaho"]},
-        "Big South": {0: ["Gardner-Webb"], 1: ["High-Point", "Winthrop", "UNC-Asheville", "Presbyterian-College"], 2: ["High-Point", "Winthrop"], 3: ["High-Point"]},
-        "Big Ten": {0: ["Maryland", "Northwestern"], 1: ["Iowa", "Washington", "Northwestern", "Rutgers"], 2: ["Ohio-State", "Wisconsin", "Purdue", "UCLA"], 3: ["Michigan", "Wisconsin", "Purdue", "UCLA"], 4: ["Michigan", "Purdue"]},
-        "Big West": {0: ["UC-San-Diego", "UC-Davis"], 1: ["Cal-State-Northridge", "Cal-State-Fullerton"], 2: ["UC-Irvine", "Hawaii"], 3: ["Hawaii"]},
-        "Coastal Athletic": {0: ["Northeastern"], 1: ["Campbell", "Drexel", "Towson", "William-Mary"], 2: ["Campbell", "Monmouth", "Towson", "Hofstra"], 3: ["Monmouth", "Hofstra"], 4: ["Hofstra"]},
-        "Conference USA": {0: ["Missouri-State", "New-Mexico-State"], 1: ["Missouri-State", "Sam-Houston-State", "Louisiana-Tech", "Kennesaw-State"], 2: ["Louisiana-Tech", "Kennesaw-State"], 3: ["Kennesaw-State"]},
-        "Horizon League": {0: ["Cleveland-State"], 1: ["Green-Bay", "Detroit", "Northern-Kentucky", "Robert-Morris", "Wright-State"], 2: ["Northern-Kentucky"], 3: ["Wright-State", "Detroit"], 4: ["Wright-State"]},
-        "Ivy League": {0: ["Yale", "Penn"], 1: ["Penn"]},
-        "MAAC": {0: ["Sacred-Heart", "Fairfield"], 1: ["Merrimack", "Fairfield", "Marist", "Siena"], 2: ["Merrimack", "Siena"], 3: ["Siena"]},
-        "MEAC": {0: ["Delaware-State", "South-Carolina-State", "North-Carolina-Central"], 1: ["Howard", "North-Carolina-Central"], 2: ["Howard"]},
-        "Mid-American": {0: ["UMass", "Toledo", "Akron", "Kent-State"], 1: ["Toledo", "Akron"], 2: ["Akron"]},
-        "Missouri Valley": {0: ["Drake", "Valparaiso", "Northern-Iowa"], 1: ["Drake", "UIC", "Bradley", "Northern-Iowa"], 2: ["UIC", "Northern-Iowa"], 3: ["Northern-Iowa"]},
-        "Mountain West": {0: ["UNLV", "Nevada", "Colorado-State", "San-Jose-State"], 1: ["Utah-State", "Nevada", "San-Diego-State", "New-Mexico"], 2: ["Utah-State", "San-Diego-State"], 3: ["Utah-State"]},
-        "NEC": {0: ["Wagner", "Long-Island", "Mercyhurst", "Stonehill"], 1: ["Long-Island", "Mercyhurst"], 2: ["Long-Island"]},
-        "Ohio Valley": {0: ["Eastern-Illinois", "Lindenwood"], 1: ["Tennessee-Martin", "Southeast-Missouri"], 2: ["Tennessee-State", "Morehead-State"], 3: ["Tennessee-State"]},
-        "Patriot League": {0: ["Holy-Cross", "Bucknell"], 1: ["Boston-University", "Colgate", "Lehigh", "Navy"], 2: ["Lehigh", "Boston-University"], 3: ["Lehigh"]},
-        "SEC": {0: ["Kentucky", "Auburn", "Ole-Miss", "Oklahoma"], 1: ["Kentucky", "Tennessee", "Ole-Miss", "Oklahoma"], 2: ["Florida", "Vanderbilt", "Ole-Miss", "Arkansas"], 3: ["Vanderbilt", "Arkansas"]},
-        "Southern": {0: ["UNCG", "The-Citadel"], 1: ["East-Tennessee-State", "UNCG", "Furman", "Western-Carolina"], 2: ["Furman", "East-Tennessee-State"], 3: ["Furman"]},
-        "Southland": {0: ["New-Orleans", "Nicholls"], 1: ["Texas-AM-Corpus-Christi", "UTRGV"], 2: ["Stephen-F-Austin", "McNeese"], 3: ["McNeese"]},
-        "Sun Belt": {0: ["Louisiana", "Old-Dominion"], 1: ["James-Madison", "Georgia-Southern"], 2: ["Southern-Miss", "Georgia-Southern"], 3: ["Southern-Miss", "Georgia-Southern"], 4: ["Southern-Miss", "Georgia-Southern"], 5: ["Troy", "Georgia-Southern"], 6: ["Troy"]},
-        "SWAC": {0: ["Alcorn-State", "Grambling-State"], 1: ["Prairie-View-AM", "Jackson-State"], 2: ["Prairie-View-AM", "Florida-AM", "Alabama-AM", "Southern"], 3: ["Prairie-View-AM", "Southern"], 4: ["Prairie-View-AM"]},
-        "The Summit League": {0: ["Oral-Roberts"], 1: ["North-Dakota-State", "Saint-Thomas", "Omaha", "North-Dakota"], 2: ["North-Dakota-State", "North-Dakota"], 3: ["North-Dakota-State"]},
-        "West Coast": {0: ["Portland", "San-Diego"], 1: ["Portland", "Seattle-University"], 2: ["San-Francisco", "Pacific"], 3: ["Oregon-State", "Santa-Clara"], 4: ["Gonzaga", "Santa-Clara"], 5: ["Gonzaga"]},
-        "Western Athletic": {0: ["Abilene-Christian"], 1: ["UTA", "Utah-Tech"], 2: ["Utah-Valley", "California-Baptist"], 3: ["California-Baptist"]}
-}
+#FORMAT: "Western Athletic": {0: ["Abilene-Christian"], 1: ["UTA", "Utah-Tech"], 2: ["Utah-Valley", "California-Baptist"], 3: ["California-Baptist"]}
+BRACKET_RESULTS = {}
+BRACKET_RESULTS_W = {}
 
-BRACKET_RESULTS_W = {
-        "ACC": {0: ["Miami-FL", "California", "Georgia-Tech"], 1: ["Notre-Dame", "Clemson", "Syracuse", "Virginia-Tech"], 2: ["Notre-Dame", "Duke", "Louisville", "North-Carolina"], 3: ["Duke", "Louisville"], 4: ["Duke"]},
-        "America East": {0: ["Maine", "Vermont", "Binghamton", "UMBC"], 1: ["Maine", "Vermont"], 2: ["Vermont"]},
-        "American": {0: ["FAU", "Temple"], 1: ["North-Texas", "UTSA"], 2: ["North-Texas", "UTSA"], 3: ["Rice", "UTSA"], 4: ["UTSA"]},
-        "ASUN": {0: ["Austin-Peay", "FGCU", "West-Georgia", "North-Alabama"], 1: ["Austin-Peay", "Stetson", "Jacksonville", "Central-Arkansas"], 2: ["Austin-Peay", "Jacksonville"], 3: ["Jacksonville"]},
-        "Atlantic 10": {0: ["Duquesne", "Saint-Louis"], 1: ["Loyola-Chicago", "Saint-Josephs", "Dayton", "La-Salle"], 2: ["Rhode-Island", "Davidson", "George-Mason", "Richmond"], 3: ["Rhode-Island", "George-Mason"], 4: ["Rhode-Island"]},
-        "Big 12": {0: ["Kansas-State", "BYU", "Arizona-State", "Kansas"], 1: ["Kansas-State", "BYU", "Arizona-State", "Colorado"], 2: ["Kansas-State", "TCU", "West-Virginia", "Colorado"], 3: ["TCU", "West-Virginia"], 4: ["West-Virginia"]},
-        "Big East": {0: ["Georgetown", "Providence", "Saint-Johns"], 1: ["Connecticut", "Creighton", "Villanova", "Seton-Hall"], 2: ["Connecticut", "Villanova"], 3: ["Connecticut"]},
-        "Big Sky": {0: ["Weber-State", "Montana"], 1: ["Idaho", "Montana-State", "Sacramento-State", "Eastern-Washington"], 2: ["Idaho", "Montana-State"], 3: ["Idaho"]},
-        "Big South": {0: ["South-Carolina-Upstate"], 1: ["High-Point", "Winthrop", "Radford", "Longwood"], 2: ["High-Point", "Radford"], 3: ["High-Point"]},
-        "Big Ten": {0: ["Indiana", "Illinois", "Oregon"], 1: ["Washington", "Ohio-State", "Illinois", "Oregon"], 2: ["UCLA", "Ohio-State", "Iowa", "Michigan"], 3: ["UCLA", "Iowa"], 4: ["UCLA"]},
-        "Big West": {0: ["Cal-State-Fullerton", "UC-Riverside"], 1: ["Hawaii", "UC-Davis"], 2: ["Hawaii", "UC-San-Diego"], 3: ["UC-San-Diego"]},
-        "Coastal Athletic": {0: ["UNCW"], 1: ["William-Mary", "Monmouth", "Hofstra", "Elon"], 2: ["Charleston", "Stony-Brook", "Hofstra", "Drexel"], 3: ["Charleston", "Hofstra"], 4: ["Charleston"]},
-        "Conference USA": {0: ["Delaware", "Jacksonville-State"], 1: ["Louisiana-Tech", "FIU", "Liberty", "Missouri-State"], 2: ["Louisiana-Tech", "Missouri-State"], 3: ["Missouri-State"]},
-        "Horizon League": {0: ["Detroit"], 1: ["Cleveland-State", "Youngstown-State", "Purdue-Fort-Wayne", "IU-Indianapolis", "Green-Bay"], 2: ["Purdue-Fort-Wayne"], 3: ["Green-Bay", "Youngstown-State"], 4: ["Green-Bay"]},
-        "Ivy League": {0: ["Princeton", "Harvard"], 1: ["Princeton"]},
-        "MAAC": {0: ["Manhattan", "Sacred-Heart"], 1: ["Quinnipiac", "Fairfield", "Iona", "Merrimack"], 2: ["Quinnipiac", "Fairfield"], 3: ["Fairfield"]},
-        "MEAC": {0: ["Howard", "Maryland-Eastern-Shore", "Coppin-State", "Norfolk-State"], 1: ["Howard", "Norfolk-State"], 2: ["Howard"]},
-        "Mid-American": {0: ["Miami-OH", "Ohio", "Ball-State", "Toledo"], 1: ["Miami-OH", "Toledo"], 2: ["Miami-OH"]},
-        "Missouri Valley": {0: ["Indiana-State", "Evansville", "Drake"], 1: ["Murray-State", "Northern-Iowa", "Evansville", "Illinois-State"], 2: ["Murray-State", "Evansville"], 3: ["Murray-State"]},
-        "Mountain West": {0: ["Air-Force", "Boise-State", "Fresno-State", "Grand-Canyon"], 1: ["Air-Force", "Boise-State", "UNLV", "Colorado-State"], 2: ["Air-Force", "Colorado-State"], 3: ["Colorado-State"]},
-        "NEC": {0: ["Mercyhurst", "Fairleigh-Dickinson", "Long-Island", "Le-Moyne"], 1: ["Fairleigh-Dickinson", "Long-Island"], 2: ["Fairleigh-Dickinson"]},
-        "Ohio Valley": {0: ["Southeast-Missouri", "SIUE"], 1: ["Southeast-Missouri", "Southern-Indiana"], 2: ["Western-Illinois", "Lindenwood"], 3: ["Western-Illinois"]},
-        "Patriot League": {0: ["Boston-University", "Colgate"], 1: ["Army", "Lehigh", "Holy-Cross", "Navy"], 2: ["Holy-Cross", "Lehigh"], 3: ["Holy-Cross"]},
-        "SEC": {0: ["Kentucky", "Florida", "Auburn", "Alabama"], 1: ["Kentucky", "Oklahoma", "Ole-Miss", "Alabama"], 2: ["South-Carolina", "LSU", "Ole-Miss", "Texas"], 3: ["South-Carolina", "Texas"], 4: ["Texas"]},
-        "Southern": {0: ["Chattanooga", "East-Tennessee-State", "Samford", "Furman"], 1: ["Chattanooga", "Samford"], 2: ["Samford"]},
-        "Southland": {0: ["Northwestern-State", "Nicholls"], 1: ["UTRGV", "Stephen-F-Austin"], 2: ["McNeese", "Stephen-F-Austin"], 3: ["Stephen-F-Austin"]},
-        "Sun Belt": {0: ["South-Alabama", "Louisiana"], 1: ["South-Alabama", "ULM"], 2: ["South-Alabama", "ULM"], 3: ["South-Alabama", "ULM"], 4: ["James-Madison", "Arkansas-State"], 5: ["James-Madison", "Troy"], 6: ["James-Madison"]},
-        "SWAC": {0: ["Bethune-Cookman", "Mississippi-Valley-State"], 1: ["Florida-AM", "Arkansas-Pine-Bluff"], 2: ["Alabama-AM", "Arkansas-Pine-Bluff", "Southern", "Alabama-State"], 3: ["Southern", "Alabama-State"], 4: ["Southern"]},
-        "The Summit League": {0: ["Omaha"], 1: ["South-Dakota-State", "North-Dakota-State", "Saint-Thomas", "South-Dakota"], 2: ["North-Dakota-State", "South-Dakota-State"], 3: ["South-Dakota-State"]},
-        "West Coast": {0: ["Washington-State", "San-Diego"], 1: ["Washington-State", "San-Francisco"], 2: ["Portland", "San-Francisco"], 3: ["Oregon-State", "Santa-Clara"], 4: ["Oregon-State", "Gonzaga"], 5: ["Gonzaga"]},
-        "Western Athletic": {0: ["UTA"], 1: ["Tarleton-State", "UTA"], 2: ["California-Baptist", "Abilene-Christian"], 3: ["California-Baptist"]}
-}
-
-def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
+def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results, season_days, days_left):
     conference_teams = dict()
     if builder.mens:
         bracket_results = BRACKET_RESULTS
@@ -1125,7 +1034,7 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
         #SET UP BRACKET WITH TEAMS
         seeds = []
         
-        seeded_teams = get_seeds(builder.mens, conference, conference_teams[conference], scorer, simmed_kenpoms)
+        seeded_teams = get_seeds(builder.mens, conference, conference_teams[conference], scorer, simmed_kenpoms, season_days, days_left)
         # Uncomment below to test for missing/extra games, etc
         #print(conference)
         for index, team in enumerate(seeded_teams):
@@ -1220,7 +1129,7 @@ def simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results):
     return conf_reg_winners
 
 #run one simulation of the rest of the college basketball season
-def simulate_games(scorer, builder, weights, simmed_kenpoms):
+def simulate_games(scorer, builder, weights, simmed_kenpoms, season_days, days_left):
     results = {'tournament': list(), 'final_four': list(), 'champion': list(), 'conference': dict(), 'teams': dict()}
     for conference in builder.conference_winners:
         results['conference'][conference] = list()
@@ -1288,7 +1197,7 @@ def simulate_games(scorer, builder, weights, simmed_kenpoms):
                 "ncaa_round": -1
             }
     
-    conf_reg_winners = simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results)
+    conf_reg_winners = simulate_conference_tournaments(scorer, builder, simmed_kenpoms, results, season_days, days_left)
     #print_Illinois(scorer, simmed_kenpoms)
     scorer.build_scores(weights, simmed_kenpoms)
     builder.select_seed_and_print_field()
@@ -1328,6 +1237,7 @@ def print_Illinois(scorer, team_kenpoms):
                 if scorer.teams[reverse_team_dict[game.opponent]].conference == "Big Ten":
                     conf_losses += 1
     print(str(wins) + "-" + str(losses) + " (" + str(conf_wins) + "-" + str(conf_losses) + ")")
+    print("Obj rec:", scorer.teams["Illinois"].record)
     print(team_kenpoms["Illinois"])
 
 def translate_team_sonny(team):
@@ -1806,12 +1716,39 @@ def print_bracket(winners, old_regions):
     print(regions[1][15].ljust(space) + myfirst + regions[3][15].rjust(space))
     print()
 
+def reset_team(scorer, team):
+    scorer.teams[team].games = set(scorer.teams[team].saved_games)
+    scorer.teams[team].future_games = list(scorer.teams[team].saved_future_games)
+    scorer.teams[team].at_large_bid = False
+    scorer.teams[team].auto_bid = False
+    scorer.teams[team].region = -1
+    scorer.teams[team].seed = -1
+    scorer.teams[team].conference_wins = 0
+    scorer.teams[team].conference_losses = 0
+    try:
+        del scorer.teams[team].loss_score
+    except AttributeError:
+        return
+    del scorer.teams[team].results_based_score
+    del scorer.teams[team].NET_score
+    del scorer.teams[team].power_score
+    del scorer.teams[team].Q1_score
+    del scorer.teams[team].Q2_score
+    del scorer.teams[team].Q3_score
+    del scorer.teams[team].Q4_score
+    del scorer.teams[team].road_score
+    del scorer.teams[team].neutral_score
+    del scorer.teams[team].top10_score
+    del scorer.teams[team].top25_score
+    del scorer.teams[team].awful_loss_score
+    del scorer.teams[team].bad_loss_score
+
 #run a monte carlo simulation of the remaining college basketball season
 def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfile, mc_output_html, tournament_selected):
     rng = numpy.random.default_rng()
     today_date = date.today()
-    selection_sunday = date(2026, 3, 15)
-    season_start = date(2025, 11, 3)
+    selection_sunday = date(2027, 3, 14)
+    season_start = date(2026, 11, 1)
     season_days = (selection_sunday - season_start).days
     if season_start > today_date:
         days_left = season_days
@@ -1853,23 +1790,23 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         #}
         team_results[team] = list()
     successful_runs = 0
+    simmed_kenpoms = dict()
     if tournament_selected:
-        simmed_kenpoms = dict()
         results = {"teams": dict()}
         all_results = dict()
         if builder.mens:
             builder.regions = {
                     0: {1: "Duke", 2: "Connecticut", 3: "Michigan-State", 4: "Kansas", 5: "Saint-Johns", 6: "Louisville", 7: "UCLA", 8: "Ohio-State", 9: "TCU", 10: "UCF", 11: "South-Florida", 12: "Northern-Iowa", 13: "California-Baptist", 14: "North-Dakota-State", 15: "Furman", 16: "Siena"},
-                    1: {1: "Arizona", 2: "Purdue", 3: "Gonzaga", 4: "Arkansas", 5: "Wisconsin", 6: "BYU", 7: "Miami-FL", 8: "Villanova", 9: "Utah-State", 10: "Missouri", 11: "Texas/North-Carolina-State", 12: "High-Point", 13: "Hawaii", 14: "Kennesaw-State", 15: "Queens", 16: "Long-Island"},
-                    2: {1: "Michigan", 2: "Iowa-State", 3: "Virginia", 4: "Alabama", 5: "Texas-Tech", 6: "Tennessee", 7: "Kentucky", 8: "Georgia", 9: "Saint-Louis", 10: "Santa-Clara", 11: "Miami-OH/SMU", 12: "Akron", 13: "Hofstra", 14: "Wright-State", 15: "Tennessee-State", 16: "UMBC/Howard"},
-                    3: {1: "Florida", 2: "Houston", 3: "Illinois", 4: "Nebraska", 5: "Vanderbilt", 6: "North-Carolina", 7: "Saint-Marys-College", 8: "Clemson", 9: "Iowa", 10: "Texas-AM", 11: "VCU", 12: "McNeese", 13: "Troy", 14: "Penn", 15: "Idaho", 16: "Prairie-View-AM/Lehigh"},
+                    1: {1: "Arizona", 2: "Purdue", 3: "Gonzaga", 4: "Arkansas", 5: "Wisconsin", 6: "BYU", 7: "Miami-FL", 8: "Villanova", 9: "Utah-State", 10: "Missouri", 11: "Texas", 12: "High-Point", 13: "Hawaii", 14: "Kennesaw-State", 15: "Queens", 16: "Long-Island"},
+                    2: {1: "Michigan", 2: "Iowa-State", 3: "Virginia", 4: "Alabama", 5: "Texas-Tech", 6: "Tennessee", 7: "Kentucky", 8: "Georgia", 9: "Saint-Louis", 10: "Santa-Clara", 11: "Miami-OH", 12: "Akron", 13: "Hofstra", 14: "Wright-State", 15: "Tennessee-State", 16: "Howard"},
+                    3: {1: "Florida", 2: "Houston", 3: "Illinois", 4: "Nebraska", 5: "Vanderbilt", 6: "North-Carolina", 7: "Saint-Marys-College", 8: "Clemson", 9: "Iowa", 10: "Texas-AM", 11: "VCU", 12: "McNeese", 13: "Troy", 14: "Penn", 15: "Idaho", 16: "Prairie-View-AM"},
             }
         else:
             builder.regions = {
                 0: {1: "Connecticut", 2: "Vanderbilt", 3: "Ohio-State", 4: "North-Carolina", 5: "Maryland", 6: "Notre-Dame", 7: "Illinois", 8: "Iowa-State", 9: "Syracuse", 10: "Colorado", 11: "Fairfield", 12: "Murray-State", 13: "Western-Illinois", 14: "Howard", 15: "High-Point", 16: "UTSA"},
-                1: {1: "UCLA", 2: "LSU", 3: "Duke", 4: "Minnesota", 5: "Ole-Miss", 6: "Baylor", 7: "Texas-Tech", 8: "Oklahoma-State", 9: "Princeton", 10: "Villanova", 11: "Nebraska/Richmond", 12: "Gonzaga", 13: "Green-Bay", 14: "Charleston", 15: "Jacksonville", 16: "California-Baptist"},
-                2: {1: "Texas", 2: "Michigan", 3: "Louisville", 4: "West-Virginia", 5: "Kentucky", 6: "Alabama", 7: "North-Carolina-State", 8: "Oregon", 9: "Virginia-Tech", 10: "Tennessee", 11: "Rhode-Island", 12: "James-Madison", 13: "Miami-OH", 14: "Vermont", 15: "Holy-Cross", 16: "Missouri-State/Stephen-F-Austin"},
-                3: {1: "South-Carolina", 2: "Iowa", 3: "TCU", 4: "Oklahoma", 5: "Michigan-State", 6: "Washington", 7: "Georgia", 8: "Clemson", 9: "USC", 10: "Virginia/Arizona-State", 11: "South-Dakota-State", 12: "Colorado-State", 13: "Idaho", 14: "UC-San-Diego", 15: "Fairleigh-Dickinson", 16: "Southern/Samford"},
+                1: {1: "UCLA", 2: "LSU", 3: "Duke", 4: "Minnesota", 5: "Ole-Miss", 6: "Baylor", 7: "Texas-Tech", 8: "Oklahoma-State", 9: "Princeton", 10: "Villanova", 11: "Nebraska", 12: "Gonzaga", 13: "Green-Bay", 14: "Charleston", 15: "Jacksonville", 16: "California-Baptist"},
+                2: {1: "Texas", 2: "Michigan", 3: "Louisville", 4: "West-Virginia", 5: "Kentucky", 6: "Alabama", 7: "North-Carolina-State", 8: "Oregon", 9: "Virginia-Tech", 10: "Tennessee", 11: "Rhode-Island", 12: "James-Madison", 13: "Miami-OH", 14: "Vermont", 15: "Holy-Cross", 16: "Missouri-State"},
+                3: {1: "South-Carolina", 2: "Iowa", 3: "TCU", 4: "Oklahoma", 5: "Michigan-State", 6: "Washington", 7: "Georgia", 8: "Clemson", 9: "USC", 10: "Virginia", 11: "South-Dakota-State", 12: "Colorado-State", 13: "Idaho", 14: "UC-San-Diego", 15: "Fairleigh-Dickinson", 16: "Southern"},
             }
         for region in builder.regions:
             for seed in builder.regions[region]:
@@ -1898,11 +1835,12 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
                             'championship': 0
                         }
         for i in range(simulations):
-            print("Running sim", i)
+            if not i % 10000:
+                print("Running sim", i)
             for team in results["teams"]:
                 simmed_kenpoms[team] = {"rating": rng.normal(scorer.team_kenpoms[team]["rating"], 0.8)}
             winners = simulate_tournament(builder, simmed_kenpoms, scorer, results)
-            print_bracket(winners, builder.regions)
+            #print_bracket(winners, builder.regions)
             for team in results["teams"]:
                 team_result = results["teams"][team]
                 for tourney_round in [('first_round', 1), ('second_round', 2), ('sweet_sixteen', 3), ('elite_eight', 4), ('final_four', 5), ('ncg', 6), ('championship', 7)]:
@@ -1944,14 +1882,7 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
     for i in range(simulations):
         print("Running sim", i)
         for team in scorer.teams:
-            scorer.teams[team].games = set(scorer.teams[team].saved_games)
-            scorer.teams[team].future_games = list(scorer.teams[team].saved_future_games)
-            scorer.teams[team].at_large_bid = False
-            scorer.teams[team].auto_bid = False
-            scorer.teams[team].region = -1
-            scorer.teams[team].seed = -1
-            scorer.teams[team].conference_wins = 0
-            scorer.teams[team].conference_losses = 0
+            reset_team(scorer, team)
             simmed_kenpoms[team] = {"rating": rng.normal(scorer.team_kenpoms[team]["rating"], 5.8639*days_left/season_days)}
         rank_counter = 1
         for team in sorted(simmed_kenpoms, key=lambda x: simmed_kenpoms[x]["rating"], reverse=True):
@@ -1959,12 +1890,13 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
             rank_counter += 1
         builder.first_weekend_sites = list(first_weekend_sites)
         builder.conference_winners = dict(conference_winners)
+        builder.head_to_head = dict()
         weights = dict()
         # vary weights a little bit
         for weight in base_weights:
             weights[weight] = random.uniform(0.8, 1.2)*base_weights[weight]
         try:
-            results = simulate_games(scorer, builder, weights, simmed_kenpoms)
+            results = simulate_games(scorer, builder, weights, simmed_kenpoms, season_days, days_left)
         except Exception as e:
             print(e)
             print("big ol failure, bummer boy")

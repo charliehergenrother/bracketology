@@ -391,7 +391,8 @@ class Scraper:
                                     game["time"] = game["time"].replace("PM", "AM")
                             else:   #game time TBA
                                 game["time"] = "0:00"
-                            schedule_games.append(game)
+                            if game["opponent"] != "":  # This seems to happen with non div 1 games sometimes
+                                schedule_games.append(game)
                         found_result = False
                         found_game = False
                     elif "team-schedule__result" in line:           # game is in the past
@@ -1319,6 +1320,7 @@ def translate_team_sonny(team):
             "Monmouth Nj": "Monmouth",
             "Florida Gulf Coast": "FGCU",
             "North Carolina Wilmington": "UNCW",
+            "New Orleans": "LSU-New-Orleans"
     }
     if team in translations:
         return translations[team]
@@ -1397,8 +1399,13 @@ def scrape_initial_kenpom(year, scorer):
                     team = line[4:32].strip().title()
                     team = translate_team_sonny(team)
                     rank = int(line[:3].strip())
-                    rating = float(line[54:].strip())
+                    try:
+                        rating = float(line[54:].strip())
+                    except ValueError:  #new team
+                        rating = 24.00
                     team_kenpoms[team] = {"rating": rating, "rank": rank}
+        if "Saint-Josephs" not in team_kenpoms: #Sonny forgot the Hawks
+            team_kenpoms["Saint-Josephs"] = {"rating": 50.00, "rank": 150}
     return team_kenpoms
 #{
         #   wins: X

@@ -59,6 +59,18 @@ class Team:
         game_line = 0
         self.games = set()
         non_di = False
+        #TODO fix when LSU NO's page is filled out
+        if not mens:
+            if team == "LSU-New-Orleans":
+                self.conference = "Southland"
+                self.team_out = "LSU New Orleans"
+                self.NET = 349
+                return
+            if team == "West-Florida":
+                self.conference = "ASUN"
+                self.team_out = "West Florida"
+                self.NET = 364
+                return
         for line in team_page.text.split("\n"):
             if "Non-Division I Games" in line:
                 non_di = True

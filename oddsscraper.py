@@ -5,7 +5,7 @@ ODDS_PATH = "/mnt/c/Users/charl/Downloads/"
 def do_fd_setup(oddsfile):
     f = open(oddsfile, "r")
     for line in f.read().split("\n"):
-        if "You need to enable" in line:
+        if "Championship Winner" in line:
             break
     odds_tables = line.replace(">", ">\n")
     return odds_tables
@@ -79,16 +79,16 @@ def scrape_fanduel_tournament():
 def scrape_fanduel():
     results = dict()
     results['championship'] = scrape_fanduel_main_list(ODDS_PATH + "fd champ")
-    results['final_four'] = scrape_fanduel_main_list(ODDS_PATH + "fd ff")
-    results['conference'] = scrape_fanduel_conference()
-    results['tournament'] = scrape_fanduel_tournament()
+    #results['final_four'] = scrape_fanduel_main_list(ODDS_PATH + "fd ff")
+    #results['conference'] = scrape_fanduel_conference()
+    #results['tournament'] = scrape_fanduel_tournament()
     return results
 
 def do_dk_setup(oddsfile):
     f = open(oddsfile, "r")
     for line in f:
-        if "Team to Reach" in line or "Men's NCAA Tournament Winner" in line \
-                or "Men's NCAAB Conference" in line or "Make the 2026 Men's" in line:
+        if "Team to Reach" in line or "Men's NCAA Basketball Champion" in line \
+                or "Men's CBB Regular Season Conference" in line or "Make the 2026 Men's" in line:
             break
     odds_tables = line.replace(">", ">\n")
     return odds_tables
@@ -131,16 +131,15 @@ def scrape_draftkings_tournament():
                 results[team]["N"] = -int(odds[1:])
     return results
 
-def scrape_draftkings_conference():
-    oddsfile = ODDS_PATH + "dk conf"
+def scrape_draftkings_conference(filename, results):
+    oddsfile = ODDS_PATH + filename
     found_team = False
     found_odds = False
     odds_tables = do_dk_setup(oddsfile)
-    results = dict()
     for line in odds_tables.split("\n"):
-        if " Regular Season Conference Winner" in line:
+        if " Regular Season Conference Winner" in line or " Regular Season Winner" in line:
             conference = line[:line.find(" Regular")]
-            results[conference] = dict()
+            results['conference'][conference] = dict()
         if "cb-market__button-title" in line:
             found_team = True
             continue
@@ -154,10 +153,9 @@ def scrape_draftkings_conference():
             odds = line[:line.find("</span>")]
             found_odds = False
             try:
-                results[conference][team] = int(odds)
+                results['conference'][conference][team] = int(odds)
             except ValueError:  #aren't em dashes fun
-                results[conference][team] = -int(odds[1:])
-    return results
+                results['conference'][conference][team] = -int(odds[1:])
 
 def scrape_draftkings_main_list(oddsfile):
     found_team = False
@@ -188,20 +186,22 @@ def scrape_draftkings():
     results = dict()
     results['championship'] = scrape_draftkings_main_list(ODDS_PATH + "dk champ")
     results['final_four'] = scrape_draftkings_main_list(ODDS_PATH + "dk ff")
-    results['conference'] = scrape_draftkings_conference()
-    results['tournament'] = scrape_draftkings_tournament()
+    results["conference"] = {}
+    scrape_draftkings_conference("dk conf1", results)
+    scrape_draftkings_conference("dk conf2", results)
+    scrape_draftkings_conference("dk conf3", results)
+    #results['tournament'] = scrape_draftkings_tournament()
     return results
 
 def do_caesars_setup(oddsfile):
-    f = open(oddsfile, "r")
-    for line in f.read().split("\n"):
-        if "2026 Mens NCAA" in line:
-            break
-    odds_tables = line.replace(">", ">\n")
     return odds_tables
 
 def scrape_caesars_main_list(oddsfile):
-    odds_tables = do_caesars_setup(oddsfile)
+    f = open(oddsfile, "r")
+    for line in f.read().split("\n"):
+        if "Champion" in line:
+            break
+    odds_tables = line.replace(">", ">\n")
     results = dict()
     found_team = False
     found_odds = False
@@ -251,15 +251,19 @@ def scrape_caesars_conference():
     oddsfile = ODDS_PATH + "cs conf"
     f = open(oddsfile, "r")
     for line in f.read().split("\n"):
-        if "Conference Winner" in line:
+        if "Conference Mens Regular Season" in line:
             break
     odds_tables = line.replace(">", ">\n")
     results = dict()
     found_team = False
     found_odds = False
     for line in odds_tables.split("\n"):
-        if "Conference Winner" in line and "Regular Season" not in line:
-            conference = line[:line.find(" Conference Winner</span>")]
+        if "Conference Mens Regular Season" in line:
+            conference = line[5:line.find(" Conference Mens Regular Season")]
+            results[conference] = dict()
+            continue
+        if " Mens Regular Season" in line:
+            conference = line[5:line.find(" Mens Regular Season")]
             results[conference] = dict()
             continue
         if "cui-text-ellipsis" in line:
@@ -269,7 +273,7 @@ def scrape_caesars_conference():
             team = line[:line.find(" </div>")]
             found_team = False
             continue
-        if "market-button-odds" in line:
+        if "market-button-odds" in line and team not in results[conference]:
             found_odds = True
             continue
         if found_odds:
@@ -303,11 +307,11 @@ def scrape_betmgm_main_list(oddsfile):
             team = line[:line.find("</div>")]
             found_team = False
             continue
-        if "custom-odds-value-style" in line:
+        if "fr-custom-style" in line:
             found_odds = True
             continue
         if found_odds:
-            odds = int(line[:line.find("</span>")])
+            odds = int(line[:line.find("</ms-font-resizer>")])
             results[team] = odds
             found_odds = False
             continue
@@ -336,6 +340,10 @@ def scrape_betmgm_conference():
             conference = line[9:line.find(" regular season winner")]
             results[conference] = dict()
             continue
+        if "Regular Season Winner" in line:
+            conference = line[9:line.find(" Regular Season Winner")]
+            results[conference] = dict()
+            continue
         if "name ng-star-inserted" in line:
             found_team = True
             continue
@@ -343,11 +351,11 @@ def scrape_betmgm_conference():
             team = line[:line.find("</div>")]
             found_team = False
             continue
-        if "custom-odds-value-style" in line:
+        if "fr-custom-style" in line:
             found_odds = True
             continue
         if found_odds:
-            odds = int(line[:line.find("</span>")])
+            odds = int(line[:line.find("</ms-font-resizer>")])
             results[conference][team] = odds
             found_odds = False
             continue
@@ -364,21 +372,21 @@ def scrape_betmgm():
 def scrape_bet365_main_list(oddsfile):
     f = open(oddsfile, "r")
     for line in f.read().split("\n"):
-        if "NCAA Championship 2025" in line:
+        if "NCAAB Championship 2026" in line:
             break
     odds_tables = line.replace(">", ">\n")
     results = dict()
     found_team = False
     found_odds = False
     for line in odds_tables.split("\n"):
-        if 'ParticipantBorderless_Name">' in line:
+        if 'rgl-c1e976' in line:
             found_team = True
             continue
         if found_team:
             team = line[:line.find("</span>")].rstrip()
             found_team = False
             continue
-        if 'ParticipantBorderless_Odds">' in line:
+        if 'rgl-4a5de5' in line:
             found_odds = True
             continue
         if found_odds:
@@ -464,7 +472,7 @@ def scrape_bet365():
     results['championship'] = scrape_bet365_main_list(ODDS_PATH + "bt champ.html")
     results['final_four'] = scrape_bet365_main_list(ODDS_PATH + "bt ff.html")
     results['conference'] = scrape_bet365_conference()
-    results['tournament'] = scrape_bet365_tournament()
+    #results['tournament'] = scrape_bet365_tournament()
     return results
 
 def get_string_odds(odds):
@@ -486,6 +494,7 @@ def translate_team_name(team):
         "UConn": "Connecticut",
         "San Jose St": "San-Jose-State",
         "Saint Mary's": "Saint-Marys-College",
+        "Saint Mary's CA": "Saint-Marys-College",
         "Saint Marys": "Saint-Marys-College",
         "NC State": "North-Carolina-State",
         "Texas A&amp;M": "Texas-AM",
@@ -530,6 +539,7 @@ def translate_team_name(team):
         "Miami (FL)": "Miami-FL",
         "Middle Tennessee Blue": "Middle-Tennessee",
         "Minnesota Golden": "Minnesota",
+        "Mississippi Valley State Delta": "Mississippi-Valley-State",
         "Nevada Wolf": "Nevada",
         "Niagara Purple": "Niagara",
         "North Carolina Tar": "North-Carolina",
@@ -544,10 +554,12 @@ def translate_team_name(team):
         "Presbyterian Blue": "Presbyterian-College",
         "Queens University": "Queens",
         "Rutgers Scarlet": "Rutgers",
+        "Southern Indiana Screaming": "Southern-Indiana",
         "Southern Miss Golden": "Southern-Miss",
         "St. John's Red": "Saint-Johns",
         "St. Thomas (MN)": "Saint-Thomas",
         "TCU Horned": "TCU",
+        "Tennessee Tech Golden": "Tennessee-Tech",
         "Texas Tech Red": "Texas-Tech",
         "Tulane Green": "Tulane",
         "Tulsa Golden": "Tulsa",
@@ -559,8 +571,10 @@ def translate_team_name(team):
         "William &amp; Mary": "William-Mary",
        
         "Cal St. Bakersfield": "Cal-State-Bakersfield",
+        "CSU Bakersfield": "Cal-State-Bakersfield",
         "Cal St. Fullerton": "Cal-State-Fullerton",
         "Cal St. Northridge": "Cal-State-Northridge",
+        "CSUN": "Cal-State-Northridge",
         "E Kentucky": "Eastern-Kentucky",
         "Florida Gulf Coast": "FGCU",
         "GA Southern": "Georgia-Southern",
@@ -579,7 +593,68 @@ def translate_team_name(team):
         "Mississippi": "Ole-Miss",
         "VA Commonwealth": "VCU",
         "Central Florida": "UCF",
-        "Florida Intl": "FIU"
+        "Florida Intl": "FIU",
+        "Indiana U.": "Indiana",
+        "Washington U": "Washington",
+        "Albany NY": "Albany",
+        "Queens NC": "Queens",
+        "Queens (NC)": "Queens",
+        "NC Asheville": "UNC-Asheville",
+        "Sam Houston": "Sam-Houston-State",
+        "IU Indy": "IU-Indianapolis",
+        "Brown U": "Brown",
+        "Mount Saint Mary's": "Mount-Saint-Marys",
+        "Mount St. Mary's": "Mount-Saint-Marys",
+        "St. Peter's": "Saint-Peters",
+        "Saint Peter's": "Saint-Peters",
+        "MD Eastern Shore": "Maryland-Eastern-Shore",
+        "UMES": "Maryland-Eastern-Shore",
+        "NC Central": "North-Carolina-Central",
+        "Central Connecticut State": "Central-Connecticut",
+        "LIU": "Long-Island",
+        "Southeast Missouri State": "Southeast-Missouri",
+        "SE Missouri State": "Southeast-Missouri",
+        "ETSU": "East-Tennessee-State",
+        "NC Greensboro": "UNCG",
+        "A&amp;M-Corpus Christi": "Texas-AM-Corpus-Christi",
+        "East Texas A&amp;M": "East-Texas-AM",
+        "N'Western State": "Northwestern-State",
+        "SE Louisiana": "Southeastern-Louisiana",
+        "Stephen Austin": "Stephen-F-Austin",
+        "Stephen F. Austin": "Stephen-F-Austin",
+        "Texas A&amp;M Corpus": "Texas-AM-Corpus-Christi",
+        "Texas A&amp;M Corpus Christi": "Texas-AM-Corpus-Christi",
+        "UT Rio Grande Valley": "UTRGV",
+        "Kansas City": "UMKC",
+        "Nebraska Omaha": "Omaha",
+        "S Dakota State": "South-Dakota-State",
+        "Saint Thomas MN": "Saint-Thomas",
+        "St. Thomas Minnesota": "Saint-Thomas",
+        "St. Thomas": "Saint-Thomas",
+        "Alabama A&amp;M": "Alabama-AM",
+        "Alcorn": "Alcorn-State",
+        "Florida A&amp;M": "Florida-AM",
+        "Grambling": "Grambling-State",
+        "Mississippi Valley": "Mississippi-Valley-State",
+        "Prairie View A&amp;M": "Prairie-View-AM",
+        "Southern University": "Southern",
+        "UAPB Golden": "Arkansas-Pine-Bluff",
+        "UT Arlington": "UTA",
+        "Houston U": "Houston",
+        "USC-Upstate": "South-Carolina-Upstate",
+        "New Orleans": "LSU-New-Orleans",
+        "New Orleans U": "LSU-New-Orleans",
+        "Nicholls State": "Nicholls",
+        "Louisiana-Monroe": "ULM",
+        "Prairie View": "Prairie-View-AM",
+        "Boston U": "Boston-University",
+        "IUPUI": "IU-Indianapolis",
+        "LIU Brooklyn": "Long-Island",
+        "UL Lafayette": "Louisiana",
+        "UL Monroe": "ULM",
+        "UT Martin": "Tennessee-Martin",
+        "Wisc Green Bay": "Green-Bay",
+        "Wisc Milwaukee": "Milwaukee"
     }
     if team in ad_hoc_dict:
         return ad_hoc_dict[team]
@@ -614,32 +689,48 @@ def combine_results(fd, dk, cs, bm, bt):
     conference_lookup = {
         "ACC Conference": "ACC",
         "Big 10 Conference": "Big Ten",
+        "Big 10": "Big Ten",
         "Big 12 Conference": "Big 12",
+        "Big 12 conference": "Big 12",
+        "BIG 12": "Big 12",
         "Big East Conference": "Big East",
         "SEC Conference": "SEC",
         "American Athletic Conference": "American",
         "AAC": "American",
-        "Atlantic 10 Conference": "Atlantic 10",
-        "Conference USA": "Conference USA",
-        "MAC": "Mid-American",
-        "Missouri Valley Conference": "Missouri Valley",
-        "Mountain West Conference": "Mountain West",
-        "Southern Conference": "Southern",
-        "West Coast Conference": "West Coast",
-        "Atlantic Sun": "ASUN",
-        "Summit League": "The Summit League",
-        "Big 10": "Big Ten",
         "American Conference": "American",
+        "American Athletic": "American",
+        "Atlantic Sun": "ASUN",
         " Atlantic Sun Conference": "ASUN",
+        "Atlantic 10 Conference": "Atlantic 10",
         "Big Sky Conference": "Big Sky",
         "Big South Conference": "Big South",
         "Big West Conference": "Big West",
-        "Sun Belt Conference": "Sun Belt",
-        "American Athletic": "American",
         "CAA Conference": "Coastal Athletic",
+        "CAA": "Coastal Athletic",
+        "Conference USA": "Conference USA",
+        "Horizon": "Horizon League",
+        "Ivy League Conference": "Ivy League",
+        "MAC": "Mid-American",
+        "Mid American": "Mid-American",
+        "MAAC": "Metro",
+        "Mid Eastern Athletic": "MEAC",
+        "Missouri Valley Conference": "Missouri Valley",
+        "Mountain West Conference": "Mountain West",
+        "Northeast": "NEC",
+        "Pac 12": "Pac-12",
+        "Southern Conference": "Southern",
+        "Southland Conference": "Southland",
+        "Southwestern Athletic": "SWAC",
+        "Summit Conference": "The Summit League",
+        "Summit League": "The Summit League",
+        "Sun Belt Conference": "Sun Belt",
+        "UAC": "United Athletic",
+        "West Coast Conference": "West Coast",
     }
-    for pair in [(fd, "FD"), (dk, "DK"), (bm, "BM"), (bt, "BT")]: #[(fd, "FD"), (dk, "DK"), (cs, "CS"), (bm, "BM"), (bt, "BT")]:
+    for pair in [(fd, "FD"), (dk, "DK"), (cs, "CS"), (bm, "BM"), (bt, "BT")]:
         book, abbrev = pair[0], pair[1]
+        if 'conference' not in book:
+            continue
         for conference in book['conference']:
             conf_name = conference
             if conference in conference_lookup:
@@ -648,8 +739,10 @@ def combine_results(fd, dk, cs, bm, bt):
                 results['conference'][conf_name] = dict()
             run_combine(book['conference'][conference], abbrev, results['conference'][conf_name])
 
-    for pair in [(dk, "DK"), (bt, "BT")]: #[(fd, "FD"), (dk, "DK"), (bt, "BT")]:
+    for pair in [(fd, "FD"), (dk, "DK"), (cs, "CS"), (bm, "BM"), (bt, "BT")]:
         book, abbrev = pair[0], pair[1]
+        if 'tournament' not in book:
+            continue
         for team in book['tournament']:
             fixed_team = translate_team_name(team)
             if fixed_team in results['tournament']['Y']:
@@ -664,21 +757,18 @@ def combine_results(fd, dk, cs, bm, bt):
                 except KeyError: # book only put up yes odds, not no odds
                     pass
 
-    for team in fd['final_four']:
-        fixed_team = translate_team_name(team)
-        results['final_four'][fixed_team] = {'FD': fd['final_four'][team]}
-    run_combine(dk['final_four'], 'DK', results['final_four'])
-    #run_combine(cs['final_four'], 'CS', results['final_four'])
-    run_combine(bt['final_four'], 'BT', results['final_four'])
+    for pair in [(fd, "FD"), (dk, "DK"), (cs, "CS"), (bm, "BM"), (bt, "BT")]:
+        book, abbrev = pair[0], pair[1]
+        if 'final_four' not in book:
+            continue
+        run_combine(book['final_four'], abbrev, results['final_four'])
     
-    for team in fd['championship']:
-        fixed_team = translate_team_name(team)
-        results['championship'][fixed_team] = {'FD': fd['championship'][team]}
-    run_combine(dk['championship'], 'DK', results['championship'])
-    run_combine(cs['championship'], 'CS', results['championship'])
-    run_combine(bm['championship'], 'BM', results['championship'])
-    run_combine(bt['championship'], 'BT', results['championship'])
-
+    for pair in [(fd, "FD"), (dk, "DK"), (cs, "CS"), (bm, "BM"), (bt, "BT")]:
+        book, abbrev = pair[0], pair[1]
+        if 'championship' not in book:
+            continue
+        run_combine(book['championship'], abbrev, results['championship'])
+    
     return results
 
 def get_best_odds(all_odds):

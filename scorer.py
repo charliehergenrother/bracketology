@@ -1036,7 +1036,6 @@ class Scorer:
         elif self.future:
             for team in self.teams:
                 net_estimates[team] = self.get_NET_estimate(self.teams[team].NET, self.team_kenpoms[team]["rank"], season_days, days_left)
-
         for team in self.teams:
             if self.verbose and not self.monte_carlo:
                 print("Scoring", team)

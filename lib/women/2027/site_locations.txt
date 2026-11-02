@@ -1,0 +1,4 @@
+Philadelphia 1[39.9011° N, 75.1719° W]
+Philadelphia 2[39.9011° N, 75.1719° W]
+Las Vegas 3[36.1030° N, 115.1787° W]
+Las Vegas 4[36.1030° N, 115.1787° W]

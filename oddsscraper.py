@@ -330,18 +330,24 @@ def scrape_betmgm_conference():
     found_team = False
     found_odds = False
     table_start = False
+    conference = ""
     for line in odds_tables.split("\n"):
         if not table_start:
             if "regular season winner" in line:
                 table_start = True
             else:
                 continue
+        if "Tournament winner" in line:
+            conference = ""
+            continue
         if "regular season winner" in line:
             conference = line[9:line.find(" regular season winner")]
             results[conference] = dict()
             continue
         if "Regular Season Winner" in line:
             conference = line[9:line.find(" Regular Season Winner")]
+            if conference == "ce USA": # they forgot the year!
+                conference = "Conference USA"
             results[conference] = dict()
             continue
         if "name ng-star-inserted" in line:
@@ -355,8 +361,9 @@ def scrape_betmgm_conference():
             found_odds = True
             continue
         if found_odds:
-            odds = int(line[:line.find("</ms-font-resizer>")])
-            results[conference][team] = odds
+            if conference != "":
+                odds = int(line[:line.find("</ms-font-resizer>")])
+                results[conference][team] = odds
             found_odds = False
             continue
         if "Wooden" in line:
@@ -654,7 +661,9 @@ def translate_team_name(team):
         "UL Monroe": "ULM",
         "UT Martin": "Tennessee-Martin",
         "Wisc Green Bay": "Green-Bay",
-        "Wisc Milwaukee": "Milwaukee"
+        "Wisc Milwaukee": "Milwaukee",
+        "Binghampton": "Binghamton",
+        "UMASS-Lowell": "UMass-Lowell",
     }
     if team in ad_hoc_dict:
         return ad_hoc_dict[team]
@@ -699,6 +708,7 @@ def combine_results(fd, dk, cs, bm, bt):
         "AAC": "American",
         "American Conference": "American",
         "American Athletic": "American",
+        "America East Conference": "America East",
         "Atlantic Sun": "ASUN",
         " Atlantic Sun Conference": "ASUN",
         "Atlantic 10 Conference": "Atlantic 10",
@@ -718,6 +728,7 @@ def combine_results(fd, dk, cs, bm, bt):
         "Mountain West Conference": "Mountain West",
         "Northeast": "NEC",
         "Pac 12": "Pac-12",
+        "Pac-12 Conference": "Pac-12",
         "Southern Conference": "Southern",
         "Southland Conference": "Southland",
         "Southwestern Athletic": "SWAC",

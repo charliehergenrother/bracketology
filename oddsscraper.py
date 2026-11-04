@@ -407,25 +407,25 @@ def scrape_bet365_conference():
     oddsfile = ODDS_PATH + "bt conf.html"
     f = open(oddsfile, "r")
     for line in f.read().split("\n"):
-        if "Regular Season 2025" in line:
+        if "Regular Season 2026" in line:
             break
     odds_tables = line.replace(">", ">\n")
     results = dict()
     found_team = False
     found_odds = False
     for line in odds_tables.split("\n"):
-        if "Regular Season 2025" in line:
-            conference = line[:line.find(" Regular Season 2025")]
+        if "Regular Season 2026" in line:
+            conference = line[:line.find(" Regular Season 2026")]
             results[conference] = dict()
             continue
-        if 'ParticipantBorderless_Name">' in line:
+        if 'rgl-c1e976' in line:
             found_team = True
             continue
         if found_team:
             team = line[:line.find("</span>")].rstrip()
             found_team = False
             continue
-        if 'ParticipantBorderless_Odds">' in line:
+        if 'rgl-4a5de5' in line:
             found_odds = True
             continue
         if found_odds:
@@ -663,7 +663,7 @@ def translate_team_name(team):
         "Wisc Green Bay": "Green-Bay",
         "Wisc Milwaukee": "Milwaukee",
         "Binghampton": "Binghamton",
-        "UMASS-Lowell": "UMass-Lowell",
+        "UMASS Lowell": "UMass-Lowell",
     }
     if team in ad_hoc_dict:
         return ad_hoc_dict[team]

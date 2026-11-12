@@ -5,7 +5,7 @@ ODDS_PATH = "/mnt/c/Users/charl/Downloads/"
 def do_fd_setup(oddsfile):
     f = open(oddsfile, "r")
     for line in f.read().split("\n"):
-        if "Championship Winner" in line:
+        if "Championship Winner" in line or " Regular Season Conference Winner" in line:
             break
     odds_tables = line.replace(">", ">\n")
     return odds_tables
@@ -19,17 +19,17 @@ def scrape_fanduel_conference():
     for line in odds_tables.split("\n"):
         if "NCAAB Odds" in line:
             break
-        if " Regular Season Winner 2025-2026</span>" in line or " Regular Season Winner 2025-2026 (Without IL Schools)</span>" in line:
+        if " Regular Season Conference Winner 2026-27 (Without IL Schools)</span>" in line or \
+                " Regular Season Conference Winner 2026-27</span>" in line:
             conference = line[:line.find(" Regular")]
             results[conference] = dict()
             continue
-        if conference and conference in line and "</span>" in line and "Show less" not in line:
-            if not team:
-                team = line[:line.index("</span>")]
-            else:
-                odds = line[:line.index("</span>")]
-                results[conference][team] = int(odds)
-                team = ""
+        if conference and conference in line and "button" in line:
+            line_items = line.split(",")
+            team = line_items[1][1:]
+            odds = line_items[2][1:line_items[2].find('"')]
+            results[conference][team] = int(odds)
+            team = ""
     return results
 
 def scrape_fanduel_main_list(oddsfile):
@@ -80,7 +80,7 @@ def scrape_fanduel():
     results = dict()
     results['championship'] = scrape_fanduel_main_list(ODDS_PATH + "fd champ")
     #results['final_four'] = scrape_fanduel_main_list(ODDS_PATH + "fd ff")
-    #results['conference'] = scrape_fanduel_conference()
+    results['conference'] = scrape_fanduel_conference()
     #results['tournament'] = scrape_fanduel_tournament()
     return results
 
@@ -206,7 +206,7 @@ def scrape_caesars_main_list(oddsfile):
     found_team = False
     found_odds = False
     for line in odds_tables.split("\n"):
-        if "cui-text-ellipsis" in line:
+        if "text-ellipsis line-clamp" in line:
             found_team = True
             continue
         if found_team:
@@ -258,15 +258,13 @@ def scrape_caesars_conference():
     found_team = False
     found_odds = False
     for line in odds_tables.split("\n"):
-        if "Conference Mens Regular Season" in line:
-            conference = line[5:line.find(" Conference Mens Regular Season")]
+        if " Mens Regular <" in line:
+            conference = line[5:line.find(" Mens Regular <")]
+            if " Conference" == conference[-11:]:
+                conference = conference[:-11]
             results[conference] = dict()
             continue
-        if " Mens Regular Season" in line:
-            conference = line[5:line.find(" Mens Regular Season")]
-            results[conference] = dict()
-            continue
-        if "cui-text-ellipsis" in line:
+        if "text-ellipsis line-clamp" in line:
             found_team = True
             continue
         if found_team:
@@ -386,14 +384,14 @@ def scrape_bet365_main_list(oddsfile):
     found_team = False
     found_odds = False
     for line in odds_tables.split("\n"):
-        if 'rgl-c1e976' in line:
+        if 'rgl-8b6a52' in line:
             found_team = True
             continue
         if found_team:
-            team = line[:line.find("</span>")].rstrip()
+            team = line[:line.find("</div>")].rstrip()
             found_team = False
             continue
-        if 'rgl-4a5de5' in line:
+        if 'rgl-f8e95e' in line:
             found_odds = True
             continue
         if found_odds:
@@ -418,14 +416,14 @@ def scrape_bet365_conference():
             conference = line[:line.find(" Regular Season 2026")]
             results[conference] = dict()
             continue
-        if 'rgl-c1e976' in line:
+        if 'rgl-8b6a52' in line:
             found_team = True
             continue
         if found_team:
-            team = line[:line.find("</span>")].rstrip()
+            team = line[:line.find("</div>")].rstrip()
             found_team = False
             continue
-        if 'rgl-4a5de5' in line:
+        if 'rgl-f8e95e' in line:
             found_odds = True
             continue
         if found_odds:
@@ -712,6 +710,7 @@ def combine_results(fd, dk, cs, bm, bt):
         "Atlantic Sun": "ASUN",
         " Atlantic Sun Conference": "ASUN",
         "Atlantic 10 Conference": "Atlantic 10",
+        "A10": "Atlantic 10",
         "Big Sky Conference": "Big Sky",
         "Big South Conference": "Big South",
         "Big West Conference": "Big West",
@@ -724,6 +723,7 @@ def combine_results(fd, dk, cs, bm, bt):
         "Mid American": "Mid-American",
         "MAAC": "Metro",
         "Mid Eastern Athletic": "MEAC",
+        "MVC": "Missouri Valley",
         "Missouri Valley Conference": "Missouri Valley",
         "Mountain West Conference": "Mountain West",
         "Northeast": "NEC",
@@ -737,6 +737,7 @@ def combine_results(fd, dk, cs, bm, bt):
         "Sun Belt Conference": "Sun Belt",
         "UAC": "United Athletic",
         "West Coast Conference": "West Coast",
+        "WCC": "West Coast"
     }
     for pair in [(fd, "FD"), (dk, "DK"), (cs, "CS"), (bm, "BM"), (bt, "BT")]:
         book, abbrev = pair[0], pair[1]

@@ -2086,7 +2086,7 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
 
     for team in made_tournament:
         result_percents[team]['auto_bid'] = len(list(filter(lambda x: x['ctourn_winner'], team_results[team])))/successful_runs
-        for tourney_round in [('second_round', 2), ('sweet_sixteen', 3), ('elite_eight', 4), ('ncg', 6)]:
+        for tourney_round in [('first_round', 1), ('second_round', 2), ('sweet_sixteen', 3), ('elite_eight', 4), ('ncg', 6)]:
             result_percents[team][tourney_round[0]] = len(list(filter(lambda x: x['ncaa_round'] >= tourney_round[1], team_results[team])))/successful_runs
 
     if mc_output_html:
@@ -2097,13 +2097,13 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
         f.write('<div class="table_container">\n')
         f.write('  <table class="outcomes_table">\n')
         f.write('    <colgroup><col class="teamcol"><col class="confcol"><col class="autocol"><col class="tourncol">')
-        f.write('<col class="srcol"><col class="sscol"><col class="eecol">')
+        f.write('<col class="frcol"><col class="srcol"><col class="sscol"><col class="eecol">')
         f.write('<col class="ffcol"><col class="ncgcol"><col class="nccol"></colgroup>\n')
         f.write('    <thead>\n')
         f.write('      <tr class="header_row"><th>Team</th>')
         f.write('<th>Avg. seed</th><th>Win conf</th>')
         f.write('<th>Auto bid</th><th>Tournament</th>')
-        f.write('<th>2nd Round</th><th>Sweet 16</th><th>Elite 8</th><th>Final Four</th>')
+        f.write('<th>1st Round</th><th>2nd Round</th><th>Sweet 16</th><th>Elite 8</th><th>Final Four</th>')
         f.write('<th>Champ game</th><th>Win champ</th>')
         f.write('</tr>')
         f.write('    </thead>\n')
@@ -2114,7 +2114,7 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
             else:
                 f.write('    <tr><td><img class="tiny_logo" src="assets/' + team + '.png"/><a href="team_pagesw/' + team + '.html">' + scorer.teams[team].team_out + '</a></td>')
             f.write('<td>' + str(round(sum(team_seeds[team])/made_tournament[team], 2)) + '</td>')
-            for outcome_string in ['conference', 'auto_bid', 'tournament', 'second_round', 'sweet_sixteen', 'elite_eight', 'final_four', 'ncg', 'championship']:
+            for outcome_string in ['conference', 'auto_bid', 'tournament', 'first_round', 'second_round', 'sweet_sixteen', 'elite_eight', 'final_four', 'ncg', 'championship']:
                 try:
                     outcome_percentage = round(result_percents[team][outcome_string]*100, 2)
                 except KeyError:

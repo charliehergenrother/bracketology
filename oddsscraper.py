@@ -709,6 +709,7 @@ def combine_results(fd, dk, cs, bm, bt):
         "America East Conference": "America East",
         "Atlantic Sun": "ASUN",
         " Atlantic Sun Conference": "ASUN",
+        "ASUN Conference": "ASUN",
         "Atlantic 10 Conference": "Atlantic 10",
         "A10": "Atlantic 10",
         "Big Sky Conference": "Big Sky",

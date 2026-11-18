@@ -203,6 +203,7 @@ def scrape_caesars_main_list(oddsfile):
             break
     odds_tables = line.replace(">", ">\n")
     results = dict()
+    team = ""
     found_team = False
     found_odds = False
     for line in odds_tables.split("\n"):
@@ -217,8 +218,9 @@ def scrape_caesars_main_list(oddsfile):
             found_odds = True
             continue
         if found_odds:
-            odds = int(line[:line.find("</span>")])
-            results[team] = odds
+            if team != "":
+                odds = int(line[:line.find("</span>")])
+                results[team] = odds
             found_odds = False
             continue
     return results
@@ -255,6 +257,8 @@ def scrape_caesars_conference():
             break
     odds_tables = line.replace(">", ">\n")
     results = dict()
+    team = ""
+    conference = ""
     found_team = False
     found_odds = False
     for line in odds_tables.split("\n"):
@@ -271,12 +275,13 @@ def scrape_caesars_conference():
             team = line[:line.find(" </div>")]
             found_team = False
             continue
-        if "market-button-odds" in line and team not in results[conference]:
+        if "market-button-odds" in line and conference != "" and team not in results[conference]:
             found_odds = True
             continue
         if found_odds:
-            odds = int(line[:line.find("</span>")])
-            results[conference][team] = odds
+            if team != "":
+                odds = int(line[:line.find("</span>")])
+                results[conference][team] = odds
             found_odds = False
             continue
     return results

@@ -1843,6 +1843,8 @@ def run_monte_carlo(simulations, scorer, builder, mens, weightfile, mc_outputfil
                         }
         for i in range(simulations):
             if not i % 10000:
+                if builder.mens:
+                    print("W - ", end="")
                 print("Running sim", i)
             for team in results["teams"]:
                 simmed_kenpoms[team] = {"rating": rng.normal(scorer.team_kenpoms[team]["rating"], 0.8)}

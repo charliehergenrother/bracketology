@@ -7,3 +7,4 @@ cp index.html men.html
 ./scraper.py -w -b womenfuture.html -f -o excelPath/futurebracketlist2027w.csv -g womenschedule.html
 ./oddsscraper.py
 ./scraper.py -c 20000 -d excelPath/montecarlooutput2027.csv -p menprojections.html
+./scraper.py -c 20000 -w -d excelPath/montecarlooutputw2027.csv -p womenprojections.html

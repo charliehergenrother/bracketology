@@ -393,6 +393,10 @@ class Scraper:
                                 game["time"] = "0:00"
                             if game["opponent"] != "":  # This seems to happen with non div 1 games sometimes
                                 schedule_games.append(game)
+                        elif "team-schedule__result--in-progress" in line:
+                            game["time"] = "0:00"
+                            if game["opponent"] != "":  # This seems to happen with non div 1 games sometimes
+                                schedule_games.append(game)
                         found_result = False
                         found_game = False
                     elif "team-schedule__result" in line:           # game is in the past
